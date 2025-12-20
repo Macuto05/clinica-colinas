@@ -4,52 +4,170 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-    console.log('🌱 Start seeding...');
+    console.log('🌱 Starting seeding...');
 
     // 1. Roles
-    const roles = ['ADMIN', 'MEDICO', 'PACIENTE', 'ENFERMERIA', 'RECEPCION', 'FARMACIA', 'LABORATORIO'];
+    const roles = [
+        { nombre: 'ADMIN', descripcion: 'Administrador del sistema con acceso total' },
+        { nombre: 'MEDICO', descripcion: 'Profesional de la salud' },
+        { nombre: 'PACIENTE', descripcion: 'Usuario que recibe atención médica' },
+        { nombre: 'RECEPCION', descripcion: 'Encargado de recepción y citas' },
+        { nombre: 'ENFERMERIA', descripcion: 'Personal de enfermería' },
+        { nombre: 'FARMACIA', descripcion: 'Encargado de dispensar medicamentos' },
+    ];
 
-    for (const nombre of roles) {
-        // Upsert to avoid duplicates if re-running
+    for (const r of roles) {
         await prisma.rol.upsert({
-            where: { nombre }, // Unique field
+            where: { nombre: r.nombre },
             update: {},
-            create: {
-                nombre,
-                descripcion: `Rol del sistema: ${nombre}`
-            },
+            create: r,
         });
     }
-    console.log('✅ Roles synced');
+    console.log('✅ Roles seeded');
 
-    // 2. Admin User
-    const adminRol = await prisma.rol.findUnique({ where: { nombre: 'ADMIN' } });
+    // 2. Especialidades
+    const especialidades = [
+        { nombre: 'Medicina General', descripcion: 'Atención primaria' },
+        { nombre: 'Cardiologia', descripcion: 'Enfermedades del corazón' },
+        { nombre: 'Pediatria', descripcion: 'Atención a niños' },
+        { nombre: 'Ginecologia', descripcion: 'Salud de la mujer' },
+        { nombre: 'Traumatologia', descripcion: 'Lesiones óseas y musculares' },
+        { nombre: 'Cirugia Plastica', descripcion: 'Procedimientos estéticos y reconstructivos' },
+        { nombre: 'Gastroenterologia', descripcion: 'Sistema digestivo' },
+    ];
 
-    if (adminRol) {
-        const passwordHash = await bcrypt.hash('Admin123!', 10);
-        const adminEmail = 'admin@clinica.com';
+    for (const e of especialidades) {
+        await prisma.especialidad.upsert({
+            where: { nombre: e.nombre },
+            update: {},
+            create: e,
+        });
+    }
+    console.log('✅ Specialties seeded');
 
+    // Password for all users: 123456
+    const passwordHash = await bcrypt.hash('123456', 10);
+
+    // 3. Admin User
+    const adminRole = await prisma.rol.findUnique({ where: { nombre: 'ADMIN' } });
+    if (adminRole) {
         await prisma.usuario.upsert({
-            where: { email: adminEmail },
+            where: { email: 'admin@clinica.com' },
             update: {},
             create: {
-                email: adminEmail,
+                email: 'admin@clinica.com',
                 passwordHash,
-                rolId: adminRol.rolId,
+                rolId: adminRole.rolId,
                 estado: 'ACTIVO',
+                empleado: {
+                    create: {
+                        nombres: 'Super',
+                        apellidos: 'Admin',
+                        documentoIdentidad: 'V00000001',
+                        estadoLaboral: 'ACTIVO',
+                        fechaIngreso: new Date(),
+                    }
+                }
             },
         });
-        console.log('✅ Admin user synced (admin@clinica.com / Admin123!)');
-    } else {
-        console.error('❌ Admin Role not found, cannot create Admin user.');
     }
+    console.log('✅ Admin user seeded (admin@clinica.com / 123456)');
 
-    console.log('🌱 Seed finished.');
+    // 4. Doctor Users
+    // Standard helper to create a doctor
+    const medicoRole = await prisma.rol.findUnique({ where: { nombre: 'MEDICO' } });
+    if (medicoRole) {
+        // Doctor 1
+        const esp1 = await prisma.especialidad.findUnique({ where: { nombre: 'Cirugia Plastica' } });
+        if (esp1) {
+            await prisma.usuario.upsert({
+                where: { email: 'doctor1@clinica.com' },
+                update: {},
+                create: {
+                    email: 'doctor1@clinica.com',
+                    passwordHash,
+                    rolId: medicoRole.rolId,
+                    empleado: {
+                        create: {
+                            nombres: 'Beverly Jackeline',
+                            apellidos: 'Bruzual Ortiz',
+                            documentoIdentidad: 'V12345678',
+                            telefono: '0414-1234567',
+                            medico: {
+                                create: {
+                                    especialidadId: esp1.especialidadId,
+                                    numeroColegiatura: 'CMP-11111',
+                                    activo: true
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Doctor 2
+        const esp2 = await prisma.especialidad.findUnique({ where: { nombre: 'Gastroenterologia' } });
+        if (esp2) {
+            await prisma.usuario.upsert({
+                where: { email: 'doctor2@clinica.com' },
+                update: {},
+                create: {
+                    email: 'doctor2@clinica.com',
+                    passwordHash,
+                    rolId: medicoRole.rolId,
+                    empleado: {
+                        create: {
+                            nombres: 'Luisana Maria',
+                            apellidos: 'Rodriguez Pereo',
+                            documentoIdentidad: 'V87654321',
+                            telefono: '0412-7654321',
+                            medico: {
+                                create: {
+                                    especialidadId: esp2.especialidadId,
+                                    numeroColegiatura: 'CMP-22222',
+                                    activo: true
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+    console.log('✅ Doctors seeded');
+
+    // 5. Patient User
+    const pacienteRole = await prisma.rol.findUnique({ where: { nombre: 'PACIENTE' } });
+    if (pacienteRole) {
+        await prisma.usuario.upsert({
+            where: { email: 'paciente@clinica.com' },
+            update: {},
+            create: {
+                email: 'paciente@clinica.com',
+                passwordHash,
+                rolId: pacienteRole.rolId,
+                paciente: {
+                    create: {
+                        nombres: 'Juan',
+                        apellidos: 'Perez',
+                        documentoIdentidad: 'V11223344',
+                        fechaNacimiento: new Date('1990-01-01'),
+                        telefono: '0424-0000000',
+                        direccion: 'Av. Principal 123'
+                    }
+                }
+            }
+        });
+    }
+    console.log('✅ Patient seeded (paciente@clinica.com / 123456)');
+
+    console.log('🚀 Seeding finished.');
 }
 
 main()
     .catch((e) => {
-        console.error('❌ Error in seed:', e);
+        console.error(e);
         process.exit(1);
     })
     .finally(async () => {
