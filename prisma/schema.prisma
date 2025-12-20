@@ -1,0 +1,493 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// 0️⃣ ENUMS
+
+enum UsuarioEstado {
+  ACTIVO
+  INACTIVO
+  BLOQUEADO
+}
+
+enum PacienteEstado {
+  ACTIVO
+  INACTIVO
+  BLOQUEADO
+  FALLECIDO
+}
+
+// RESTORED MODEL: Especialidad (required by UI and Repositories)
+model Especialidad {
+  especialidadId BigInt   @id @default(autoincrement()) @map("especialidad_id")
+  nombre         String   @unique @db.VarChar(120)
+  descripcion    String?  @db.Text
+  icono          String?  @db.VarChar(50)
+  activa         Boolean  @default(true)
+
+  medicos        Medico[]
+
+  @@map("especialidad")
+}
+
+
+enum EmpleadoEstadoLaboral {
+  ACTIVO
+  VACACIONES
+  LICENCIA
+  SUSPENDIDO
+  RETIRADO
+}
+
+enum CitaEstado {
+  PROGRAMADA
+  CONFIRMADA
+  ATENDIDA
+  CANCELADA
+  NO_ASISTIO
+}
+
+enum CitaOrigen {
+  WEB
+  RECEPCION
+}
+
+enum CitaTipo {
+  CONSULTA
+  CONTROL
+  ESPECIALIDAD
+  OTRA
+}
+
+enum FacturaEstado {
+  PENDIENTE
+  PARCIAL
+  PAGADA
+  ANULADA
+}
+
+enum FacturaItemTipo {
+  SERVICIO
+  INSUMO
+  EXAMEN
+  OTRO
+}
+
+enum PagoEstado {
+  PENDIENTE
+  VALIDADO
+  RECHAZADO
+  ANULADO
+}
+
+enum PagoCanal {
+  ONLINE
+  PRESENCIAL
+}
+
+enum MovimientoTipo {
+  ENTRADA
+  SALIDA
+  AJUSTE
+  TRASLADO
+}
+
+enum SolicitudInsumoEstado {
+  PENDIENTE
+  APROBADA
+  RECHAZADA
+  DESPACHADA
+}
+
+enum SolicitudLabEstado {
+  PENDIENTE
+  APROBADA
+  RECHAZADA
+  ATENDIDA
+}
+
+enum DocumentoTipo {
+  RESULTADO_LAB
+  INFORME
+  OTRO
+}
+
+// 1️⃣ SEGURIDAD Y USUARIOS
+
+model Rol {
+  rolId       BigInt    @id @default(autoincrement()) @map("rol_id")
+  nombre      String    @unique @db.VarChar(50)
+  descripcion String?   @db.Text
+  activo      Boolean   @default(true)
+  usuarios    Usuario[]
+
+  @@map("rol")
+}
+
+model Usuario {
+  usuarioId     BigInt        @id @default(autoincrement()) @map("usuario_id")
+  rolId         BigInt        @map("rol_id")
+  email         String        @unique @db.VarChar(255)
+  passwordHash  String        @map("password_hash") @db.Text
+  estado        UsuarioEstado @default(ACTIVO)
+  fechaCreacion DateTime      @default(now()) @map("fecha_creacion") @db.Timestamptz
+  ultimoAcceso  DateTime?     @map("ultimo_acceso") @db.Timestamptz
+
+  rol              Rol                   @relation(fields: [rolId], references: [rolId], onDelete: Restrict)
+  empleado         Empleado?
+  paciente         Paciente?
+  citasCreadas     CitaMedica[]          @relation("UsuarioCreaCita")
+  facturasEmitidas Factura[]             @relation("UsuarioEmiteFactura")
+  pagosRegistrados Pago[]                @relation("UsuarioRegistraPago")
+  solicitudesIns   SolicitudInsumo[]     @relation("UsuarioSolicitaInsumo")
+  respuestasIns    SolicitudInsumo[]     @relation("UsuarioRespondeInsumo")
+  movimientos      MovimientoInventario[]
+  solicitudesLab   SolicitudLaboratorio[]
+  resultadosCargados ResultadoLaboratorio[]
+
+  @@map("usuario")
+}
+
+model Empleado {
+  empleadoId         BigInt                @id @default(autoincrement()) @map("empleado_id")
+  usuarioId          BigInt?               @unique @map("usuario_id")
+  nombres            String                @db.VarChar(120)
+  apellidos          String                @db.VarChar(120)
+  documentoIdentidad String?               @unique @map("documento_identidad") @db.VarChar(40)
+  telefono           String?               @db.VarChar(40)
+  correoInstitucional String?              @map("correo_institucional") @db.VarChar(255)
+  fechaIngreso       DateTime?             @map("fecha_ingreso") @db.Date
+  estadoLaboral      EmpleadoEstadoLaboral @default(ACTIVO) @map("estado_laboral")
+
+  usuario Usuario? @relation(fields: [usuarioId], references: [usuarioId], onDelete: SetNull)
+  medico  Medico?
+
+  @@map("empleado")
+}
+
+model Medico {
+  empleadoId         BigInt  @id @map("empleado_id")
+  especialidadId     BigInt  @map("especialidad_id")
+  numeroColegiatura  String? @unique @map("numero_colegiatura") @db.VarChar(60)
+  licenciaProfesional String? @unique @map("licencia_profesional") @db.VarChar(60)
+  activo             Boolean @default(true)
+
+  empleado     Empleado     @relation(fields: [empleadoId], references: [empleadoId], onDelete: Cascade)
+  especialidad Especialidad @relation(fields: [especialidadId], references: [especialidadId], onDelete: Restrict)
+  citas        CitaMedica[]
+
+  @@map("medico")
+}
+
+model Paciente {
+  pacienteId         BigInt         @id @default(autoincrement()) @map("paciente_id")
+  usuarioId          BigInt?        @unique @map("usuario_id")
+  nombres            String         @db.VarChar(120)
+  apellidos          String         @db.VarChar(120)
+  documentoIdentidad String?        @unique @map("documento_identidad") @db.VarChar(40)
+  fechaNacimiento    DateTime?      @map("fecha_nacimiento") @db.Date
+  sexo               String?        @db.VarChar(20)
+  telefono           String?        @db.VarChar(40)
+  correo             String?        @db.VarChar(255)
+  direccion          String?        @db.Text
+  estado             PacienteEstado @default(ACTIVO)
+
+  usuario Usuario?     @relation(fields: [usuarioId], references: [usuarioId], onDelete: SetNull)
+  citas   CitaMedica[]
+
+  @@map("paciente")
+}
+
+// 2️⃣ CITAS
+
+model CitaMedica {
+  citaId         BigInt     @id @default(autoincrement()) @map("cita_id")
+  pacienteId     BigInt     @map("paciente_id")
+  medicoId       BigInt     @map("medico_id")
+  fechaCita      DateTime   @map("fecha_cita") @db.Date
+  horaInicio     DateTime   @map("hora_inicio") @db.Time
+  horaFin        DateTime   @map("hora_fin") @db.Time
+  motivoConsulta String?    @map("motivo_consulta") @db.Text
+  estadoCita     CitaEstado @default(PROGRAMADA) @map("estado_cita")
+  tipoCita       CitaTipo   @default(CONSULTA) @map("tipo_cita")
+  origenCita     CitaOrigen @default(WEB) @map("origen_cita")
+  observaciones  String?    @db.Text
+  fechaCreacion  DateTime   @default(now()) @map("fecha_creacion") @db.Timestamptz
+  usuarioCreacion BigInt    @map("usuario_creacion")
+
+  paciente        Paciente               @relation(fields: [pacienteId], references: [pacienteId], onDelete: Restrict)
+  medico          Medico                 @relation(fields: [medicoId], references: [empleadoId], onDelete: Restrict)
+  creador         Usuario                @relation("UsuarioCreaCita", fields: [usuarioCreacion], references: [usuarioId], onDelete: Restrict)
+  factura         Factura?
+  solicitudesInsumo SolicitudInsumo[]
+  solicitudesLab    SolicitudLaboratorio[]
+  documentos        DocumentoClinico[]
+
+  @@unique([medicoId, fechaCita, horaInicio], name: "uq_cita_slot")
+  @@map("cita_medica")
+  // Note: 'CONSTRAINT chk_horas CHECK (hora_fin > hora_inicio)' is not directly supported in Prisma schema, handled in DB or App logic.
+}
+
+// 3️⃣ PAGOS Y FACTURACIÓN
+
+model MetodoPago {
+  metodoPagoId BigInt  @id @default(autoincrement()) @map("metodo_pago_id")
+  nombre       String  @unique @db.VarChar(80)
+  descripcion  String? @db.Text
+  activo       Boolean @default(true)
+  pagos        Pago[]
+
+  @@map("metodo_pago")
+}
+
+model Factura {
+  facturaId      BigInt        @id @default(autoincrement()) @map("factura_id")
+  citaId         BigInt        @unique @map("cita_id")
+  numeroFactura  String?       @unique @map("numero_factura") @db.VarChar(60)
+  fechaEmision   DateTime      @default(now()) @map("fecha_emision") @db.Timestamptz
+  estadoFactura  FacturaEstado @default(PENDIENTE) @map("estado_factura")
+  subtotal       Decimal       @default(0) @db.Decimal(12, 2)
+  descuentoTotal Decimal       @default(0) @map("descuento_total") @db.Decimal(12, 2)
+  impuestoTotal  Decimal       @default(0) @map("impuesto_total") @db.Decimal(12, 2)
+  total          Decimal       @default(0) @db.Decimal(12, 2)
+  saldoPendiente Decimal       @default(0) @map("saldo_pendiente") @db.Decimal(12, 2)
+  observaciones  String?       @db.Text
+  usuarioEmision BigInt        @map("usuario_emision")
+
+  cita    CitaMedica       @relation(fields: [citaId], references: [citaId], onDelete: Restrict)
+  emisor  Usuario          @relation("UsuarioEmiteFactura", fields: [usuarioEmision], references: [usuarioId], onDelete: Restrict)
+  detalles FacturaDetalle[]
+  pagos    Pago[]
+
+  @@map("factura")
+}
+
+model FacturaDetalle {
+  detalleId      BigInt          @id @default(autoincrement()) @map("detalle_id")
+  facturaId      BigInt          @map("factura_id")
+  tipoItem       FacturaItemTipo @map("tipo_item")
+  descripcion    String          @db.Text
+  cantidad       Decimal         @db.Decimal(12, 2)
+  precioUnitario Decimal         @map("precio_unitario") @db.Decimal(12, 2)
+  importe        Decimal         @db.Decimal(12, 2)
+  referenciaId   BigInt?         @map("referencia_id")
+
+  factura Factura @relation(fields: [facturaId], references: [facturaId], onDelete: Cascade)
+
+  @@map("factura_detalle")
+}
+
+model Pago {
+  pagoId            BigInt     @id @default(autoincrement()) @map("pago_id")
+  facturaId         BigInt     @map("factura_id")
+  monto             Decimal    @db.Decimal(12, 2)
+  fechaPago         DateTime   @default(now()) @map("fecha_pago") @db.Timestamptz
+  estadoPago        PagoEstado @default(PENDIENTE) @map("estado_pago")
+  metodoPagoId      BigInt     @map("metodo_pago_id")
+  referenciaExterna String?    @map("referencia_externa") @db.VarChar(120)
+  canalPago         PagoCanal  @default(PRESENCIAL) @map("canal_pago")
+  usuarioRegistro   BigInt     @map("usuario_registro")
+  observaciones     String?    @db.Text
+
+  factura     Factura    @relation(fields: [facturaId], references: [facturaId], onDelete: Restrict)
+  metodoPago  MetodoPago @relation(fields: [metodoPagoId], references: [metodoPagoId])
+  registrador Usuario    @relation("UsuarioRegistraPago", fields: [usuarioRegistro], references: [usuarioId], onDelete: Restrict)
+
+  @@map("pago")
+}
+
+// 4️⃣ INVENTARIO / INSUMOS
+
+model Insumo {
+  insumoId     BigInt             @id @default(autoincrement()) @map("insumo_id")
+  codigo       String             @unique @db.VarChar(60)
+  nombre       String             @db.VarChar(120)
+  descripcion  String?            @db.Text
+  unidadMedida String             @map("unidad_medida") @db.VarChar(40)
+  categoria    String             @db.VarChar(60)
+  activo       Boolean            @default(true)
+  stock        Stock[]
+  detalleSolicitudes SolicitudInsumoDetalle[]
+  detalleMovimientos MovimientoDetalle[]
+
+  @@map("insumo")
+}
+
+model Almacen {
+  almacenId   BigInt                 @id @default(autoincrement()) @map("almacen_id")
+  nombre      String                 @unique @db.VarChar(80)
+  descripcion String?                @db.Text
+  activo      Boolean                @default(true)
+  stock       Stock[]
+  movimientos MovimientoInventario[]
+
+  @@map("almacen")
+}
+
+model Stock {
+  stockId        BigInt   @id @default(autoincrement()) @map("stock_id")
+  almacenId      BigInt   @map("almacen_id")
+  insumoId       BigInt   @map("insumo_id")
+  cantidadActual Decimal  @default(0) @map("cantidad_actual") @db.Decimal(14, 2)
+  actualizadoEn  DateTime @default(now()) @map("actualizado_en") @db.Timestamptz
+
+  almacen Almacen @relation(fields: [almacenId], references: [almacenId])
+  insumo  Insumo  @relation(fields: [insumoId], references: [insumoId])
+
+  @@unique([almacenId, insumoId], name: "uq_stock")
+  @@map("stock")
+}
+
+model Proveedor {
+  proveedorId BigInt  @id @default(autoincrement()) @map("proveedor_id")
+  nombre      String  @db.VarChar(160)
+  rifNif      String? @unique @map("rif_nif") @db.VarChar(40)
+  telefono    String? @db.VarChar(40)
+  correo      String? @db.VarChar(255)
+  direccion   String? @db.Text
+  activo      Boolean @default(true)
+  movimientos MovimientoInventario[]
+
+  @@map("proveedor")
+}
+
+model SolicitudInsumo {
+  solicitudInsumoId BigInt                @id @default(autoincrement()) @map("solicitud_insumo_id")
+  citaId            BigInt                @map("cita_id")
+  usuarioSolicita   BigInt                @map("usuario_solicita")
+  fechaSolicitud    DateTime              @default(now()) @map("fecha_solicitud") @db.Timestamptz
+  estadoSolicitud   SolicitudInsumoEstado @default(PENDIENTE) @map("estado_solicitud")
+  usuarioResponde   BigInt?               @map("usuario_responde")
+  fechaRespuesta    DateTime?             @map("fecha_respuesta") @db.Timestamptz
+  observaciones     String?               @db.Text
+
+  cita        CitaMedica               @relation(fields: [citaId], references: [citaId])
+  solicitante Usuario                  @relation("UsuarioSolicitaInsumo", fields: [usuarioSolicita], references: [usuarioId])
+  respondedor Usuario?                 @relation("UsuarioRespondeInsumo", fields: [usuarioResponde], references: [usuarioId])
+  detalles    SolicitudInsumoDetalle[]
+  movimientos MovimientoInventario[]
+
+  @@map("solicitud_insumo")
+}
+
+model SolicitudInsumoDetalle {
+  solicitudDetalleId BigInt  @id @default(autoincrement()) @map("solicitud_detalle_id")
+  solicitudInsumoId  BigInt  @map("solicitud_insumo_id")
+  insumoId           BigInt  @map("insumo_id")
+  cantidadSolicitada Decimal @map("cantidad_solicitada") @db.Decimal(14, 2)
+  cantidadAprobada   Decimal? @map("cantidad_aprobada") @db.Decimal(14, 2)
+
+  solicitud SolicitudInsumo @relation(fields: [solicitudInsumoId], references: [solicitudInsumoId], onDelete: Cascade)
+  insumo    Insumo          @relation(fields: [insumoId], references: [insumoId])
+
+  @@unique([solicitudInsumoId, insumoId], name: "uq_solins_det")
+  @@map("solicitud_insumo_detalle")
+}
+
+model MovimientoInventario {
+  movimientoId      BigInt         @id @default(autoincrement()) @map("movimiento_id")
+  almacenId         BigInt         @map("almacen_id")
+  tipoMovimiento    MovimientoTipo @map("tipo_movimiento")
+  fechaMovimiento   DateTime       @default(now()) @map("fecha_movimiento") @db.Timestamptz
+  usuarioId         BigInt         @map("usuario_id")
+  proveedorId       BigInt?        @map("proveedor_id")
+  solicitudInsumoId BigInt?        @map("solicitud_insumo_id")
+  referencia        String?        @db.VarChar(120)
+  observaciones     String?        @db.Text
+
+  almacen         Almacen          @relation(fields: [almacenId], references: [almacenId])
+  usuario         Usuario          @relation(fields: [usuarioId], references: [usuarioId])
+  proveedor       Proveedor?       @relation(fields: [proveedorId], references: [proveedorId])
+  solicitudInsumo SolicitudInsumo? @relation(fields: [solicitudInsumoId], references: [solicitudInsumoId])
+  detalles        MovimientoDetalle[]
+
+  @@map("movimiento_inventario")
+}
+
+model MovimientoDetalle {
+  movimientoDetalleId BigInt  @id @default(autoincrement()) @map("movimiento_detalle_id")
+  movimientoId        BigInt  @map("movimiento_id")
+  insumoId            BigInt  @map("insumo_id")
+  cantidad            Decimal @db.Decimal(14, 2)
+  costoUnitario       Decimal? @map("costo_unitario") @db.Decimal(14, 2)
+
+  movimiento MovimientoInventario @relation(fields: [movimientoId], references: [movimientoId], onDelete: Cascade)
+  insumo     Insumo               @relation(fields: [insumoId], references: [insumoId])
+
+  @@map("movimiento_detalle")
+}
+
+// 5️⃣ LABORATORIO
+
+model ExamenLaboratorio {
+  examenId    BigInt     @id @default(autoincrement()) @map("examen_id")
+  nombre      String     @unique @db.VarChar(120)
+  descripcion String?    @db.Text
+  activo      Boolean    @default(true)
+  detalles    SolicitudLaboratorioDetalle[]
+
+  @@map("examen_laboratorio")
+}
+
+model SolicitudLaboratorio {
+  solicitudLabId  BigInt             @id @default(autoincrement()) @map("solicitud_lab_id")
+  citaId          BigInt             @map("cita_id")
+  usuarioSolicita BigInt             @map("usuario_solicita")
+  fechaSolicitud  DateTime           @default(now()) @map("fecha_solicitud") @db.Timestamptz
+  estadoSolicitud SolicitudLabEstado @default(PENDIENTE) @map("estado_solicitud")
+  observaciones   String?            @db.Text
+
+  cita        CitaMedica                    @relation(fields: [citaId], references: [citaId])
+  solicitante Usuario                       @relation(fields: [usuarioSolicita], references: [usuarioId])
+  detalles    SolicitudLaboratorioDetalle[]
+
+  @@map("solicitud_laboratorio")
+}
+
+model SolicitudLaboratorioDetalle {
+  detalleLabId   BigInt @id @default(autoincrement()) @map("detalle_lab_id")
+  solicitudLabId BigInt @map("solicitud_lab_id")
+  examenId       BigInt @map("examen_id")
+
+  solicitud SolicitudLaboratorio  @relation(fields: [solicitudLabId], references: [solicitudLabId], onDelete: Cascade)
+  examen    ExamenLaboratorio     @relation(fields: [examenId], references: [examenId])
+  resultado ResultadoLaboratorio?
+
+  @@unique([solicitudLabId, examenId], name: "uq_sollab_det")
+  @@map("solicitud_laboratorio_detalle")
+}
+
+model ResultadoLaboratorio {
+  resultadoId        BigInt   @id @default(autoincrement()) @map("resultado_id")
+  detalleLabId       BigInt   @unique @map("detalle_lab_id")
+  fechaResultado     DateTime @default(now()) @map("fecha_resultado") @db.Timestamptz
+  observacionGeneral String?  @map("observacion_general") @db.Text
+  usuarioCarga       BigInt   @map("usuario_carga")
+
+  detalleSol SolicitudLaboratorioDetalle @relation(fields: [detalleLabId], references: [detalleLabId])
+  cargador   Usuario                     @relation(fields: [usuarioCarga], references: [usuarioId])
+  documentos DocumentoClinico[]
+
+  @@map("resultado_laboratorio")
+}
+
+model DocumentoClinico {
+  documentoId   BigInt        @id @default(autoincrement()) @map("documento_id")
+  resultadoId   BigInt        @unique @map("resultado_id")
+  citaId        BigInt        @map("cita_id")
+  nombreArchivo String        @map("nombre_archivo") @db.VarChar(255)
+  rutaArchivo   String        @map("ruta_archivo") @db.Text
+  tipoDocumento DocumentoTipo @default(RESULTADO_LAB) @map("tipo_documento")
+  fechaCarga    DateTime      @default(now()) @map("fecha_carga") @db.Timestamptz
+
+  resultado ResultadoLaboratorio @relation(fields: [resultadoId], references: [resultadoId])
+  cita      CitaMedica           @relation(fields: [citaId], references: [citaId])
+
+  @@map("documento_clinico")
+}
+
+
