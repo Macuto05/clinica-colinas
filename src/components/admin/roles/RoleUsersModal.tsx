@@ -1,16 +1,16 @@
 "use client";
 
 import { Modal } from "@/components/ui/Modal";
-import { User, Stethoscope, HeartPulse, Shield } from "lucide-react";
 
 interface RoleUsersModalProps {
     isOpen: boolean;
     onClose: () => void;
     roleName: string;
     users: any[];
+    icon: React.ElementType;
 }
 
-export default function RoleUsersModal({ isOpen, onClose, roleName, users }: RoleUsersModalProps) {
+export default function RoleUsersModal({ isOpen, onClose, roleName, users, icon: RoleIcon }: RoleUsersModalProps) {
     return (
         <Modal
             isOpen={isOpen}
@@ -23,30 +23,26 @@ export default function RoleUsersModal({ isOpen, onClose, roleName, users }: Rol
                 ) : (
                     <div className="grid gap-3">
                         {users.map((user) => {
-                            // Determine user type and display info
+                            // Determine display info
                             let name = "Usuario del Sistema";
                             let identifier = user.email;
-                            let Icon = Shield;
                             let additionalInfo = "";
 
                             if (user.empleado?.medico) {
                                 name = `${user.empleado.nombres} ${user.empleado.apellidos}`;
-                                Icon = Stethoscope;
                                 additionalInfo = "Médico";
                             } else if (user.paciente) {
                                 name = `${user.paciente.nombres} ${user.paciente.apellidos}`;
-                                Icon = HeartPulse;
                                 additionalInfo = "Paciente";
                             } else if (user.empleado) {
                                 name = `${user.empleado.nombres} ${user.empleado.apellidos}`;
-                                Icon = User;
                                 additionalInfo = "Personal";
                             }
 
                             return (
                                 <div key={user.usuarioId} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg border border-gray-100 dark:border-zinc-700">
                                     <div className="p-2 bg-white dark:bg-zinc-700 rounded-full shadow-sm text-lime-600 dark:text-lime-400">
-                                        <Icon size={18} />
+                                        <RoleIcon size={18} />
                                     </div>
                                     <div>
                                         <p className="text-sm font-semibold text-gray-900 dark:text-white">{name}</p>

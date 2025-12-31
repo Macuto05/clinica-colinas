@@ -107,12 +107,28 @@ export class Appointment {
         return new Appointment({ ...this.props, status: AppointmentStatus.NO_SHOW });
     }
 
+    get startDateTime(): Date {
+        const [hours, minutes] = this.props.startTime.split(':').map(Number);
+        const fullDate = new Date(this.props.date);
+        // Assuming date is stored as UTC midnight or relative to generic date
+        // We set the time components.
+        // Using UTC methods to avoid local timezone shifts on the base date if it was distinct
+        fullDate.setUTCHours(hours, minutes, 0, 0);
+        return fullDate;
+    }
+
     toJSON() {
+        // Construct ISO string manually to preserve "Wall Clock" time
+        // This ensures the frontend interprets 09:00 as 09:00 Local Time regardless of timezone
+        const dateStr = new Date(this.props.date).toISOString().split('T')[0];
+        const datetime = `${dateStr}T${this.props.startTime}`;
+
         return {
             id: this.props.id,
             patientId: this.props.patientId,
             doctorId: this.props.doctorId,
             date: this.props.date,
+            datetime: datetime,
             startTime: this.props.startTime,
             endTime: this.props.endTime,
             status: this.props.status,
@@ -120,6 +136,7 @@ export class Appointment {
             origin: this.props.origin,
             patientName: this.props.patientName,
             doctorName: this.props.doctorName,
+            reason: this.props.reason,
         };
     }
 }

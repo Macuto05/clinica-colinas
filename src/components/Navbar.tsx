@@ -56,7 +56,13 @@ export default function Navbar() {
                         </Link>
                         {user ? (
                             <Link
-                                href={user.role === 'ADMIN' ? '/admin' : user.role === 'DOCTOR' ? '/dashboard/doctor' : '/dashboard/perfil'}
+                                href={
+                                    user.role === 'ADMIN' ? '/admin' :
+                                        user.role === 'DOCTOR' ? '/dashboard/doctor' :
+                                            user.role === 'ALMACEN' ? '/almacen' :
+                                                ['CAJA', 'CAJA Y FACTURACION', 'CAJA Y FACTURACIÓN', 'CAJA/FACTURACION', 'CAJA/FACTURACIÓN'].includes(user.role?.toUpperCase() || "") ? '/caja' :
+                                                    '/dashboard/perfil'
+                                }
                                 className="flex items-center gap-2 text-gray-600 transition-all hover:text-[#a1db4b] hover:scale-105 dark:text-gray-400"
                             >
                                 <User className="h-3.5 w-3.5" />
@@ -65,7 +71,7 @@ export default function Navbar() {
                         ) : (
                             <Link href="/login" className="flex items-center gap-2 text-gray-600 transition-all hover:text-[#a1db4b] hover:scale-105 dark:text-gray-400">
                                 <User className="h-3.5 w-3.5" />
-                                Mi Clínica
+                                Iniciar Sesión
                             </Link>
                         )}
                     </div>

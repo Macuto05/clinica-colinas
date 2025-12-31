@@ -55,11 +55,14 @@ export default async function AdminDoctorsPage({
                 }
             },
             especialidad: true,
+            horario: {
+                include: {
+                    detalles: true
+                }
+            }
         },
         orderBy: {
-            empleado: {
-                apellidos: 'asc'
-            }
+            empleadoId: 'asc'
         }
     });
 
@@ -125,11 +128,7 @@ export default async function AdminDoctorsPage({
                                     </td>
                                     <td className="whitespace-nowrap px-6 py-4">
                                         <div className="flex items-center">
-                                            <div className="h-8 w-8 flex-shrink-0 mr-3">
-                                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-lime-100 text-sm dark:bg-lime-900/30">
-                                                    👨‍⚕️
-                                                </div>
-                                            </div>
+
                                             <div>
                                                 <div className="text-sm font-semibold text-gray-900 dark:text-white">{fullName}</div>
                                             </div>

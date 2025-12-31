@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Calendar, Clock, User as UserIcon, Plus } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/Button";
 
 interface Appointment {
     id: number;
@@ -13,11 +14,8 @@ interface Appointment {
     endTime: string;
     type: string;
     status: string;
-    doctor: {
-        firstName: string;
-        lastName: string;
-        specialty: string;
-    };
+    doctorName?: string;
+    reason?: string;
 }
 
 export default function AppointmentsPage() {
@@ -76,7 +74,7 @@ export default function AppointmentsPage() {
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-lime-600"></div>
             </div>
         );
     }
@@ -89,18 +87,17 @@ export default function AppointmentsPage() {
                         <h1 className="text-2xl font-bold text-gray-900">Mis Citas</h1>
                         <p className="text-gray-600">Gestiona tus consultas médicas</p>
                     </div>
-                    <Link
-                        href="/dashboard/citas/nueva"
-                        className="inline-flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
+                    <Button
+                        onClick={() => router.push("/dashboard/citas/nueva")}
+                        leftIcon={<Plus size={20} />}
                     >
-                        <Plus size={20} />
                         Nueva Cita
-                    </Link>
+                    </Button>
                 </div>
 
                 {isLoadingAppointments ? (
                     <div className="text-center py-12">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-lime-600 mx-auto"></div>
                         <p className="mt-2 text-gray-500">Cargando citas...</p>
                     </div>
                 ) : appointments.length === 0 ? (
@@ -110,38 +107,43 @@ export default function AppointmentsPage() {
                         </div>
                         <h3 className="text-lg font-medium text-gray-900">No tienes citas programadas</h3>
                         <p className="text-gray-500 mt-1 mb-6">Agenda tu primera consulta con nuestros especialistas.</p>
-                        <Link
-                            href="/dashboard/citas/nueva"
-                            className="inline-block bg-primary-600 text-white px-6 py-2.5 rounded-lg hover:bg-primary-700 transition-colors"
+                        <Button
+                            onClick={() => router.push("/dashboard/citas/nueva")}
                         >
                             Agendar Cita
-                        </Link>
+                        </Button>
                     </div>
                 ) : (
                     <div className="space-y-4">
                         {appointments.map((apt) => (
                             <div key={apt.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
                                 <div className="flex items-start gap-4">
-                                    <div className="w-12 h-12 bg-primary-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                                        <Calendar className="text-primary-600" />
+                                    <div className="w-12 h-12 bg-lime-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <Calendar className="text-lime-600" />
                                     </div>
                                     <div>
                                         <h3 className="font-semibold text-gray-900">
-                                            {apt.type} - {apt.doctor?.specialty || 'Consulta General'}
+                                            {apt.type}
                                         </h3>
                                         <p className="text-gray-600 text-sm">
-                                            Dr. {apt.doctor?.firstName} {apt.doctor?.lastName}
+                                            Dr. {apt.doctorName || 'No asignado'}
                                         </p>
                                         <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                                             <span className="flex items-center gap-1">
                                                 <Calendar size={14} />
-                                                {new Date(apt.date).toLocaleDateString()}
+                                                {/* Parsing ISO string manually to avoid timezone shift, Format: DD/MM/YYYY */}
+                                                {String(new Date(apt.date).getUTCDate()).padStart(2, '0')}/{String(new Date(apt.date).getUTCMonth() + 1).padStart(2, '0')}/{new Date(apt.date).getUTCFullYear()}
                                             </span>
                                             <span className="flex items-center gap-1">
                                                 <Clock size={14} />
                                                 {apt.startTime} - {apt.endTime}
                                             </span>
                                         </div>
+                                        {apt.reason && (
+                                            <p className="text-sm text-gray-500 mt-1 italic">
+                                                Motivo: {apt.reason}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                                 <div>

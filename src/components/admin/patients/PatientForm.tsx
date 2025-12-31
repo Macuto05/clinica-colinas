@@ -1,23 +1,51 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
-import { Loader2, Save, X } from "lucide-react";
+import { Loader2, Save, X, Edit } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { FormInput } from "@/components/auth/FormInput";
+import { Select } from "@/components/ui/Select";
+import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
 
-// Schema for Patient
+// Localized & Robust Schema matching Public Registration
 const patientSchema = z.object({
-    nombres: z.string().min(2, "El nombre es requerido"),
-    apellidos: z.string().min(2, "El apellido es requerido"),
-    documentoIdentidad: z.string().min(5, "Documento requerido"),
-    fechaNacimiento: z.string().optional(), // We'll handle date as string YYYY-MM-DD
+    nombres: z
+        .string()
+        .min(2, "Nombre debe tener al menos 2 caracteres")
+        .max(50, "Nombre muy largo")
+        .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "El nombre solo puede contener letras"),
+    apellidos: z
+        .string()
+        .min(2, "Apellido debe tener al menos 2 caracteres")
+        .max(50, "Apellido muy largo")
+        .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "El apellido solo puede contener letras"),
+
+    // Split ID Card
+    idType: z.enum(["V-", "E-", "J-"]),
+    idNumber: z
+        .string()
+        .min(6, "Mínimo 6 dígitos")
+        .max(12, "Máximo 12 dígitos")
+        .regex(/^\d+$/, "Solo números"),
+
+    fechaNacimiento: z.string().optional(), // We'll handle validation logic in refinement or UI if needed
     sexo: z.string().optional(),
-    telefono: z.string().optional(),
+
+    // Split Phone
+    phoneCode: z.enum(["0412-", "0414-", "0416-", "0424-", "0426-", "0422-"]),
+    phoneNumber: z
+        .string()
+        .min(7, "Mínimo 7 dígitos")
+        .max(7, "Máximo 7 dígitos")
+        .regex(/^\d+$/, "Solo números"),
+
     correo: z.string().email("Correo inválido").optional().or(z.literal("")),
     direccion: z.string().optional(),
     estado: z.enum(["ACTIVO", "INACTIVO", "BLOQUEADO", "FALLECIDO"]).default("ACTIVO"),
 
-    // User related fields (for existing users mostly)
+    // User related fields
     email: z.string().email("Email de usuario inválido").optional().or(z.literal("")),
     usuarioEstado: z.enum(["ACTIVO", "INACTIVO", "BLOQUEADO"]).default("ACTIVO"),
     password: z.string().optional(),
@@ -26,7 +54,7 @@ const patientSchema = z.object({
 type PatientFormData = z.infer<typeof patientSchema>;
 
 interface PatientFormProps {
-    initialData?: any; // We'll refine this type
+    initialData?: any;
     onClose: () => void;
     onSuccess?: () => void;
 }
@@ -38,18 +66,38 @@ export default function PatientForm({ initialData, onClose, onSuccess }: Patient
 
     const isEditing = !!initialData;
 
+    // Helper to split valid ID/Phone if editing
+    const splitId = (fullId: string = "") => {
+        if (!fullId) return { type: "V-", number: "" };
+        const match = fullId.match(/^([VEJ]-)(.*)$/);
+        return match ? { type: match[1], number: match[2] } : { type: "V-", number: fullId };
+    };
+
+    const splitPhone = (fullPhone: string = "") => {
+        // Simple logic looking for known prefixes, defaults to 0412 if not found or empty
+        const prefixes = ["0412-", "0414-", "0416-", "0424-", "0426-", "0422-"];
+        const found = prefixes.find(p => fullPhone.startsWith(p));
+        return found ? { code: found, number: fullPhone.replace(found, "") } : { code: "0412-", number: "" };
+    };
+
+    const initialId = splitId(initialData?.documentoIdentidad);
+    const initialPhone = splitPhone(initialData?.telefono);
+
     const defaultValues: Partial<PatientFormData> = {
         nombres: initialData?.nombres || "",
         apellidos: initialData?.apellidos || "",
-        documentoIdentidad: initialData?.documentoIdentidad || "",
+        idType: initialId.type as any,
+        idNumber: initialId.number,
         fechaNacimiento: initialData?.fechaNacimiento ? new Date(initialData.fechaNacimiento).toISOString().split('T')[0] : "",
         sexo: initialData?.sexo || "",
-        telefono: initialData?.telefono || "",
+        phoneCode: initialPhone.code as any,
+        phoneNumber: initialPhone.number,
         correo: initialData?.correo || "",
         direccion: initialData?.direccion || "",
         estado: initialData?.estado || "ACTIVO",
         email: initialData?.usuario?.email || "",
         usuarioEstado: initialData?.usuario?.estado || "ACTIVO",
+        password: "",
     };
 
     const {
@@ -57,10 +105,40 @@ export default function PatientForm({ initialData, onClose, onSuccess }: Patient
         handleSubmit,
         formState: { errors },
         watch,
+        reset,
     } = useForm<PatientFormData>({
         resolver: zodResolver(patientSchema),
         defaultValues: defaultValues as any,
+        mode: "onChange",
     });
+
+    // Effect to seed form when initialData changes
+    useEffect(() => {
+        if (initialData) {
+            const currentId = splitId(initialData.documentoIdentidad);
+            const currentPhone = splitPhone(initialData.telefono);
+
+            reset({
+                ...initialData,
+                nombres: initialData.nombres || "",
+                apellidos: initialData.apellidos || "",
+                idType: currentId.type as any,
+                idNumber: currentId.number,
+                fechaNacimiento: initialData.fechaNacimiento ? new Date(initialData.fechaNacimiento).toISOString().split('T')[0] : "",
+                sexo: initialData.sexo || "",
+                phoneCode: currentPhone.code as any,
+                phoneNumber: currentPhone.number,
+                correo: initialData.correo || "",
+                direccion: initialData.direccion || "",
+                estado: initialData.estado || "ACTIVO",
+                email: initialData.usuario?.email || "",
+                usuarioEstado: initialData.usuario?.estado || "ACTIVO",
+                password: "",
+            });
+        }
+    }, [initialData, reset]);
+
+    const password = watch("password", ""); // Watch for strength indicator
 
     const onSubmit = async (data: PatientFormData) => {
         setIsSubmitting(true);
@@ -73,10 +151,18 @@ export default function PatientForm({ initialData, onClose, onSuccess }: Patient
 
             const method = isEditing ? "PUT" : "POST";
 
+            // Transform data to match API expectations
+            const payload = {
+                ...data,
+                documentoIdentidad: `${data.idType}${data.idNumber}`,
+                telefono: `${data.phoneCode}${data.phoneNumber}`,
+                // Remove temporary fields if API is strict, but usually safe to send extra
+            };
+
             const response = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data),
+                body: JSON.stringify(payload),
             });
 
             if (!response.ok) {
@@ -97,14 +183,7 @@ export default function PatientForm({ initialData, onClose, onSuccess }: Patient
     return (
         <div className="flex flex-col h-full bg-white dark:bg-zinc-900 rounded-lg shadow-xl overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {isEditing ? "Editar Paciente" : "Nuevo Paciente"}
-                </h2>
-                <button onClick={onClose} className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
-                    <X className="w-5 h-5" />
-                </button>
-            </div>
+
 
             {/* Form Content */}
             <div className="flex-1 overflow-y-auto p-6">
@@ -125,12 +204,12 @@ export default function PatientForm({ initialData, onClose, onSuccess }: Patient
                             {/* Nombres */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Nombres <span className="text-red-500">*</span>
+                                    Nombres
                                 </label>
                                 <input
                                     {...register("nombres")}
                                     className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                    placeholder="Ej: Juan Andrés"
+                                    placeholder="Ej: Juan Carlos"
                                 />
                                 {errors.nombres && <p className="text-red-500 text-xs mt-1">{errors.nombres.message}</p>}
                             </div>
@@ -138,12 +217,12 @@ export default function PatientForm({ initialData, onClose, onSuccess }: Patient
                             {/* Apellidos */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Apellidos <span className="text-red-500">*</span>
+                                    Apellidos
                                 </label>
                                 <input
                                     {...register("apellidos")}
                                     className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                    placeholder="Ej: Pérez López"
+                                    placeholder="Ej: Pérez Rodríguez"
                                 />
                                 {errors.apellidos && <p className="text-red-500 text-xs mt-1">{errors.apellidos.message}</p>}
                             </div>
@@ -151,14 +230,29 @@ export default function PatientForm({ initialData, onClose, onSuccess }: Patient
                             {/* Documento */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Documento de Identidad <span className="text-red-500">*</span>
+                                    Documento de Identidad
                                 </label>
-                                <input
-                                    {...register("documentoIdentidad")}
-                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                    placeholder="Ej: 12345678"
-                                />
-                                {errors.documentoIdentidad && <p className="text-red-500 text-xs mt-1">{errors.documentoIdentidad.message}</p>}
+                                <div className="flex gap-2">
+                                    <div className="w-24">
+                                        <Select
+                                            options={[
+                                                { value: "V-", label: "V-" },
+                                                { value: "E-", label: "E-" },
+                                                { value: "J-", label: "J-" }
+                                            ]}
+                                            error={errors.idType?.message}
+                                            {...register("idType")}
+                                        />
+                                    </div>
+                                    <div className="flex-1">
+                                        <input
+                                            {...register("idNumber")}
+                                            className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                            placeholder="12345678"
+                                        />
+                                    </div>
+                                </div>
+                                {errors.idNumber && <p className="text-red-500 text-xs mt-1">{errors.idNumber.message}</p>}
                             </div>
 
                             {/* Fecha Nacimiento */}
@@ -174,19 +268,20 @@ export default function PatientForm({ initialData, onClose, onSuccess }: Patient
                             </div>
 
                             {/* Sexo */}
-                            <div>
+                            <div className="md:col-span-2">
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Sexo
                                 </label>
-                                <select
+                                <Select
+                                    options={[
+                                        { value: "MASCULINO", label: "Masculino" },
+                                        { value: "FEMENINO", label: "Femenino" },
+                                        { value: "OTRO", label: "Otro" }
+                                    ]}
+                                    placeholder="Seleccionar..."
+                                    error={errors.sexo?.message}
                                     {...register("sexo")}
-                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                >
-                                    <option value="">Seleccione...</option>
-                                    <option value="MASCULINO">Masculino</option>
-                                    <option value="FEMENINO">Femenino</option>
-                                    <option value="OTRO">Otro</option>
-                                </select>
+                                />
                             </div>
                         </div>
                     </div>
@@ -205,23 +300,43 @@ export default function PatientForm({ initialData, onClose, onSuccess }: Patient
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Teléfono
                                 </label>
-                                <input
-                                    {...register("telefono")}
-                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                    placeholder="Ej: +58 414 1234567"
-                                />
+                                <div className="flex gap-2">
+                                    <div className="w-28">
+                                        <Select
+                                            options={[
+                                                { value: "0412-", label: "0412" },
+                                                { value: "0422-", label: "0422" },
+                                                { value: "0414-", label: "0414" },
+                                                { value: "0424-", label: "0424" },
+                                                { value: "0416-", label: "0416" },
+                                                { value: "0426-", label: "0426" }
+                                            ]}
+                                            error={errors.phoneCode?.message}
+                                            {...register("phoneCode")}
+                                        />
+                                    </div>
+                                    <div className="flex-1">
+                                        <input
+                                            {...register("phoneNumber")}
+                                            className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                            placeholder="1234567"
+                                        />
+                                    </div>
+                                </div>
+                                {errors.phoneNumber && <p className="text-red-500 text-xs mt-1">{errors.phoneNumber.message}</p>}
                             </div>
 
                             {/* Correo Contacto */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Correo (Contacto)
+                                    Correo de Contacto
                                 </label>
                                 <input
                                     {...register("correo")}
                                     className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                    placeholder="ejemplo@correo.com"
+                                    placeholder="contacto@ejemplo.com"
                                 />
+                                {errors.correo && <p className="text-red-500 text-xs mt-1">{errors.correo.message}</p>}
                             </div>
 
                             {/* Direccion */}
@@ -233,7 +348,7 @@ export default function PatientForm({ initialData, onClose, onSuccess }: Patient
                                     {...register("direccion")}
                                     rows={2}
                                     className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none"
-                                    placeholder="Dirección completa"
+                                    placeholder="Tu dirección completa"
                                 />
                             </div>
                         </div>
@@ -248,35 +363,26 @@ export default function PatientForm({ initialData, onClose, onSuccess }: Patient
                         </h3>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Email Usuario (Si existe usuario asociado) */}
+                            {/* Email Usuario */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Email de Usuario
-                                    <span className="ml-1 text-xs text-gray-400 font-normal">(Vinculado a la cuenta de acceso)</span>
-                                </label>
-                                <input
+                                <FormInput
+                                    label="Correo de Acceso (Usuario)"
+                                    placeholder="usuario@login.com"
+                                    error={errors.email?.message}
                                     {...register("email")}
-                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                    placeholder="usuario@sistema.com"
                                 />
-                                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
                             </div>
 
-                            {/* Password - Only for new users or password reset */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Contraseña
-                                    <span className="ml-1 text-xs text-gray-400 font-normal">
-                                        {isEditing ? "(Dejar vacío para mantener actual)" : "(Requerido para nuevos usuarios)"}
-                                    </span>
-                                </label>
-                                <input
+                            {/* Password */}
+                            <div className="space-y-2">
+                                <FormInput
+                                    label="Contraseña"
                                     type="password"
-                                    {...register("password")}
-                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                     placeholder={isEditing ? "••••••••" : "Contraseña"}
+                                    error={errors.password?.message}
+                                    {...register("password")}
                                 />
-                                {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
+                                {password && <PasswordStrengthIndicator password={password} />}
                             </div>
 
                             {/* Selects de Estado */}
@@ -284,31 +390,32 @@ export default function PatientForm({ initialData, onClose, onSuccess }: Patient
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Estado del Paciente
                                 </label>
-                                <select
+                                <Select
                                     {...register("estado")}
-                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                >
-                                    <option value="ACTIVO">ACTIVO</option>
-                                    <option value="INACTIVO">INACTIVO</option>
-                                    <option value="BLOQUEADO">BLOQUEADO</option>
-                                    <option value="FALLECIDO">FALLECIDO</option>
-                                </select>
+                                    options={[
+                                        { value: "ACTIVO", label: "ACTIVO" },
+                                        { value: "INACTIVO", label: "INACTIVO" },
+                                        { value: "BLOQUEADO", label: "BLOQUEADO" },
+                                        { value: "FALLECIDO", label: "FALLECIDO" }
+                                    ]}
+                                    error={errors.estado?.message}
+                                />
                             </div>
 
                             {/* Estado Usuario */}
-                            {/* Only show if user exists or we are creating one. For now simplest logic. */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Estado de Usuario (Acceso)
                                 </label>
-                                <select
+                                <Select
                                     {...register("usuarioEstado")}
-                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                >
-                                    <option value="ACTIVO">ACTIVO</option>
-                                    <option value="INACTIVO">INACTIVO</option>
-                                    <option value="BLOQUEADO">BLOQUEADO</option>
-                                </select>
+                                    options={[
+                                        { value: "ACTIVO", label: "ACTIVO" },
+                                        { value: "INACTIVO", label: "INACTIVO" },
+                                        { value: "BLOQUEADO", label: "BLOQUEADO" }
+                                    ]}
+                                    error={errors.usuarioEstado?.message}
+                                />
                             </div>
 
                         </div>
@@ -318,32 +425,24 @@ export default function PatientForm({ initialData, onClose, onSuccess }: Patient
 
             {/* Footer */}
             <div className="bg-gray-50 dark:bg-zinc-800/50 px-6 py-4 flex items-center justify-end gap-3 border-t border-gray-200 dark:border-zinc-800">
-                <button
+                <Button
                     type="button"
+                    variant="outline"
                     onClick={onClose}
                     disabled={isSubmitting}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded-lg transition-colors"
+                    className="dark:border-zinc-700 dark:text-gray-300 dark:hover:bg-zinc-700"
                 >
                     Cancelar
-                </button>
-                <button
+                </Button>
+                <Button
                     type="submit"
                     form="patient-form"
+                    isLoading={isSubmitting}
                     disabled={isSubmitting}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    leftIcon={isEditing ? <Edit className="w-4 h-4" /> : <Save className="w-4 h-4" />}
                 >
-                    {isSubmitting ? (
-                        <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Guardando...
-                        </>
-                    ) : (
-                        <>
-                            <Save className="w-4 h-4" />
-                            Guardar Cambios
-                        </>
-                    )}
-                </button>
+                    {isEditing ? "Guardar Cambios" : "Guardar Paciente"}
+                </Button>
             </div>
         </div>
     );

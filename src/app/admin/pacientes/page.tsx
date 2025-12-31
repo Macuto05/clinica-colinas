@@ -59,7 +59,7 @@ export default async function AdminPatientsPage({ searchParams }: PageProps) {
     // 1. Fetch patients
     const patients = await prisma.paciente.findMany({
         where,
-        orderBy: { apellidos: 'asc' },
+        orderBy: { pacienteId: 'asc' },
         include: {
             usuario: {
                 select: { email: true, estado: true }
@@ -127,7 +127,7 @@ export default async function AdminPatientsPage({ searchParams }: PageProps) {
                                     <td className="whitespace-nowrap px-6 py-4">
                                         <div className="text-sm font-semibold text-gray-900 dark:text-white">{fullName}</div>
                                     </td>
-                                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                                         {patient.documentoIdentidad || "Sin documento"}
                                     </td>
                                     <td className="whitespace-nowrap px-6 py-4">

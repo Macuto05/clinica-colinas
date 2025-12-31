@@ -13,6 +13,18 @@ export class AppointmentController {
         try {
             const body: any = await request.json(); // Use any temporarily to allow mapping
 
+            // Verify Auth Token to get User ID
+            const token = request.cookies.get('auth-token')?.value;
+            let userId = undefined;
+
+            if (token) {
+                const { JWTService } = await import('@/infrastructure/services/JWTService');
+                const payload = await JWTService.verifyToken(token);
+                if (payload) {
+                    userId = payload.userId;
+                }
+            }
+
             // Map to DTO
             const dto: CreateAppointmentDTO = {
                 patientId: body.patientId,
@@ -22,7 +34,8 @@ export class AppointmentController {
                 endTime: body.endTime,
                 type: body.type,
                 origin: body.origin,
-                reason: body.reason
+                reason: body.reason,
+                userId: userId
             };
 
             const scheduleUseCase = container.getScheduleAppointmentUseCase();

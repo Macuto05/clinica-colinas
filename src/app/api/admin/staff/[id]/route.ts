@@ -16,8 +16,9 @@ const updateStaffSchema = z.object({
     estadoLaboral: z.enum(["ACTIVO", "VACACIONES", "LICENCIA", "SUSPENDIDO", "RETIRADO"]).optional(),
 });
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
     try {
+        const params = await props.params;
         const id = BigInt(params.id);
         const body = await request.json();
         const result = updateStaffSchema.safeParse(body);

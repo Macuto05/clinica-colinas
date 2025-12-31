@@ -79,8 +79,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Default redirects if no specific path was requested
         if (userData.role === "ADMIN") {
             router.push("/admin");
-        } else if (userData.role === "DOCTOR") {
+        } else if (userData.role === "DOCTOR" || userData.role === "MEDICO") { // Added MEDICO role
             router.push("/dashboard/doctor");
+        } else if (userData.role === "ALMACEN") {
+            router.push("/almacen");
+        } else if (["CAJA", "CAJA Y FACTURACION", "CAJA Y FACTURACIÓN", "CAJA/FACTURACION", "CAJA/FACTURACIÓN"].includes(userData.role?.toUpperCase() || "")) {
+            router.push("/caja");
         } else {
             router.push("/dashboard");
         }

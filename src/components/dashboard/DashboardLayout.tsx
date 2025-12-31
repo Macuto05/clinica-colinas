@@ -55,17 +55,20 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     {/* Logo */}
                     <div className="h-16 flex items-center px-6 border-b border-gray-100">
                         <Link href="/" className="flex items-center gap-2">
-                            <div className="bg-primary-600 p-1.5 rounded-lg">
-                                <img src="/logo-clinicas-colina.jpg" alt="Logo" className="h-6 w-auto mix-blend-screen brightness-0 invert" />
+                            <div className="relative h-8 w-32 transition-transform hover:scale-105">
+                                <img
+                                    src="/logo-clinicas-colina.jpg"
+                                    alt="Clínicas Colina"
+                                    className="object-contain h-full w-full"
+                                />
                             </div>
-                            <span className="font-bold text-gray-900 text-sm tracking-tight">{CLINIC_INFO.name}</span>
                         </Link>
                     </div>
 
                     {/* User Profile Summary */}
                     <div className="p-4 border-b border-gray-100 bg-gray-50/50">
                         <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold border-2 border-white shadow-sm">
+                            <div className="h-10 w-10 rounded-full bg-lime-100 flex items-center justify-center text-lime-700 font-bold border-2 border-white shadow-sm">
                                 {user?.name?.charAt(0) || "U"}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -91,7 +94,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                                     className={`
                                         flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group
                                         ${active
-                                            ? "bg-primary-50 text-primary-700 shadow-sm ring-1 ring-primary-200"
+                                            ? "bg-lime-50 text-lime-700 shadow-sm ring-1 ring-lime-200"
                                             : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                                         }
                                     `}
@@ -100,11 +103,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                                         size={20}
                                         className={`
                                             transition-colors duration-200
-                                            ${active ? "text-primary-600" : "text-gray-400 group-hover:text-gray-600"}
+                                            ${active ? "text-lime-600" : "text-gray-400 group-hover:text-gray-600"}
                                         `}
                                     />
                                     {item.name}
-                                    {active && <ChevronRight size={16} className="ml-auto text-primary-400" />}
+                                    {active && <ChevronRight size={16} className="ml-auto text-lime-400" />}
                                 </Link>
                             );
                         })}
@@ -114,7 +117,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     <div className="p-4 border-t border-gray-100">
                         <button
                             onClick={() => logout()}
-                            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                         >
                             <LogOut size={20} />
                             Cerrar Sesión

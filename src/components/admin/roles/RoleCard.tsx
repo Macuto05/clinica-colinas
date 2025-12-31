@@ -1,13 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { Shield, Users } from "lucide-react";
+import { Shield, Users, Award, Package, Stethoscope, Pill, Headset, ShieldCheck, User } from "lucide-react";
 import RoleActions from "./RoleActions";
 import RoleUsersModal from "./RoleUsersModal";
 
 interface RoleCardProps {
     role: any;
 }
+
+const roleIcons: { [key: string]: React.ElementType } = {
+    "ADMIN": ShieldCheck,
+    "MEDICO": Award,
+    "PACIENTE": Users,
+    "ENFERMERIA": Stethoscope,
+    "FARMACIA": Pill,
+    "ALMACEN": Package,
+    "RECEPCION": Headset,
+};
 
 export default function RoleCard({ role }: RoleCardProps) {
     const [isHovered, setIsHovered] = useState(false);
@@ -16,17 +26,29 @@ export default function RoleCard({ role }: RoleCardProps) {
     // Filter users list from the role object (assuming it's passed populated)
     const users = role.usuarios || [];
 
+    const IconComponent = roleIcons[role.nombre] || Shield;
+
+    const isActive = role.activo !== false; // Default to true if undefined, though schema says default true
+
     return (
         <>
             <div
-                className="group relative bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 p-6 transition-all duration-300 hover:shadow-lg hover:border-lime-200 dark:hover:border-lime-900/50 hover:-translate-y-1 cursor-pointer"
+                className={`group relative bg-white dark:bg-zinc-900 rounded-xl shadow-sm border-y border-r border-gray-200 dark:border-zinc-800 p-6 transition-all duration-300 hover:shadow-lg cursor-pointer hover:-translate-y-1
+                ${isActive
+                        ? 'border-l-4 border-l-lime-500 hover:border-lime-200 dark:hover:border-lime-900/50'
+                        : 'border-l-4 border-l-red-500 opacity-75 hover:opacity-100 hover:border-red-200 dark:hover:border-red-900/50'
+                    }`}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
                 onClick={() => setShowUsersModal(true)}
             >
                 <div className="flex justify-between items-start mb-4">
-                    <div className={`p-2 rounded-lg transition-colors duration-300 ${isHovered ? 'bg-lime-100 text-lime-600 dark:bg-lime-900/30 dark:text-lime-400' : 'bg-gray-50 text-gray-500 dark:bg-zinc-800'}`}>
-                        <Shield size={20} />
+                    <div className={`p-2 rounded-lg transition-colors duration-300 
+                        ${isActive
+                            ? (isHovered ? 'bg-lime-100 text-lime-600 dark:bg-lime-900/30 dark:text-lime-400' : 'bg-gray-50 text-gray-500 dark:bg-zinc-800')
+                            : 'bg-red-100 text-red-500 dark:bg-red-900/30 dark:text-red-400'
+                        }`}>
+                        <IconComponent size={20} />
                     </div>
 
                     <div onClick={(e) => e.stopPropagation()}>
@@ -57,6 +79,7 @@ export default function RoleCard({ role }: RoleCardProps) {
                 onClose={() => setShowUsersModal(false)}
                 roleName={role.nombre}
                 users={users}
+                icon={IconComponent}
             />
         </>
     );

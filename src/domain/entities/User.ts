@@ -21,6 +21,7 @@ export enum Role {
     NURSE = 'ENFERMERIA',
     LAB = 'LABORATORIO',
     INVENTORY = 'FARMACIA', // Mapped from 'INVENTORY' to 'FARMACIA' based on seed
+    BILLING = 'CAJA',
     RECEPTION = 'RECEPCION',
 }
 
@@ -39,6 +40,8 @@ export interface UserProps {
     documentId?: string; // documento_identidad
     phone?: string;
     address?: string; // direccion (only in Paciente and Empleado)
+    sex?: string; // only Paciente
+    contactEmail?: string; // only Paciente
     patientId?: number; // Linked Paciente ID
     employeeId?: number; // Linked Empleado ID
 
@@ -110,6 +113,14 @@ export class User {
 
     get address(): string | undefined {
         return this.props.address;
+    }
+
+    get sex(): string | undefined {
+        return this.props.sex;
+    }
+
+    get contactEmail(): string | undefined {
+        return this.props.contactEmail;
     }
 
     get documentId(): string | undefined {
@@ -186,6 +197,11 @@ export class User {
             documentId: this.props.documentId,
             createdAt: this.props.createdAt,
             lastAccess: this.props.lastAccess,
+            sex: this.props.sex,
+            contactEmail: this.props.contactEmail,
+            birthDate: this.props.birthDate,
+            patientId: this.props.patientId,
+            employeeId: this.props.employeeId,
         };
     }
 }

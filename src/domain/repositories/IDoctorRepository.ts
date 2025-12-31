@@ -23,7 +23,7 @@ export interface IDoctorRepository {
     /**
      * Find all doctors by specialty
      */
-    findBySpeciality(speciality: string): Promise<Doctor[]>;
+    findBySpeciality(speciality: number | string): Promise<Doctor[]>;
 
     /**
      * Get all doctors

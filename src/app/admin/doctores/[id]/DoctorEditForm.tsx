@@ -39,7 +39,7 @@ export default function DoctorEditForm({ doctor }: DoctorEditFormProps) {
         try {
             const result = await updateDoctor(doctor.id, formData);
             if (result.success) {
-                alert("Doctor actualizado correctamente");
+
                 router.refresh();
                 router.push("/admin/doctores");
             } else {

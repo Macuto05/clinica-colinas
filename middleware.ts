@@ -45,9 +45,19 @@ export async function middleware(req: NextRequest) {
         return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 
+    // Protect Storekeeper Routes
+    if (req.nextUrl.pathname.startsWith("/almacen") && role !== "ALMACEN" && role !== "ADMIN") {
+        return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
+
+    // Protect Caja Routes
+    if (req.nextUrl.pathname.startsWith("/caja") && role !== "CAJA/FACTURACION" && role !== "ADMIN") {
+        return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
+
     return NextResponse.next();
 }
 
 export const config = {
-    matcher: ["/dashboard/:path*", "/admin/:path*", "/api/appointments/:path*"],
+    matcher: ["/dashboard/:path*", "/admin/:path*", "/api/appointments/:path*", "/almacen/:path*", "/caja/:path*"],
 };

@@ -20,6 +20,26 @@ export class RegisterUser {
         const emailExists = await this.userRepository.emailExists(data.email);
         if (emailExists) throw new Error('Email already registered');
 
+        // 1b. Check if ID Card exists
+        if (data.idCard) {
+            const idExists = await this.userRepository.idCardExists(data.idCard);
+            if (idExists) throw new Error('Cédula ya registrada en el sistema');
+        }
+
+        // 1c. Check if Phone exists
+        if (data.phone) {
+            const phoneExists = await this.userRepository.phoneExists(data.phone);
+            if (phoneExists) throw new Error('Teléfono ya registrado en el sistema');
+        }
+
+        // 1d. Check if Contact Email exists (if different from login email, though usually checked separately)
+        if (data.contactEmail) {
+            // Optional: check if contact email overlaps with login email of others? 
+            // For now strictly check contact email usage.
+            const contactEmailExists = await this.userRepository.contactEmailExists(data.contactEmail);
+            if (contactEmailExists) throw new Error('Correo de contacto ya registrado');
+        }
+
         // 2. Hash password
         const passwordHash = await bcrypt.hash(data.password, 10);
 
@@ -55,6 +75,8 @@ export class RegisterUser {
                         telefono: data.phone,
                         direccion: data.address,
                         fechaNacimiento: data.birthDate,
+                        sexo: data.sex,
+                        correo: data.contactEmail,
                         estado: PacienteEstado.ACTIVO
                     }
                 });
@@ -77,7 +99,9 @@ export class RegisterUser {
                     await tx.medico.create({
                         data: {
                             empleadoId: empleado.empleadoId,
-                            especialidad: data.specialty,
+                            especialidad: {
+                                connect: { nombre: data.specialty }
+                            },
                             numeroColegiatura: data.collegiateNumber,
                             activo: true
                         }

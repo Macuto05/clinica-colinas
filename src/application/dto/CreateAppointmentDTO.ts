@@ -11,4 +11,5 @@ export interface CreateAppointmentDTO {
     type: string;      // CONSULTA, CONTROL, etc.
     origin?: string;   // WEB, RECEPCION
     reason?: string;
+    userId?: number;   // ID of the user creating the appointment (e.g. from session)
 }

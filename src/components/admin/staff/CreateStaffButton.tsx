@@ -23,7 +23,7 @@ export default function CreateStaffButton({ roles }: CreateStaffButtonProps) {
         <>
             <button
                 onClick={() => setIsModalOpen(true)}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-medium shadow-sm"
+                className="flex items-center gap-2 bg-lime-600 hover:bg-lime-700 text-white px-4 py-2 rounded-lg transition-colors font-medium shadow-sm"
             >
                 <Plus size={20} />
                 <span>Nuevo Empleado</span>

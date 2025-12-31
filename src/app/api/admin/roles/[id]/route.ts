@@ -8,8 +8,9 @@ const updateRoleSchema = z.object({
     activo: z.boolean().optional(),
 });
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
     try {
+        const params = await props.params;
         const id = BigInt(params.id);
         const body = await request.json();
         const result = updateRoleSchema.safeParse(body);
@@ -36,8 +37,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }) {
     try {
+        const params = await props.params;
         const id = BigInt(params.id);
 
         // Check for users

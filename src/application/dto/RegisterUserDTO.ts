@@ -14,6 +14,8 @@ export interface RegisterUserDTO {
     address?: string;
     idCard?: string;
     birthDate?: Date;
+    sex?: string;
+    contactEmail?: string;
     // Doctor specific (optional)
     specialty?: string;
     collegiateNumber?: string;

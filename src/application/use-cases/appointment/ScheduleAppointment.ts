@@ -60,7 +60,7 @@ export class ScheduleAppointment {
             status: AppointmentStatus.PENDING,
             reason: data.reason,
             createdAt: new Date(),
-            createdBy: data.patientId // Default to patient self-scheduling
+            createdBy: data.userId || data.patientId // Use session user ID if provided, else fallback (though fallback might be wrong if IDs differ)
         });
 
         // 5. Persist

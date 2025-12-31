@@ -9,27 +9,29 @@ import { Medico, Empleado } from '@prisma/client';
 
 export class PrismaDoctorRepository implements IDoctorRepository {
 
-    private mapToDomain(medico: Medico & { empleado: Empleado }): Doctor {
+    private mapToDomain(medico: Medico & { empleado: Empleado; especialidad: { nombre: string } }): Doctor {
         return new Doctor({
             id: Number(medico.empleadoId),
-            specialty: medico.especialidad,
+            specialty: medico.especialidad.nombre,
             collegiateNumber: medico.numeroColegiatura || undefined,
             professionalLicense: medico.licenciaProfesional || undefined,
             isActive: medico.activo,
             firstName: medico.empleado.nombres,
             lastName: medico.empleado.apellidos,
-            // email would require joining Usuario, if needed we can fetch it or leave undefined
         });
     }
 
     async create(doctor: Doctor): Promise<Doctor> {
-        // This assumes creating a NEW doctor means creating a NEW Employee + Medico record.
-        // If we are promoting an existing employee, logic would be different.
-        // For simplicity, we implement creation of both.
+        // Find specialty first to get its ID (assuming name passed)
+        // Or specific logic. Simplified:
+        const specialtyRecord = await prisma.especialidad.findUnique({
+            where: { nombre: doctor.specialty }
+        });
+        if (!specialtyRecord) throw new Error("Specialty not found");
 
         const created = await prisma.medico.create({
             data: {
-                especialidad: doctor.specialty,
+                especialidadId: specialtyRecord.especialidadId,
                 numeroColegiatura: doctor.collegiateNumber,
                 licenciaProfesional: doctor.professionalLicense,
                 activo: doctor.isActive,
@@ -37,13 +39,12 @@ export class PrismaDoctorRepository implements IDoctorRepository {
                     create: {
                         nombres: doctor.firstName,
                         apellidos: doctor.lastName,
-                        // Other mandatory employee fields need defaults or arguments
-                        // Schema says 'estado_laboral' default ACTIVO.
                     }
                 }
             },
             include: {
-                empleado: true
+                empleado: true,
+                especialidad: true
             }
         });
 
@@ -53,7 +54,7 @@ export class PrismaDoctorRepository implements IDoctorRepository {
     async findById(id: number): Promise<Doctor | null> {
         const medico = await prisma.medico.findUnique({
             where: { empleadoId: id },
-            include: { empleado: true }
+            include: { empleado: true, especialidad: true }
         });
 
         if (!medico) return null;
@@ -61,34 +62,26 @@ export class PrismaDoctorRepository implements IDoctorRepository {
     }
 
     async findByUserId(userId: number): Promise<Doctor | null> {
-        // Find medico via employee -> usuario
         const medico = await prisma.medico.findFirst({
             where: {
                 empleado: {
                     usuarioId: userId
                 }
             },
-            include: { empleado: true }
+            include: { empleado: true, especialidad: true }
         });
 
         if (!medico) return null;
         return this.mapToDomain(medico);
     }
 
-    async findBySpeciality(speciality: string): Promise<Doctor[]> {
-        // Note: Interface might still use number if I didn't update it? 
-        // I need to check IDoctorRepository. findAllBySpeciality used to take ID.
-        // I should update IDoctorRepository signature if I haven't yet, or cast here.
-        // For now, assuming string passed or adapting.
-
-        // Actually, previous interface had `findBySpeciality(specialityId: number)`.
-        // I should probably update the Interface first or accept that I'm changing the contract.
-        // The implementation Plan said "Update Repository Interfaces". I missed IDoctorRepository update.
-        // I will assume standard string search now.
-
+    async findBySpeciality(specialityId: number | string): Promise<Doctor[]> {
         const doctors = await prisma.medico.findMany({
-            where: { especialidad: String(speciality) },
-            include: { empleado: true }
+            where: {
+                especialidadId: BigInt(specialityId),
+                activo: true
+            },
+            include: { empleado: true, especialidad: true }
         });
 
         return doctors.map(d => this.mapToDomain(d));
@@ -96,22 +89,30 @@ export class PrismaDoctorRepository implements IDoctorRepository {
 
     async findAll(): Promise<Doctor[]> {
         const doctors = await prisma.medico.findMany({
-            include: { empleado: true }
+            where: { activo: true }, // Also filter all active here as per request "Show active doctors"
+            include: { empleado: true, especialidad: true }
         });
 
         return doctors.map(d => this.mapToDomain(d));
     }
 
     async update(id: number, data: Partial<Doctor>): Promise<Doctor> {
+        // Handle specialty update if needed (requires lookup)
+        let specialtyIdUpdate = undefined;
+        if (data.specialty) {
+            const sp = await prisma.especialidad.findUnique({ where: { nombre: data.specialty } });
+            if (sp) specialtyIdUpdate = sp.especialidadId;
+        }
+
         const updated = await prisma.medico.update({
             where: { empleadoId: id },
             data: {
-                especialidad: data.specialty,
+                especialidadId: specialtyIdUpdate,
                 numeroColegiatura: data.collegiateNumber,
                 licenciaProfesional: data.professionalLicense,
                 activo: data.isActive
             },
-            include: { empleado: true }
+            include: { empleado: true, especialidad: true }
         });
 
         return this.mapToDomain(updated);

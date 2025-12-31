@@ -29,6 +29,9 @@ export class PrismaUserRepository implements IUserRepository {
         let employeeId = undefined;
         let patientId = undefined;
 
+        // Map String Role from DB to Enum
+        const role = usuario.rol.nombre;
+
         if (usuario.empleado) {
             firstName = usuario.empleado.nombres;
             lastName = usuario.empleado.apellidos;
@@ -44,12 +47,35 @@ export class PrismaUserRepository implements IUserRepository {
             address = usuario.paciente.direccion || undefined;
             birthDate = usuario.paciente.fechaNacimiento || undefined;
             patientId = Number(usuario.paciente.pacienteId);
-        }
+            // new fields
+            const paciente = usuario.paciente; // helper
+            // We need to cast or ensure types if not inferred correctly but Prisma types should handle it
+            // Assuming UserProps has sex/contactEmail added
+            // @ts-ignore - dynamic property access if not fully typed in local strict check
+            const sex = paciente.sexo || undefined;
+            const contactEmail = paciente.correo || undefined;
 
-        // Map String Role from DB to Enum
-        // Note: DB roles are ADMIN, MEDICO, etc. 
-        // We shouldn't cast blindly if types mismatch, but for now we assume consistency
-        const role = usuario.rol.nombre;
+            return new User({
+                id: Number(usuario.usuarioId),
+                email: usuario.email,
+                passwordHash: usuario.passwordHash,
+                role: role,
+                status: usuario.estado as UserStatus,
+                createdAt: usuario.fechaCreacion,
+                lastAccess: usuario.ultimoAcceso,
+                firstName,
+                lastName,
+                documentId,
+                phone,
+                address,
+                speciality,
+                birthDate,
+                patientId,
+                employeeId,
+                sex,
+                contactEmail
+            });
+        }
 
         return new User({
             id: Number(usuario.usuarioId),
@@ -154,5 +180,36 @@ export class PrismaUserRepository implements IUserRepository {
             where: { email },
         });
         return count > 0;
+    }
+
+    async idCardExists(idCard: string): Promise<boolean> {
+        const patientCount = await prisma.paciente.count({
+            where: { documentoIdentidad: idCard }
+        });
+        if (patientCount > 0) return true;
+
+        const employeeCount = await prisma.empleado.count({
+            where: { documentoIdentidad: idCard }
+        });
+        return employeeCount > 0;
+    }
+
+    async phoneExists(phone: string): Promise<boolean> {
+        const patientCount = await prisma.paciente.count({
+            where: { telefono: phone }
+        });
+        if (patientCount > 0) return true;
+
+        const employeeCount = await prisma.empleado.count({
+            where: { telefono: phone }
+        });
+        return employeeCount > 0;
+    }
+
+    async contactEmailExists(email: string): Promise<boolean> {
+        const patientCount = await prisma.paciente.count({
+            where: { correo: email }
+        });
+        return patientCount > 0;
     }
 }

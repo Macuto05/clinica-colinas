@@ -11,9 +11,10 @@ interface ModalProps {
     onClose: () => void;
     title: string;
     children: React.ReactNode;
+    className?: string;
 }
 
-export function Modal({ isOpen, onClose, title, children }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, className = "max-w-2xl" }: ModalProps) {
     // Prevent scrolling when modal is open
     useEffect(() => {
         if (isOpen) {
@@ -50,7 +51,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             transition={{ duration: 0.2 }}
-                            className="w-full max-w-2xl bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-gray-200 dark:border-zinc-800 pointer-events-auto flex flex-col max-h-[90vh]"
+                            className={`w-full ${className} bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-gray-200 dark:border-zinc-800 pointer-events-auto flex flex-col max-h-[90vh]`}
                         >
                             {/* Header */}
                             <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-zinc-800">

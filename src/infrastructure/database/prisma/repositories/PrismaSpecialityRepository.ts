@@ -7,6 +7,7 @@ import { ISpecialityRepository } from '@/domain/repositories/ISpecialityReposito
 import prisma from '../client';
 
 export class PrismaSpecialityRepository implements ISpecialityRepository {
+    // Forced recompile trigger
     async create(speciality: Speciality): Promise<Speciality> {
         const created = await prisma.especialidad.create({
             data: {
@@ -16,7 +17,7 @@ export class PrismaSpecialityRepository implements ISpecialityRepository {
         });
 
         return new Speciality({
-            id: created.id,
+            id: Number(created.especialidadId),
             name: created.nombre,
             description: created.descripcion || undefined,
         });
@@ -24,13 +25,13 @@ export class PrismaSpecialityRepository implements ISpecialityRepository {
 
     async findById(id: number): Promise<Speciality | null> {
         const speciality = await prisma.especialidad.findUnique({
-            where: { id },
+            where: { especialidadId: BigInt(id) },
         });
 
         if (!speciality) return null;
 
         return new Speciality({
-            id: speciality.id,
+            id: Number(speciality.especialidadId),
             name: speciality.nombre,
             description: speciality.descripcion || undefined,
         });
@@ -44,7 +45,7 @@ export class PrismaSpecialityRepository implements ISpecialityRepository {
         if (!speciality) return null;
 
         return new Speciality({
-            id: speciality.id,
+            id: Number(speciality.especialidadId),
             name: speciality.nombre,
             description: speciality.descripcion || undefined,
         });
@@ -58,7 +59,7 @@ export class PrismaSpecialityRepository implements ISpecialityRepository {
         return specialities.map(
             (spec) =>
                 new Speciality({
-                    id: spec.id,
+                    id: Number(spec.especialidadId),
                     name: spec.nombre,
                     description: spec.descripcion || undefined,
                 })
@@ -67,7 +68,7 @@ export class PrismaSpecialityRepository implements ISpecialityRepository {
 
     async update(id: number, data: Partial<Speciality>): Promise<Speciality> {
         const updated = await prisma.especialidad.update({
-            where: { id },
+            where: { especialidadId: BigInt(id) },
             data: {
                 nombre: data.name,
                 descripcion: data.description,
@@ -75,7 +76,7 @@ export class PrismaSpecialityRepository implements ISpecialityRepository {
         });
 
         return new Speciality({
-            id: updated.id,
+            id: Number(updated.especialidadId),
             name: updated.nombre,
             description: updated.descripcion || undefined,
         });
@@ -83,7 +84,7 @@ export class PrismaSpecialityRepository implements ISpecialityRepository {
 
     async delete(id: number): Promise<void> {
         await prisma.especialidad.delete({
-            where: { id },
+            where: { especialidadId: BigInt(id) },
         });
     }
 }

@@ -18,6 +18,7 @@ interface SpecialtyActionsProps {
 }
 
 export function SpecialtyActions({ specialty }: SpecialtyActionsProps) {
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const router = useRouter();
 
@@ -36,23 +37,37 @@ export function SpecialtyActions({ specialty }: SpecialtyActionsProps) {
 
     return (
         <>
-            <div className="relative inline-block text-left group/menu">
-                <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors">
+            <div className="relative inline-block text-left">
+                <button
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                >
                     <MoreVertical className="h-5 w-5" />
                 </button>
 
                 {/* Dropdown Menu */}
-                <div className="hidden group-hover/menu:block absolute right-0 z-10 mt-0 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-zinc-800 dark:ring-zinc-700 animate-in fade-in zoom-in-95 duration-100">
-                    <div className="py-1">
-                        <button
-                            onClick={() => setIsEditModalOpen(true)}
-                            className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-zinc-700/50"
-                        >
-                            <Edit className="mr-3 h-4 w-4 text-gray-400" />
-                            Editar
-                        </button>
-                    </div>
-                </div>
+                {isMenuOpen && (
+                    <>
+                        <div
+                            className="fixed inset-0 z-50"
+                            onClick={() => setIsMenuOpen(false)}
+                        />
+                        <div className="absolute right-0 z-50 mt-0 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-zinc-800 dark:ring-zinc-700 animate-in fade-in zoom-in-95 duration-100">
+                            <div className="py-1">
+                                <button
+                                    onClick={() => {
+                                        setIsEditModalOpen(true);
+                                        setIsMenuOpen(false);
+                                    }}
+                                    className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700 flex items-center gap-2"
+                                >
+                                    <Edit className="w-4 h-4" />
+                                    Editar
+                                </button>
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
 
             <Modal

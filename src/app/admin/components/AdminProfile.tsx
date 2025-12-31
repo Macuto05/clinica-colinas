@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-export default function AdminProfile({ user }: { user: { name: string } }) {
+export default function AdminProfile({ user, role = "Administrador" }: { user: { name: string }, role?: string }) {
     const { logout } = useAuth();
     const router = useRouter();
 
@@ -24,14 +24,15 @@ export default function AdminProfile({ user }: { user: { name: string } }) {
                         {user.name}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                        Administrador
+                        {role}
                     </p>
                 </div>
             </div>
 
             <button
+                suppressHydrationWarning
                 onClick={handleLogout}
-                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors"
+                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors cursor-pointer"
             >
                 <LogOut size={16} />
                 <span>Cerrar Sesión</span>

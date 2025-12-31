@@ -42,4 +42,19 @@ export interface IUserRepository {
      * Check if email already exists
      */
     emailExists(email: string): Promise<boolean>;
+
+    /**
+     * Check if ID Card already exists
+     */
+    idCardExists(idCard: string): Promise<boolean>;
+
+    /**
+     * Check if Phone number already exists
+     */
+    phoneExists(phone: string): Promise<boolean>;
+
+    /**
+     * Check if Contact Email already exists
+     */
+    contactEmailExists(email: string): Promise<boolean>;
 }

@@ -10,6 +10,7 @@ interface AppointmentWithDetails {
     id: number;
     datetime: string; // JSON date
     status: AppointmentStatus;
+    type: string;
     reason?: string;
     patientName?: string;
     doctorName?: string;
@@ -41,20 +42,19 @@ export default function AdminAppointmentsPage() {
     };
 
     const StatusBadge = ({ status }: { status: string }) => {
-        const styles = {
-            PENDING: "bg-yellow-100 text-yellow-800 border-yellow-200",
-            CONFIRMED: "bg-blue-100 text-blue-800 border-blue-200",
-            CANCELLED: "bg-red-100 text-red-800 border-red-200",
-            COMPLETED: "bg-green-100 text-green-800 border-green-200",
+        const styles: Record<string, string> = {
+            PROGRAMADA: "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800",
+            CONFIRMADA: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800",
+            CANCELADA: "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800",
+            ATENDIDA: "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800",
+            NO_ASISTIO: "bg-gray-100 text-gray-800 border-gray-200 dark:bg-zinc-800 dark:text-gray-400 dark:border-zinc-700",
         };
-        const label = {
-            PENDING: "Pendiente",
-            CONFIRMED: "Confirmada",
-            CANCELLED: "Cancelada",
-            COMPLETED: "Completada",
-        };
-        // @ts-ignore
-        return <span className={`px-2 py-1 rounded-full text-xs font-medium border ${styles[status]}`}>{label[status]}</span>;
+
+        return (
+            <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${styles[status] || styles.PROGRAMADA}`}>
+                {status}
+            </span>
+        );
     };
 
     const filtered = appointments.filter(apt =>
@@ -89,7 +89,7 @@ export default function AdminAppointmentsPage() {
             </div>
 
             {/* Table */}
-            <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden">
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900 min-h-[400px]">
                 {isLoading ? (
                     <div className="p-12 flex justify-center">
                         <Loader2 className="animate-spin text-lime-600" size={32} />
@@ -100,49 +100,45 @@ export default function AdminAppointmentsPage() {
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-left">
-                            <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-zinc-800 dark:text-gray-300">
+                        <table className="min-w-full divide-y divide-gray-200 dark:divide-zinc-800 text-sm">
+                            <thead className="bg-gray-50 dark:bg-zinc-800">
                                 <tr>
-                                    <th className="px-6 py-3">Fecha y Hora</th>
-                                    <th className="px-6 py-3">Paciente</th>
-                                    <th className="px-6 py-3">Doctor</th>
-                                    <th className="px-6 py-3">Motivo</th>
-                                    <th className="px-6 py-3">Estado</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Fecha y Hora</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Paciente</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Doctor</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Tipo</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Motivo</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Estado</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody className="divide-y divide-gray-200 bg-white dark:divide-zinc-800 dark:bg-zinc-900">
                                 {filtered.map((appointment) => (
-                                    <tr key={appointment.id} className="border-b dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/50">
-                                        <td className="px-6 py-4 font-medium">
+                                    <tr key={appointment.id} className="hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors group">
+                                        <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex flex-col">
-                                                <span className="text-gray-900 dark:text-white">
+                                                <span className="font-medium text-gray-900 dark:text-white">
                                                     {format(new Date(appointment.datetime), "dd 'de' MMMM", { locale: es })}
                                                 </span>
-                                                <span className="text-gray-500 text-xs">
+                                                <span className="text-gray-500 dark:text-gray-400 text-xs">
                                                     {format(new Date(appointment.datetime), "h:mm a")}
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2">
-                                                <div className="bg-blue-100 p-1 rounded-full text-blue-600">
-                                                    <User size={14} />
-                                                </div>
-                                                <span className="font-medium">{appointment.patientName}</span>
-                                            </div>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className="font-medium text-gray-900 dark:text-white">{appointment.patientName}</span>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2">
-                                                <div className="bg-purple-100 p-1 rounded-full text-purple-600">
-                                                    <Stethoscope size={14} />
-                                                </div>
-                                                <span className="font-medium">Dr. {appointment.doctorName}</span>
-                                            </div>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className="font-medium text-gray-900 dark:text-white">Dr. {appointment.doctorName}</span>
                                         </td>
-                                        <td className="px-6 py-4 text-gray-500 truncate max-w-[200px]">
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800">
+                                                {appointment.type}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
                                             {appointment.reason || "Sin motivo"}
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-6 py-4 whitespace-nowrap">
                                             <StatusBadge status={appointment.status} />
                                         </td>
                                     </tr>
@@ -154,4 +150,5 @@ export default function AdminAppointmentsPage() {
             </div>
         </div>
     );
+
 }

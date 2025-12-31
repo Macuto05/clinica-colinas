@@ -14,6 +14,8 @@ async function main() {
         { nombre: 'RECEPCION', descripcion: 'Encargado de recepción y citas' },
         { nombre: 'ENFERMERIA', descripcion: 'Personal de enfermería' },
         { nombre: 'FARMACIA', descripcion: 'Encargado de dispensar medicamentos' },
+        { nombre: 'ALMACEN', descripcion: 'Encargado de almacén e inventario' },
+        { nombre: 'CAJA', descripcion: 'Encargado de caja y facturación' },
     ];
 
     for (const r of roles) {
@@ -161,6 +163,56 @@ async function main() {
         });
     }
     console.log('✅ Patient seeded (paciente@clinica.com / 123456)');
+
+    // 6. Almacen User
+    const almacenRole = await prisma.rol.findUnique({ where: { nombre: 'ALMACEN' } });
+    if (almacenRole) {
+        await prisma.usuario.upsert({
+            where: { email: 'almacen@clinica.com' },
+            update: {},
+            create: {
+                email: 'almacen@clinica.com',
+                passwordHash,
+                rolId: almacenRole.rolId,
+                estado: 'ACTIVO',
+                empleado: {
+                    create: {
+                        nombres: 'Roberto',
+                        apellidos: 'Almacen',
+                        documentoIdentidad: 'V99887766',
+                        fechaIngreso: new Date(),
+                        estadoLaboral: 'ACTIVO'
+                    }
+                }
+            }
+        });
+    }
+    console.log('✅ Almacen user seeded (almacen@clinica.com / 123456)');
+
+    // 7. Caja User
+    const cajaRole = await prisma.rol.findUnique({ where: { nombre: 'CAJA' } });
+    if (cajaRole) {
+        await prisma.usuario.upsert({
+            where: { email: 'caja@clinica.com' },
+            update: {},
+            create: {
+                email: 'caja@clinica.com',
+                passwordHash,
+                rolId: cajaRole.rolId,
+                estado: 'ACTIVO',
+                empleado: {
+                    create: {
+                        nombres: 'Maria',
+                        apellidos: 'Cajera',
+                        documentoIdentidad: 'V11122233',
+                        fechaIngreso: new Date(),
+                        estadoLaboral: 'ACTIVO'
+                    }
+                }
+            }
+        });
+    }
+    console.log('✅ Caja user seeded (caja@clinica.com / 123456)');
 
     console.log('🚀 Seeding finished.');
 }

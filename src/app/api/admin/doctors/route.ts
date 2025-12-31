@@ -11,6 +11,7 @@ const createDoctorSchema = z.object({
     apellidos: z.string().min(2, "El apellido es requerido"),
     documentoIdentidad: z.string().min(5, "Documento de identidad requerido"),
     telefono: z.string().optional(),
+    correoInstitucional: z.string().email("Email inválido").optional().or(z.literal("")),
     especialidad: z.string().min(1, "Especialidad requerida"),
     licenciaProfesional: z.string().optional(), // Can be optional or required per business rule
     numeroColegiatura: z.string().optional(),
@@ -90,9 +91,9 @@ export async function POST(request: NextRequest) {
                     apellidos: data.apellidos,
                     documentoIdentidad: data.documentoIdentidad,
                     telefono: data.telefono,
+                    correoInstitucional: data.correoInstitucional || null,
                     fechaIngreso: ingresoDate,
                     estadoLaboral: 'ACTIVO', // Prisma Enum
-                    // correoInstitucional removed
                 }
             });
 
@@ -106,6 +107,40 @@ export async function POST(request: NextRequest) {
                     activo: true
                 }
             });
+
+            // D. Create Schedule (if provided)
+            // Expecting data.schedule to be DaySchedule[]
+            const schedule = (data as any).schedule;
+            if (Array.isArray(schedule) && schedule.length > 0) {
+                // Filter active days
+                const activeDays = schedule.filter((d: any) => d.active && d.blocks.length > 0);
+
+                if (activeDays.length > 0) {
+                    // Create Parent Schedule Record
+                    const newSchedule = await tx.medicoHorario.create({
+                        data: {
+                            medicoId: newDoctor.empleadoId,
+                            actualizadoPor: newUser.usuarioId,
+                        }
+                    });
+
+                    // Create Details
+                    for (const day of activeDays) {
+                        for (const block of day.blocks) {
+                            if (block.startTime && block.endTime) {
+                                await tx.medicoHorarioDetalle.create({
+                                    data: {
+                                        medicoHorarioId: newSchedule.medicoHorarioId,
+                                        diaSemana: day.day,
+                                        horaInicio: new Date(`1970-01-01T${block.startTime}:00Z`),
+                                        horaFin: new Date(`1970-01-01T${block.endTime}:00Z`),
+                                    }
+                                });
+                            }
+                        }
+                    }
+                }
+            }
 
             return { newUser, newEmployee, newDoctor };
         });

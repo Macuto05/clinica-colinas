@@ -27,7 +27,10 @@ export default async function AdminRolesPage() {
                     <div className="p-2 bg-lime-100 dark:bg-lime-900/30 rounded-lg text-lime-600 dark:text-lime-400">
                         <Shield size={24} />
                     </div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Gestión de Roles</h1>
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Gestión de Roles</h1>
+                        <p className="text-gray-500 dark:text-gray-400">Administra los roles de usuario.</p>
+                    </div>
                 </div>
                 <CreateRoleButton />
             </div>

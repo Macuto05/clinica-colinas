@@ -20,6 +20,6 @@ export class GetDoctorsBySpeciality {
         }
 
         // Medico stores specialty as string, so we pass the name
-        return await this.doctorRepository.findBySpeciality(speciality.name);
+        return await this.doctorRepository.findBySpeciality(speciality.id);
     }
 }

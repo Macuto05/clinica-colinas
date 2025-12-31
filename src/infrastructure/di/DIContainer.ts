@@ -2,6 +2,7 @@
  * Dependency Injection Container
  * 
  * Manages dependency injection for the application following Clean Architecture.
+ * HMR Trigger
  */
 
 // Repositories

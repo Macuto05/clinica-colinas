@@ -4,10 +4,11 @@ import { useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Mail, Lock, ArrowRight, Phone } from "lucide-react";
+import { Loader2, Mail, Lock, ArrowRight, Phone, ArrowLeft } from "lucide-react";
 import { loginSchema, LoginInput } from "@/lib/validations/auth";
 import { useAuth } from "@/contexts/AuthContext";
 import { FormInput } from "@/components/auth/FormInput";
+import { Button } from "@/components/ui/Button";
 import { CLINIC_INFO } from "@/lib/constants/clinic-info";
 
 import { useSearchParams } from "next/navigation";
@@ -115,7 +116,7 @@ export default function LoginPage() {
                             <h1 className="text-2xl font-bold text-gray-900">Iniciar Sesión</h1>
                             <Link
                                 href={redirect ? `/registro?redirect=${redirect}` : "/registro"}
-                                className="text-sm font-bold text-primary-600 bg-primary-50 px-5 py-2.5 rounded-full border border-primary-100 transition-all duration-300 transform hover:scale-105 hover:shadow-md hover:bg-primary-600 hover:text-white active:scale-95"
+                                className="text-sm font-bold text-lime-600 bg-lime-50 px-5 py-2.5 rounded-full border border-lime-100 transition-all duration-300 transform hover:scale-105 hover:shadow-md hover:bg-lime-600 hover:text-white active:scale-95"
                             >
                                 Crear cuenta nueva
                             </Link>
@@ -150,7 +151,7 @@ export default function LoginPage() {
                                     <div className="flex justify-end">
                                         <Link
                                             href="/recuperar-password"
-                                            className="text-xs text-primary-600 hover:text-primary-700 hover:underline"
+                                            className="text-xs text-lime-600 hover:text-lime-700 hover:underline"
                                         >
                                             ¿Olvidaste tu contraseña?
                                         </Link>
@@ -158,27 +159,18 @@ export default function LoginPage() {
                                 </div>
                             </div>
 
-                            <button
+                            <Button
                                 type="submit"
-                                disabled={isLoading}
-                                className="w-full bg-primary-600 text-white py-2.5 rounded-lg font-medium hover:bg-primary-700 focus:ring-4 focus:ring-primary-100 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                                isLoading={isLoading}
+                                className="w-full"
+                                rightIcon={<ArrowRight size={18} />}
                             >
-                                {isLoading ? (
-                                    <>
-                                        <Loader2 size={20} className="animate-spin" />
-                                        Iniciando sesión...
-                                    </>
-                                ) : (
-                                    <>
-                                        Ingresar
-                                        <ArrowRight size={18} />
-                                    </>
-                                )}
-                            </button>
+                                Ingresar
+                            </Button>
                         </form>
 
                         <div className="mt-8 pt-8 border-t border-gray-100 text-center text-sm text-gray-500">
-                            <p>
+                            <p className="mb-4">
                                 Al iniciar sesión, aceptas nuestros{" "}
                                 <Link href="/terminos" className="text-gray-700 hover:underline">
                                     Términos de Servicio
@@ -188,6 +180,14 @@ export default function LoginPage() {
                                     Política de Privacidad
                                 </Link>
                             </p>
+
+                            <Link
+                                href="/"
+                                className="inline-flex items-center gap-2 text-lime-600 hover:text-lime-700 font-medium hover:underline transition-colors"
+                            >
+                                <ArrowLeft size={16} />
+                                Volver a la página principal
+                            </Link>
                         </div>
                     </div>
                 </div>

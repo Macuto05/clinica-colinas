@@ -41,6 +41,8 @@ export async function POST(request: NextRequest) {
             address: data.address,
             idCard: data.idCard,
             birthDate: data.birthDate ? new Date(data.birthDate) : undefined,
+            sex: data.sex,
+            contactEmail: data.contactEmail,
             specialty: data.specialty,
             collegiateNumber: data.collegiateNumber
         });
