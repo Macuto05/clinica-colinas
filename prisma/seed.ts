@@ -214,6 +214,47 @@ async function main() {
     }
     console.log('✅ Caja user seeded (caja@clinica.com / 123456)');
 
+    console.log('✅ Caja user seeded (caja@clinica.com / 123456)');
+
+    // 8. Configuration
+    await prisma.configuracion.upsert({
+        where: { clave: 'PRECIO_CONSULTA' },
+        update: {},
+        create: {
+            clave: 'PRECIO_CONSULTA',
+            valor: '50',
+            descripcion: 'Precio base de la consulta médica en USD'
+        }
+    });
+
+    // 9. Exchange Rate
+    const existingRate = await prisma.tasaDeCambio.findFirst({ orderBy: { fecha: 'desc' } });
+    if (!existingRate) {
+        await prisma.tasaDeCambio.create({
+            data: {
+                moneda: 'USD',
+                valor: 50.00, // 1 USD = 50 Bs (Example)
+                fuente: 'BCV',
+                esAutomatica: false
+            }
+        });
+    }
+
+    // 10. Bank Accounts
+    await prisma.cuentaBancaria.upsert({
+        where: { numeroCuenta: '0105-0000-00-1234567890' },
+        update: {},
+        create: {
+            banco: 'Banco Mercantil',
+            numeroCuenta: '0105-0000-00-1234567890',
+            titular: 'Clinica Colinas CA',
+            rifTitular: 'J-12345678-0',
+            tipo: 'CORRIENTE',
+            activa: true
+        }
+    });
+    console.log('✅ Billing Config & Bank Accounts seeded');
+
     console.log('🚀 Seeding finished.');
 }
 

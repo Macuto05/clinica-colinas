@@ -49,6 +49,8 @@ model Usuario {
   rol                  Rol                    @relation(fields: [rolId], references: [rolId])
   pedidosSolicitados   PedidoCompra[]         @relation("UsuarioSolicitaPedido")
   pedidosAprobados     PedidoCompra[]         @relation("UsuarioApruebaPedido")
+  diagnosticos         Diagnostico[]
+  historiasActualizadas HistoriaClinica[] @relation("UsuarioActualizaHistoria")
 
   @@map("usuario")
 }
@@ -97,6 +99,7 @@ model Paciente {
   estado             PacienteEstado @default(ACTIVO)
   citas              CitaMedica[]
   usuario            Usuario?       @relation(fields: [usuarioId], references: [usuarioId])
+  historiaClinica    HistoriaClinica?
 
   @@map("paciente")
 }
@@ -150,6 +153,9 @@ model CitaMedica {
   factura           Factura?
   solicitudesInsumo SolicitudInsumo[]
   solicitudesLab    SolicitudLaboratorio[]
+  diagnostico       Diagnostico?
+  receta            Receta?
+  ordenes           OrdenMedica[]
 
   @@unique([medicoId, fechaCita, horaInicio], name: "uq_cita_slot")
   @@map("cita_medica")
@@ -205,15 +211,19 @@ model Pago {
   facturaId         BigInt     @map("factura_id")
   monto             Decimal    @db.Decimal(12, 2)
   fechaPago         DateTime   @default(now()) @map("fecha_pago") @db.Timestamptz(6)
+  fechaRegistro     DateTime   @default(now()) @map("fecha_registro") @db.Timestamptz(6) // New System Timestamp
   estadoPago        PagoEstado @default(PENDIENTE) @map("estado_pago")
   metodoPagoId      BigInt     @map("metodo_pago_id")
   referenciaExterna String?    @map("referencia_externa") @db.VarChar(120)
   canalPago         PagoCanal  @default(PRESENCIAL) @map("canal_pago")
+  montoBs           Decimal?   @map("monto_bs") @db.Decimal(12, 2)
+  tasaCambio        Decimal?   @map("tasa_cambio") @db.Decimal(10, 2)
   usuarioRegistro   BigInt     @map("usuario_registro")
-  observaciones     String?
+  cuentaBancariaId  Int?       @map("cuenta_bancaria_id")
   factura           Factura    @relation(fields: [facturaId], references: [facturaId])
   metodoPago        MetodoPago @relation(fields: [metodoPagoId], references: [metodoPagoId])
   registrador       Usuario    @relation("UsuarioRegistraPago", fields: [usuarioRegistro], references: [usuarioId])
+  cuentaBancaria    CuentaBancaria? @relation(fields: [cuentaBancariaId], references: [cuentaId])
 
   @@map("pago")
 }
@@ -577,4 +587,88 @@ enum PedidoEstado {
   APROBADO
   RECHAZADO
   DESPACHADO
+}
+
+model Configuracion {
+  clave         String   @id @db.VarChar(50)
+  valor         String
+  descripcion   String?
+  actualizadoEn DateTime @default(now()) @map("actualizado_en")
+
+  @@map("configuracion")
+}
+
+model CuentaBancaria {
+  cuentaId      Int      @id @default(autoincrement()) @map("cuenta_id")
+  banco         String   @db.VarChar(80)
+  numeroCuenta  String   @unique @map("numero_cuenta") @db.VarChar(50)
+  titular       String   @db.VarChar(120)
+  rifTitular    String   @map("rif_titular") @db.VarChar(20)
+  tipo              String   @default("CORRIENTE") @db.VarChar(20)
+  activa        Boolean  @default(true)
+  pagos         Pago[]
+  
+  @@map("cuenta_bancaria")
+}
+
+model Diagnostico {
+  diagnosticoId BigInt            @id @default(autoincrement()) @map("diagnostico_id")
+  citaId        BigInt            @unique @map("cita_id")
+  descripcion   String            @db.Text
+
+  notas         String?           @db.Text
+  fechaRegistro DateTime          @default(now()) @map("fecha_registro") @db.Timestamptz(6)
+  usuarioId     BigInt            @map("usuario_id") // Doctor who recorded it
+  cita          CitaMedica        @relation(fields: [citaId], references: [citaId], onDelete: Cascade)
+  medico        Usuario           @relation(fields: [usuarioId], references: [usuarioId])
+
+  @@map("diagnostico")
+}
+
+model Receta {
+  recetaId      BigInt          @id @default(autoincrement()) @map("receta_id")
+  citaId        BigInt          @unique @map("cita_id")
+  fecha         DateTime        @default(now()) @db.Date
+  detalles      RecetaDetalle[]
+  cita          CitaMedica      @relation(fields: [citaId], references: [citaId], onDelete: Cascade)
+
+  @@map("receta")
+}
+
+model RecetaDetalle {
+  detalleId     BigInt   @id @default(autoincrement()) @map("detalle_id")
+  recetaId      BigInt   @map("receta_id")
+  medicamento   String   @db.VarChar(120)
+  dosis         String   @db.VarChar(60)
+  frecuencia    String   @db.VarChar(60)
+  duracion      String   @db.VarChar(60)
+  instrucciones String?  @db.Text
+  receta        Receta   @relation(fields: [recetaId], references: [recetaId], onDelete: Cascade)
+
+  @@map("receta_detalle")
+}
+
+model OrdenMedica {
+  ordenId       BigInt     @id @default(autoincrement()) @map("orden_id")
+  citaId        BigInt     @map("cita_id")
+  tipo          String     @db.VarChar(50) // LABORATORIO, IMAGENOLOGIA, OTRO
+  estudio       String     @db.VarChar(150)
+  fechaCreacion DateTime   @default(now()) @map("fecha_creacion") @db.Timestamptz(6)
+  cita          CitaMedica @relation(fields: [citaId], references: [citaId], onDelete: Cascade)
+
+  @@map("orden_medica")
+}
+
+
+model HistoriaClinica {
+  historiaId  Int      @id @default(autoincrement()) @map("historia_id")
+  pacienteId  BigInt   @unique @map("paciente_id")
+  contenido   Json
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  updatedById BigInt?  @map("updated_by_id")
+  
+  paciente    Paciente @relation(fields: [pacienteId], references: [pacienteId])
+  updatedBy   Usuario? @relation("UsuarioActualizaHistoria", fields: [updatedById], references: [usuarioId])
+
+  @@map("historia_clinica")
 }

@@ -1,12 +1,14 @@
 "use client";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { User, Mail, Phone, MapPin, Calendar, CreditCard, Edit2, Lock, Save, X } from "lucide-react";
-import { useState } from "react";
+import { User, Mail, Phone, MapPin, Calendar, CreditCard, Edit2, Lock, Save, X, FileDown, Loader2, Clock } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FormInput } from "@/components/auth/FormInput"; // Assuming we can reuse this or simple inputs
+import { FormInput } from "@/components/auth/FormInput";
+import { generateClinicalHistoryPDF } from "@/lib/generate-history-pdf";
+import { toast } from "sonner";
 
 const editProfileSchema = z.object({
     contactEmail: z.string().email("Email inválido").optional().or(z.literal('')),
@@ -28,9 +30,11 @@ const editProfileSchema = z.object({
 type EditProfileForm = z.infer<typeof editProfileSchema>;
 
 export default function ProfilePage() {
-    const { user, refreshUser } = useAuth(); // Assuming refreshUser exists, if not we might need to reload window or implement it
+    const { user, refreshUser } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
+    const [historyDate, setHistoryDate] = useState<Date | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
 
@@ -44,9 +48,70 @@ export default function ProfilePage() {
         }
     });
 
+    useEffect(() => {
+        // Fetch history metadata on mount
+        const fetchHistoryMetadata = async () => {
+            try {
+                const res = await fetch("/api/patient/clinical-history");
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.updatedAt) {
+                        setHistoryDate(new Date(data.updatedAt));
+                    }
+                }
+            } catch (err) {
+                // Silent error
+                console.error("Could not fetch history metadata", err);
+            }
+        };
+        fetchHistoryMetadata();
+    }, []);
+
     if (!user) {
         return null;
     }
+
+    const calculateAge = (birthDate: string | Date | undefined) => {
+        if (!birthDate) return null;
+        const dob = new Date(birthDate);
+        const diffMs = Date.now() - dob.getTime();
+        const ageDt = new Date(diffMs);
+        return Math.abs(ageDt.getUTCFullYear() - 1970);
+    };
+
+    const handleDownloadHistory = async () => {
+        setIsDownloading(true);
+        try {
+            const res = await fetch("/api/patient/clinical-history");
+            if (!res.ok) {
+                if (res.status === 404) throw new Error("No tienes una historia clínica registrada aún.");
+                throw new Error("Error al obtener historia clínica");
+            }
+            const data = await res.json();
+
+            // Map User Data to Patient Data format
+            const patientData = {
+                nombres: user.firstName || "",
+                apellidos: user.lastName || "",
+                cedula: user.documentId || "",
+                fechaNacimiento: user.birthDate || "",
+                sexo: user.sex || ""
+            };
+
+            generateClinicalHistoryPDF(patientData, data.contenido || {});
+            toast.success("Historia clínica descargada");
+
+            // Update the date if newly fetched
+            if (data.updatedAt) {
+                setHistoryDate(new Date(data.updatedAt));
+            }
+        } catch (error: any) {
+            console.error(error);
+            toast.error(error.message || "Error al descargar");
+        } finally {
+            setIsDownloading(false);
+        }
+    };
 
     const onSubmit = async (data: EditProfileForm) => {
         setIsLoading(true);
@@ -74,7 +139,7 @@ export default function ProfilePage() {
 
             setSuccess("Perfil actualizado con éxito");
             setIsEditing(false);
-            if (refreshUser) refreshUser(); // Optimistic update or refresh
+            if (refreshUser) refreshUser();
             else window.location.reload();
         } catch (err: any) {
             setError(err.message);
@@ -85,23 +150,40 @@ export default function ProfilePage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Mi Perfil</h1>
-                <button
-                    onClick={() => {
-                        setIsEditing(true);
-                        reset({
-                            contactEmail: user.contactEmail || "",
-                            accessEmail: user.email || "",
-                            phone: user.phone || "",
-                            address: user.address || "",
-                        });
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 bg-lime-600 text-white rounded-lg hover:bg-lime-700 transition-colors"
-                >
-                    <Edit2 size={16} />
-                    Editar Perfil
-                </button>
+            <div className="flex items-start justify-between">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white pt-2">Mi Perfil</h1>
+                <div className="flex gap-3 items-start">
+                    <div className="flex flex-col items-end gap-1">
+                        <button
+                            onClick={handleDownloadHistory}
+                            disabled={isDownloading}
+                            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50 shadow-sm"
+                        >
+                            {isDownloading ? <Loader2 size={16} className="animate-spin" /> : <FileDown size={16} />}
+                            Descargar Historial Médico
+                        </button>
+                        {historyDate && (
+                            <span className="text-[10px] text-gray-400 dark:text-gray-500 mr-1 flex items-center gap-1">
+                                Última modificación: {historyDate.toLocaleDateString()}
+                            </span>
+                        )}
+                    </div>
+                    <button
+                        onClick={() => {
+                            setIsEditing(true);
+                            reset({
+                                contactEmail: user.contactEmail || "",
+                                accessEmail: user.email || "",
+                                phone: user.phone || "",
+                                address: user.address || "",
+                            });
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 bg-lime-600 text-white rounded-lg hover:bg-lime-700 transition-colors shadow-sm"
+                    >
+                        <Edit2 size={16} />
+                        Editar Perfil
+                    </button>
+                </div>
             </div>
 
             <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden">
@@ -142,6 +224,11 @@ export default function ProfilePage() {
                                     icon={User}
                                     label="Sexo"
                                     value={user.sex === 'M' ? 'Masculino' : user.sex === 'F' ? 'Femenino' : user.sex}
+                                />
+                                <BioItem
+                                    icon={Clock}
+                                    label="Edad"
+                                    value={user.birthDate ? `${calculateAge(user.birthDate)} años` : "No registrado"}
                                 />
                             </div>
                         </div>

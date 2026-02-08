@@ -57,6 +57,8 @@ export default async function CajaLayout({
                     </p>
                     <NavItem href="/caja/compras" icon={<ShoppingCart size={20} />} label="Aprobación Compras" />
                     <NavItem href="/caja/proveedores" icon={<Users size={20} />} label="Proveedores" />
+                    <NavItem href="/caja/pagos" icon={<ShoppingCart size={20} />} label="Gestión de Pagos" />
+                    <NavItem href="/caja/configuracion" icon={<Settings size={20} />} label="Configuración" />
 
                     <div className="my-4 border-t border-gray-200 dark:border-zinc-800" />
                     <div className="flex-1" />

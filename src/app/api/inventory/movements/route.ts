@@ -212,154 +212,154 @@ export async function POST(request: Request) {
                         }
                     }
 
-                    // LOGIC B: SALIDA / TRASLADO (Auto-Deduction FEFO/FIFO)
+                    // LOGIC B: SALIDA / TRASLADO / AJUSTE (Deduction)
                     else if (tipo === 'SALIDA' || tipo === 'TRASLADO' || tipo === 'AJUSTE') {
                         let remainingQty = cantidadSolicitada;
+                        const targetLoteId = item.loteId ? BigInt(item.loteId) : null;
 
-                        // If specific lote provided in request, use strictly that (Manual Override)
-                        if (item.loteId || item.loteCodigo) {
-                            // Implementation for specific lot (Simplified: assumed verified by frontend for now, or add fetching logic)
-                            // For this iteration, we focus on the AUTO logic requested.
-                            // If explicit lot is needed, we would query it directly.
-                            // Falling back to Auto Logic if no specific ID is properly passed, 
-                            // but usually Transfer Request will just send Item + Qty for Auto.
-                        }
-
-                        // FEFO/FIFO Query
-                        // Find batches with stock > 0
-                        const availableBatches = await tx.stockLote.findMany({
-                            where: {
-                                almacenId: almacenId,
-                                lote: {
-                                    insumoId: insumoId,
-                                    activo: true
-                                },
-                                cantidadActual: { gt: 0 }
-                            },
-                            include: { lote: true },
-                            orderBy: [
-                                { lote: { fechaVencimiento: 'asc' } }, // FEFO
-                                { lote: { loteId: 'asc' } } // FIFO (oldest ID)
-                            ]
-                        });
-
-                        const totalAvailable = availableBatches.reduce((sum, b) => sum + Number(b.cantidadActual), 0);
-                        if (totalAvailable < cantidadSolicitada) {
-                            throw new Error(`Stock insuficiente para insumo ${insumoId} en almacén ${almacenId}. Solicitado: ${cantidadSolicitada}, Disponible: ${totalAvailable}`);
-                        }
-
-                        // Distribute deduction
-                        for (const batch of availableBatches) {
-                            if (remainingQty <= 0) break;
-
-                            const currentBatchQty = Number(batch.cantidadActual);
-                            const takeFromBatch = Math.min(currentBatchQty, remainingQty);
-
-                            // 1. Deduct from Source Batch
-                            await tx.stockLote.update({
-                                where: { stockLoteId: batch.stockLoteId },
-                                data: { cantidadActual: currentBatchQty - takeFromBatch }
+                        // Scenario 1: Specific Lot Requested (Manual Selection / Write-off)
+                        if (targetLoteId) {
+                            const specificBatch = await tx.stockLote.findUnique({
+                                where: { uq_stock_lote: { almacenId, loteId: targetLoteId } },
+                                include: { lote: true }
                             });
 
-                            // 2. Create Detail for Source Movement
+                            if (!specificBatch) {
+                                throw new Error(`El lote seleccionado no existe en este almacén.`);
+                            }
+
+                            if (Number(specificBatch.cantidadActual) < cantidadSolicitada) {
+                                throw new Error(`Stock insuficiente en el lote ${specificBatch.lote.codigo}. Disponible: ${specificBatch.cantidadActual}`);
+                            }
+
+                            // Strict Expiration Check
+                            const isExpired = specificBatch.lote.fechaVencimiento ? new Date() > new Date(specificBatch.lote.fechaVencimiento) : false;
+
+                            // BLOCK if expired AND not an Adjustment (Write-off)
+                            if (isExpired && tipo !== 'AJUSTE') {
+                                throw new Error(`BLOQUEO: El lote ${specificBatch.lote.codigo} está vencido. No se puede vender ni trasladar. Use 'AJUSTE' para darlo de baja.`);
+                            }
+
+                            // Deduct from Specific Batch
+                            await tx.stockLote.update({
+                                where: { stockLoteId: specificBatch.stockLoteId },
+                                data: { cantidadActual: Number(specificBatch.cantidadActual) - cantidadSolicitada }
+                            });
+
+                            // Create Detail
                             await tx.movimientoDetalle.create({
                                 data: {
                                     movimientoId: movimientoSource.movimientoId,
                                     insumoId: insumoId,
-                                    cantidad: takeFromBatch,
-                                    loteId: batch.loteId
+                                    cantidad: cantidadSolicitada,
+                                    loteId: targetLoteId
                                 }
                             });
 
-                            // 3. IF TRASLADO: Add to Destination
-                            if (tipo === 'TRASLADO' && movimientoDest) {
-                                // Add to Destination StockLote (Same Lote ID, preserving expiry)
-                                const destStockLote = await tx.stockLote.findUnique({
-                                    where: { uq_stock_lote: { almacenId: BigInt(almacenDestinoId), loteId: batch.loteId } }
+                            remainingQty = 0; // Fulfilled
+                        }
+
+                        // Scenario 2: Auto-Pick (FEFO) - ONLY Valid Lots
+                        else {
+                            // Find batches with stock > 0 AND NOT EXPIRED
+                            const availableBatches = await tx.stockLote.findMany({
+                                where: {
+                                    almacenId: almacenId,
+                                    lote: {
+                                        insumoId: insumoId,
+                                        activo: true,
+                                        // CRITICAL: Filter out expired lots for auto-assignment
+                                        OR: [
+                                            { fechaVencimiento: null },
+                                            { fechaVencimiento: { gte: new Date() } }
+                                        ]
+                                    },
+                                    cantidadActual: { gt: 0 }
+                                },
+                                include: { lote: true },
+                                orderBy: [
+                                    { lote: { fechaVencimiento: 'asc' } }, // FEFO
+                                    { lote: { loteId: 'asc' } }
+                                ]
+                            });
+
+                            const totalAvailable = availableBatches.reduce((sum, b) => sum + Number(b.cantidadActual), 0);
+
+                            if (totalAvailable < cantidadSolicitada) {
+                                // Double check if we have *expired* stock that causes confusion
+                                const totalIncludingExpired = await tx.stockLote.aggregate({
+                                    where: { almacenId, lote: { insumoId }, cantidadActual: { gt: 0 } },
+                                    _sum: { cantidadActual: true }
+                                });
+                                const realTotal = Number(totalIncludingExpired._sum.cantidadActual || 0);
+
+                                if (realTotal >= cantidadSolicitada) {
+                                    throw new Error(`Stock insuficiente de lotes VIGENTES. Hay ${realTotal} unidades en total, pero solo ${totalAvailable} están aptas para venta (el resto venció).`);
+                                }
+                                throw new Error(`Stock insuficiente para insumo ${insumoId}. Solicitado: ${cantidadSolicitada}, Disponible: ${totalAvailable}`);
+                            }
+
+                            // Distribute deduction
+                            for (const batch of availableBatches) {
+                                if (remainingQty <= 0) break;
+
+                                const currentBatchQty = Number(batch.cantidadActual);
+                                const takeFromBatch = Math.min(currentBatchQty, remainingQty);
+
+                                // 1. Deduct from Source Batch
+                                await tx.stockLote.update({
+                                    where: { stockLoteId: batch.stockLoteId },
+                                    data: { cantidadActual: currentBatchQty - takeFromBatch }
                                 });
 
-                                if (destStockLote) {
-                                    await tx.stockLote.update({
-                                        where: { stockLoteId: destStockLote.stockLoteId },
-                                        data: { cantidadActual: Number(destStockLote.cantidadActual) + takeFromBatch }
-                                    });
-                                } else {
-                                    await tx.stockLote.create({
-                                        data: {
-                                            almacenId: BigInt(almacenDestinoId),
-                                            loteId: batch.loteId,
-                                            cantidadActual: takeFromBatch
-                                        }
-                                    });
-                                }
-
-                                // Create Detail for Destination Movement
+                                // 2. Create Detail for Source Movement
                                 await tx.movimientoDetalle.create({
                                     data: {
-                                        movimientoId: movimientoDest.movimientoId,
+                                        movimientoId: movimientoSource.movimientoId,
                                         insumoId: insumoId,
                                         cantidad: takeFromBatch,
                                         loteId: batch.loteId
                                     }
                                 });
-                            }
 
-                            // CHECK: Auto-Deactivate Lote if Global Stock is 0 OR Expired
-                            // We do this after potential Transfer addition to ensure global count is accurate.
-                            const globalStock = await tx.stockLote.aggregate({
-                                where: { loteId: batch.loteId },
-                                _sum: { cantidadActual: true }
-                            });
-                            const totalRemaining = Number(globalStock._sum.cantidadActual || 0);
-                            const isExpired = batch.lote.fechaVencimiento ? new Date() > new Date(batch.lote.fechaVencimiento) : false;
-
-                            if (totalRemaining <= 0) {
-                                // Case 1: Just clean up empty batch
-                                await tx.lote.update({
-                                    where: { loteId: batch.loteId },
-                                    data: { activo: false }
-                                });
-                            } else if (isExpired) {
-                                // Case 2: Batch has stock BUT is expired. 
-                                // Action: Annul stock (Write-off) so Global Stock reflects reality.
-
-                                // 1. Find where this expired stock is located
-                                const expiredStockLocations = await tx.stockLote.findMany({
-                                    where: { loteId: batch.loteId, cantidadActual: { gt: 0 } }
-                                });
-
-                                for (const sl of expiredStockLocations) {
-                                    const qtyToWriteOff = Number(sl.cantidadActual);
-
-                                    // A. Deduct from Global Stock (Stock table)
-                                    const st = await tx.stock.findUnique({
-                                        where: { uq_stock: { almacenId: sl.almacenId, insumoId: insumoId } }
+                                // 3. IF TRASLADO: Add to Destination
+                                if (tipo === 'TRASLADO' && movimientoDest) {
+                                    // Add to Destination StockLote
+                                    const destStockLote = await tx.stockLote.findUnique({
+                                        where: { uq_stock_lote: { almacenId: BigInt(almacenDestinoId), loteId: batch.loteId } }
                                     });
-                                    if (st) {
-                                        await tx.stock.update({
-                                            where: { stockId: st.stockId },
-                                            data: { cantidadActual: Number(st.cantidadActual) - qtyToWriteOff, actualizadoEn: new Date() }
+
+                                    if (destStockLote) {
+                                        await tx.stockLote.update({
+                                            where: { stockLoteId: destStockLote.stockLoteId },
+                                            data: { cantidadActual: Number(destStockLote.cantidadActual) + takeFromBatch }
+                                        });
+                                    } else {
+                                        await tx.stockLote.create({
+                                            data: {
+                                                almacenId: BigInt(almacenDestinoId),
+                                                loteId: batch.loteId,
+                                                cantidadActual: takeFromBatch
+                                            }
                                         });
                                     }
 
-                                    // B. Zero out the Batch Stock (StockLote table)
-                                    await tx.stockLote.update({
-                                        where: { stockLoteId: sl.stockLoteId },
-                                        data: { cantidadActual: 0 }
+                                    // Create Detail for Destination Movement
+                                    await tx.movimientoDetalle.create({
+                                        data: {
+                                            movimientoId: movimientoDest.movimientoId,
+                                            insumoId: insumoId,
+                                            cantidad: takeFromBatch,
+                                            loteId: batch.loteId
+                                        }
                                     });
                                 }
 
-                                // 2. Finally, deactivate the Lote
-                                await tx.lote.update({
-                                    where: { loteId: batch.loteId },
-                                    data: { activo: false }
-                                });
+                                remainingQty -= takeFromBatch;
                             }
-
-                            remainingQty -= takeFromBatch;
                         }
 
-                        // Update Total Stock Source
+                        // Update Total Stock Source (Always happens regardless of specific vs auto)
                         const stockSource = await tx.stock.findUnique({ where: { uq_stock: { almacenId, insumoId } } });
                         if (stockSource) {
                             await tx.stock.update({
@@ -382,6 +382,10 @@ export async function POST(request: Request) {
                                 });
                             }
                         }
+
+                        // Cleanup: Check for empty/expired batches to mark inactive (Optimization)
+                        // Triggered asynchronously or periodically in a real system, but we can do a quick check if needed.
+                        // For now, the strict filter handles the immediate safety.
                     }
                 } // End item loop
 

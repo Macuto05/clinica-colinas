@@ -30,5 +30,5 @@ if (process.env.NODE_ENV !== 'production') {
     globalForPrisma.prisma = prisma;
 }
 
-// Forced reload for Prisma Client update
+// Forced reload for Prisma Client update (Retry)
 export default prisma;

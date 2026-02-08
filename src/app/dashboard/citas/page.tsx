@@ -3,9 +3,12 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Calendar, Clock, User as UserIcon, Plus } from "lucide-react";
-import Link from "next/link";
+import { Calendar, Clock, User as UserIcon, Plus, FileText, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { StatusBadge } from "@/components/ui/StatusBadge";
+import { Modal } from "@/components/ui/Modal";
+import { AppointmentDetailsModal } from "./components/AppointmentDetailsModal";
+import { toast } from "sonner";
 
 interface Appointment {
     id: number;
@@ -16,6 +19,7 @@ interface Appointment {
     status: string;
     doctorName?: string;
     reason?: string;
+    doctorSpecialty?: string; // If available or we assume General
 }
 
 export default function AppointmentsPage() {
@@ -23,6 +27,14 @@ export default function AppointmentsPage() {
     const router = useRouter();
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [isLoadingAppointments, setIsLoadingAppointments] = useState(true);
+
+    // Modals State
+    const [reasonModal, setReasonModal] = useState<{ isOpen: boolean; text: string }>({ isOpen: false, text: "" });
+
+    // Details Modal
+    const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+    const [selectedAppointmentDetails, setSelectedAppointmentDetails] = useState<any>(null);
+    const [loadingDetails, setLoadingDetails] = useState(false);
 
     useEffect(() => {
         if (!loading && !user) {
@@ -38,18 +50,9 @@ export default function AppointmentsPage() {
     const fetchAppointments = async () => {
         if (!user) return;
         try {
-            // Determine query param based on role
-            // For now assuming Patient dashboard, so patientId is relevant.
-            // Ideally backend handles "me" or we use the profile ID from user context.
-            // If user.patientId is present we use it. 
-            // NOTE: RegisterUser ensures patientId is not null for PATIENT role.
-
-            // Using a safe cast or check would be better, but assuming user context has profile IDs if mapped.
             const patientId = (user as any).patientId;
 
             if (!patientId && user.role === 'PACIENTE') {
-                // Fallback or retry? 
-                // If no patientId, maybe user is not fully set up?
                 console.error("User has no patientId");
                 setIsLoadingAppointments(false);
                 return;
@@ -68,6 +71,29 @@ export default function AppointmentsPage() {
             console.error("Error fetching appointments:", error);
         } finally {
             setIsLoadingAppointments(false);
+        }
+    };
+
+    const handleOpenDetails = async (appointmentId: number) => {
+        setDetailsModalOpen(true);
+        setLoadingDetails(true);
+        setSelectedAppointmentDetails(null);
+
+        try {
+            const res = await fetch(`/api/patient/appointments/${appointmentId}`);
+            if (res.ok) {
+                const data = await res.json();
+                setSelectedAppointmentDetails(data);
+            } else {
+                toast.error("Error al cargar detalles");
+                setDetailsModalOpen(false);
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Error de conexión");
+            setDetailsModalOpen(false);
+        } finally {
+            setLoadingDetails(false);
         }
     };
 
@@ -115,50 +141,87 @@ export default function AppointmentsPage() {
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        {appointments.map((apt) => (
-                            <div key={apt.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                <div className="flex items-start gap-4">
-                                    <div className="w-12 h-12 bg-lime-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                                        <Calendar className="text-lime-600" />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-semibold text-gray-900">
-                                            {apt.type}
-                                        </h3>
-                                        <p className="text-gray-600 text-sm">
-                                            Dr. {apt.doctorName || 'No asignado'}
-                                        </p>
-                                        <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-                                            <span className="flex items-center gap-1">
-                                                <Calendar size={14} />
-                                                {/* Parsing ISO string manually to avoid timezone shift, Format: DD/MM/YYYY */}
-                                                {String(new Date(apt.date).getUTCDate()).padStart(2, '0')}/{String(new Date(apt.date).getUTCMonth() + 1).padStart(2, '0')}/{new Date(apt.date).getUTCFullYear()}
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                                <Clock size={14} />
-                                                {apt.startTime} - {apt.endTime}
-                                            </span>
+                        {appointments.map((apt) => {
+                            const isCompleted = ['ATENDIDA', 'COMPLETADA', 'FINALIZADA'].includes(apt.status);
+                            return (
+                                <div key={apt.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:shadow-md">
+                                    <div className="flex items-start gap-4">
+                                        <div className="w-12 h-12 bg-lime-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <Calendar className="text-lime-600" />
                                         </div>
-                                        {apt.reason && (
-                                            <p className="text-sm text-gray-500 mt-1 italic">
-                                                Motivo: {apt.reason}
+                                        <div>
+                                            <h3 className="font-bold text-gray-900 text-lg uppercase">
+                                                {apt.type}
+                                            </h3>
+                                            <p className="text-gray-600 text-sm">
+                                                Dr. {apt.doctorName || 'No asignado'}
                                             </p>
+                                            <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                                                <span className="flex items-center gap-1">
+                                                    <Calendar size={14} />
+                                                    {/* Parsing ISO string manually to avoid timezone shift, Format: DD/MM/YYYY */}
+                                                    {String(new Date(apt.date).getUTCDate()).padStart(2, '0')}/{String(new Date(apt.date).getUTCMonth() + 1).padStart(2, '0')}/{new Date(apt.date).getUTCFullYear()}
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                    <Clock size={14} />
+                                                    {apt.startTime} - {apt.endTime}
+                                                </span>
+                                            </div>
+                                            {/* Reason with Icon */}
+                                            {apt.reason && (
+                                                <div className="mt-2">
+                                                    <button
+                                                        onClick={() => setReasonModal({ isOpen: true, text: apt.reason! })}
+                                                        className="flex items-center gap-1 text-xs text-gray-500 hover:text-lime-600 transition-colors group"
+                                                        title="Ver motivo de consulta"
+                                                    >
+                                                        <span className="italic">Motivo:</span>
+                                                        <FileText size={14} className="group-hover:scale-110 transition-transform" />
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col items-end gap-3">
+                                        <StatusBadge status={apt.status} />
+
+                                        {/* Action for Completed Appointments */}
+                                        {isCompleted && (
+                                            <button
+                                                onClick={() => handleOpenDetails(apt.id)}
+                                                className="text-xs font-bold text-lime-600 bg-lime-50 hover:bg-lime-100 px-3 py-1.5 rounded-full flex items-center gap-1 transition-colors"
+                                            >
+                                                Ver Resultados <ArrowRight size={12} />
+                                            </button>
                                         )}
                                     </div>
                                 </div>
-                                <div>
-                                    <span className={`px-3 py-1 rounded-full text-xs font-medium 
-                                        ${apt.status === 'PROGRAMADA' ? 'bg-blue-100 text-blue-700' :
-                                            apt.status === 'COMPLETADA' ? 'bg-green-100 text-green-700' :
-                                                'bg-gray-100 text-gray-700'}`}>
-                                        {apt.status}
-                                    </span>
-                                </div>
-                            </div>
-                        ))}
+                            )
+                        })}
                     </div>
                 )}
             </div>
+
+            {/* Reason Modal */}
+            <Modal
+                isOpen={reasonModal.isOpen}
+                onClose={() => setReasonModal({ ...reasonModal, isOpen: false })}
+                title="Motivo de Consulta"
+            >
+                <div className="p-4">
+                    <p className="text-gray-700 dark:text-gray-300 text-lg italic bg-gray-50 dark:bg-zinc-800 p-6 rounded-xl border border-gray-100 dark:border-zinc-700 text-center">
+                        "{reasonModal.text}"
+                    </p>
+                </div>
+            </Modal>
+
+            {/* Details Modal */}
+            <AppointmentDetailsModal
+                isOpen={detailsModalOpen}
+                onClose={() => setDetailsModalOpen(false)}
+                appointment={selectedAppointmentDetails}
+                loading={loadingDetails}
+            />
         </div>
     );
 }

@@ -30,13 +30,22 @@ export async function middleware(req: NextRequest) {
     // Role-based redirection
     const role = (payload as any).role;
 
+    // Redirect specific roles from generic dashboard to their panels
+    if (req.nextUrl.pathname === "/dashboard") {
+        if (role === "RECEPCION") return NextResponse.redirect(new URL("/recepcion", req.url));
+        if (role === "MEDICO") return NextResponse.redirect(new URL("/medico", req.url));
+        if (role === "ALMACEN") return NextResponse.redirect(new URL("/almacen", req.url));
+        if (role === "CAJA" || role === "CAJA/FACTURACION") return NextResponse.redirect(new URL("/caja", req.url));
+        if (role === "ADMIN") return NextResponse.redirect(new URL("/admin", req.url));
+    }
+
     // Protect Admin Routes
     if (req.nextUrl.pathname.startsWith("/admin") && role !== "ADMIN") {
         return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 
     // Protect Doctor Routes
-    if (req.nextUrl.pathname.startsWith("/dashboard/medico") && role !== "MEDICO") {
+    if (req.nextUrl.pathname.startsWith("/medico") && role !== "MEDICO" && role !== "ADMIN") {
         return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 
@@ -51,7 +60,12 @@ export async function middleware(req: NextRequest) {
     }
 
     // Protect Caja Routes
-    if (req.nextUrl.pathname.startsWith("/caja") && role !== "CAJA/FACTURACION" && role !== "ADMIN") {
+    if (req.nextUrl.pathname.startsWith("/caja") && role !== "CAJA" && role !== "CAJA/FACTURACION" && role !== "ADMIN") {
+        return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
+
+    // Protect Reception Routes
+    if (req.nextUrl.pathname.startsWith("/recepcion") && role !== "RECEPCION") {
         return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 
@@ -59,5 +73,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-    matcher: ["/dashboard/:path*", "/admin/:path*", "/api/appointments/:path*", "/almacen/:path*", "/caja/:path*"],
+    matcher: ["/dashboard/:path*", "/admin/:path*", "/api/appointments/:path*", "/almacen/:path*", "/caja/:path*", "/medico/:path*", "/recepcion/:path*"],
 };

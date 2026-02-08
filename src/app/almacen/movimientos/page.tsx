@@ -290,8 +290,8 @@ export default function MovimientosPage() {
                                             )}
                                         </div>
                                         <div className="text-right">
-                                            <span className={`block font-bold ${(viewingDetails.tipoMovimiento === 'SALIDA' || viewingDetails.tipoMovimiento === 'TRASLADO') ? 'text-red-600' : 'text-green-600'}`}>
-                                                {(viewingDetails.tipoMovimiento === 'SALIDA' || viewingDetails.tipoMovimiento === 'TRASLADO') ? '-' : '+'}{d.cantidad}
+                                            <span className={`block font-bold ${(viewingDetails.tipoMovimiento === 'SALIDA' || viewingDetails.tipoMovimiento === 'TRASLADO' || viewingDetails.tipoMovimiento === 'AJUSTE') ? 'text-red-600' : 'text-green-600'}`}>
+                                                {(viewingDetails.tipoMovimiento === 'SALIDA' || viewingDetails.tipoMovimiento === 'TRASLADO' || viewingDetails.tipoMovimiento === 'AJUSTE') ? '-' : '+'}{d.cantidad}
                                             </span>
                                             <span className="text-xs text-gray-400">{d.insumo.unidadMedida}</span>
                                         </div>

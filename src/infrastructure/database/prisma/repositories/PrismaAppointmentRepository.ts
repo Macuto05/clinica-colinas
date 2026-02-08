@@ -85,6 +85,22 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
             return d;
         };
 
+        // 1. Fetch Consultation Price (Config)
+        let precioConsulta = 50.00; // Fallback default
+        try {
+            const config = await prisma.configuracion.findUnique({ where: { clave: 'PRECIO_CONSULTA' } });
+            if (config) {
+                precioConsulta = parseFloat(config.valor);
+            } else {
+                // Auto-initialize if missing (Self-Healing)
+                await prisma.configuracion.create({
+                    data: { clave: 'PRECIO_CONSULTA', valor: '50.00', descripcion: 'Precio base de la consulta médica en USD' }
+                });
+            }
+        } catch (e) {
+            console.error('Error fetching billing config, using default 50.00', e);
+        }
+
         const created = await prisma.citaMedica.create({
             data: {
                 pacienteId: appointment.patientId,
@@ -94,9 +110,26 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
                 horaFin: toDateTime(appointment.endTime),
                 motivoConsulta: appointment.reason,
                 estadoCita: estadoCita,
-                tipoCita: CitaTipo.CONSULTA, // Default or passed props
-                usuarioCreacion: 1, // HARDCODED for now, should be passed in props
-                // ... other fields
+                tipoCita: CitaTipo.CONSULTA,
+                usuarioCreacion: 1,
+                // Automatic Invoice Creation
+                factura: {
+                    create: {
+                        usuarioEmision: 1, // Default Issuer (System/Admin)
+                        total: precioConsulta,
+                        saldoPendiente: precioConsulta,
+                        estadoFactura: 'PENDIENTE',
+                        detalles: {
+                            create: {
+                                tipoItem: 'SERVICIO',
+                                descripcion: 'Consulta Médica General',
+                                cantidad: 1,
+                                precioUnitario: precioConsulta,
+                                importe: precioConsulta
+                            }
+                        }
+                    }
+                }
             },
             include: {
                 paciente: true,

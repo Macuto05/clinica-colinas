@@ -12,7 +12,8 @@ import {
     LogOut,
     Menu,
     X,
-    ChevronRight
+    ChevronRight,
+    CreditCard
 } from "lucide-react";
 import { CLINIC_INFO } from "@/lib/constants/clinic-info";
 
@@ -29,6 +30,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         { name: "Resumen", href: "/dashboard", icon: LayoutDashboard },
         { name: "Nueva Cita", href: "/dashboard/citas/nueva", icon: PlusCircle },
         { name: "Mis Citas", href: "/dashboard/citas", icon: Calendar },
+        { name: "Mis Finanzas", href: "/dashboard/pagos", icon: CreditCard },
         { name: "Mi Perfil", href: "/dashboard/perfil", icon: User },
     ];
 

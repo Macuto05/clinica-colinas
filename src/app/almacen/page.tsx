@@ -94,63 +94,70 @@ export default async function AlmacenDashboard() {
         where: { estado: "APROBADO" }
     });
 
-    // 6. Expiring Batches (Next 90 Days)
+    // 6. Lotes Vencidos (Expired - Urgent!)
+    const today = new Date();
+    // Reset time to start of day for accurate comparison (optional, but safer)
+    today.setHours(0, 0, 0, 0);
+
+    const expiredStockLotes = await prisma.stockLote.findMany({
+        where: {
+            cantidadActual: { gt: 0 },
+            lote: {
+                fechaVencimiento: {
+                    lt: today // Strictly less than start of today
+                },
+                activo: true
+            }
+        },
+        include: {
+            lote: { include: { insumo: true } },
+            almacen: true
+        },
+        orderBy: { lote: { fechaVencimiento: 'asc' } }
+    });
+
+    // 7. Lotes Por Vencer (Next 90 Days)
     const threeMonthsFromNow = new Date();
     threeMonthsFromNow.setDate(threeMonthsFromNow.getDate() + 90);
 
     const expiringStockLotes = await prisma.stockLote.findMany({
         where: {
-            cantidadActual: {
-                gt: 0
-            },
+            cantidadActual: { gt: 0 },
             lote: {
                 fechaVencimiento: {
+                    gte: today, // From today onwards
                     lte: threeMonthsFromNow
                 },
                 activo: true
             }
         },
         include: {
-            lote: {
-                include: {
-                    insumo: {
-                        select: {
-                            nombre: true,
-                            codigo: true,
-                            unidadMedida: true
-                        }
-                    }
-                }
-            },
-            almacen: {
-                select: {
-                    nombre: true
-                }
-            }
+            lote: { include: { insumo: true } },
+            almacen: true
         },
-        orderBy: {
-            lote: {
-                fechaVencimiento: 'asc'
-            }
-        }
+        orderBy: { lote: { fechaVencimiento: 'asc' } }
     });
 
-    const expiringBatches = expiringStockLotes.map(sl => ({
+    const formatBatch = (sl: any) => ({
         stockLoteId: sl.stockLoteId.toString(),
+        loteId: sl.loteId.toString(),
         cantidad: Number(sl.cantidadActual),
         fechaVencimiento: sl.lote.fechaVencimiento,
         codigo: sl.lote.codigo,
+        insumoId: sl.lote.insumoId.toString(),
         insumo: {
             nombre: sl.lote.insumo.nombre,
             codigo: sl.lote.insumo.codigo,
             unidadMedida: sl.lote.insumo.unidadMedida
         },
         almacen: {
+            almacenId: sl.almacenId.toString(),
             nombre: sl.almacen.nombre
         }
-    }));
+    });
 
-    const expiringCount = expiringBatches.length;
+    const expiredBatches = expiredStockLotes.map(formatBatch);
+    const expiringBatches = expiringStockLotes.map(formatBatch);
 
     return (
         <div className="space-y-6">
@@ -170,8 +177,10 @@ export default async function AlmacenDashboard() {
                 lowStockItems={lowStockItems}
                 pendingApprovalCount={pendingApprovalCount}
                 pendingReceptionCount={pendingReceptionCount}
-                expiringCount={expiringCount}
+                expiringCount={expiringBatches.length}
                 expiringBatches={expiringBatches}
+                expiredCount={expiredBatches.length}
+                expiredBatches={expiredBatches}
             />
 
         </div>

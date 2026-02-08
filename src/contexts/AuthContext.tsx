@@ -80,11 +80,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (userData.role === "ADMIN") {
             router.push("/admin");
         } else if (userData.role === "DOCTOR" || userData.role === "MEDICO") { // Added MEDICO role
-            router.push("/dashboard/doctor");
+            router.push("/medico");
         } else if (userData.role === "ALMACEN") {
             router.push("/almacen");
         } else if (["CAJA", "CAJA Y FACTURACION", "CAJA Y FACTURACIÓN", "CAJA/FACTURACION", "CAJA/FACTURACIÓN"].includes(userData.role?.toUpperCase() || "")) {
             router.push("/caja");
+        } else if (userData.role === "RECEPCION") {
+            router.push("/recepcion");
         } else {
             router.push("/dashboard");
         }

@@ -15,6 +15,8 @@ interface Props {
     pendingReceptionCount: number;
     expiringCount: number;
     expiringBatches: any[];
+    expiredCount: number;
+    expiredBatches: any[];
 }
 
 export function DashboardCards({
@@ -25,10 +27,13 @@ export function DashboardCards({
     pendingApprovalCount,
     pendingReceptionCount,
     expiringCount,
-    expiringBatches
+    expiringBatches,
+    expiredCount,
+    expiredBatches
 }: Props) {
     const [isLowStockModalOpen, setIsLowStockModalOpen] = useState(false);
     const [isExpiringModalOpen, setIsExpiringModalOpen] = useState(false);
+    const [isExpiredModalOpen, setIsExpiredModalOpen] = useState(false);
 
     return (
         <>
@@ -59,7 +64,23 @@ export function DashboardCards({
                     </div>
                 </Link>
 
-                {/* Stock Bajo (Clickable -> Open Modal) */}
+                {/* Lotes VENCIDOS (Critical) */}
+                <div
+                    onClick={() => setIsExpiredModalOpen(true)}
+                    className="block transition-transform hover:scale-[1.02] cursor-pointer"
+                >
+                    <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm flex items-center gap-4 hover:border-lime-500/50 transition-colors">
+                        <div className={`p-3 rounded-lg ${expiredCount > 0 ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-gray-100 text-gray-400'}`}>
+                            <AlertOctagon size={24} />
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-500">Lotes Vencidos</p>
+                            <p className="text-2xl font-bold text-gray-900 dark:text-white">{expiredCount}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Stock Bajo */}
                 <div
                     onClick={() => setIsLowStockModalOpen(true)}
                     className="block transition-transform hover:scale-[1.02] cursor-pointer"
@@ -75,17 +96,17 @@ export function DashboardCards({
                     </div>
                 </div>
 
-                {/* Lotes por Vencer (New Card) */}
+                {/* Lotes por Vencer (Warning) */}
                 <div
                     onClick={() => setIsExpiringModalOpen(true)}
                     className="block transition-transform hover:scale-[1.02] cursor-pointer"
                 >
                     <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm flex items-center gap-4 hover:border-lime-500/50 transition-colors">
-                        <div className="p-3 bg-red-100 text-red-600 rounded-lg dark:bg-red-900/30 dark:text-red-400">
-                            <AlertOctagon size={24} />
+                        <div className="p-3 bg-orange-100 text-orange-600 rounded-lg dark:bg-orange-900/30 dark:text-orange-400">
+                            <Package size={24} />
                         </div>
                         <div>
-                            <p className="text-sm text-gray-500">Lotes por Vencer</p>
+                            <p className="text-sm text-gray-500">Por Vencer (90d)</p>
                             <p className="text-2xl font-bold text-gray-900 dark:text-white">{expiringCount}</p>
                         </div>
                     </div>
@@ -103,19 +124,6 @@ export function DashboardCards({
                         </div>
                     </div>
                 </Link>
-
-                {/* Pedidos por Recibir */}
-                <Link href="/almacen/pedidos" className="block transition-transform hover:scale-[1.02]">
-                    <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm flex items-center gap-4 cursor-pointer hover:border-lime-500/50 transition-colors">
-                        <div className="p-3 bg-indigo-100 text-indigo-600 rounded-lg dark:bg-indigo-900/30 dark:text-indigo-400">
-                            <Package size={24} />
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-500">Por Recibir</p>
-                            <p className="text-2xl font-bold text-gray-900 dark:text-white">{pendingReceptionCount}</p>
-                        </div>
-                    </div>
-                </Link>
             </div>
 
             <LowStockModal
@@ -124,10 +132,22 @@ export function DashboardCards({
                 items={lowStockItems}
             />
 
+            {/* Expiring (Por Vencer) */}
             <ExpiringBatchesModal
                 isOpen={isExpiringModalOpen}
                 onClose={() => setIsExpiringModalOpen(false)}
                 items={expiringBatches}
+                title="Lotes por Vencer (Próximos 3 Meses)"
+                canWriteOff={false}
+            />
+
+            {/* Expired (Vencidos) */}
+            <ExpiringBatchesModal
+                isOpen={isExpiredModalOpen}
+                onClose={() => setIsExpiredModalOpen(false)}
+                items={expiredBatches}
+                title="Lotes Vencidos (Acción Requerida)"
+                canWriteOff={true}
             />
         </>
     );
