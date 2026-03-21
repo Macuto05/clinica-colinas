@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { ClipboardList, Plus, Search, CheckCircle, XCircle, Clock, Truck, Loader2, MoreVertical, FileText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { ReceivingModal } from "@/components/inventory/ReceivingModal";
@@ -35,6 +35,14 @@ interface Pedido {
 import { useRouter, useSearchParams } from "next/navigation";
 
 export default function PedidosPage() {
+    return (
+        <Suspense fallback={<div className="p-12 flex justify-center items-center h-[400px]"><Loader2 className="animate-spin text-lime-600" size={32} /></div>}>
+            <PedidosContent />
+        </Suspense>
+    );
+}
+
+function PedidosContent() {
     const { user } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
