@@ -10,6 +10,7 @@ interface AuthContextType {
     login: (userData: Partial<User>, redirectPath?: string) => void;
     logout: () => Promise<void>;
     isAuthenticated: boolean;
+    refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -110,6 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 login,
                 logout,
                 isAuthenticated: !!user,
+                refreshUser: checkAuth,
             }}
         >
             {children}

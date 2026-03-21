@@ -62,7 +62,7 @@ export async function PUT(
             if (usuarioId) {
                 const userUpdateData: any = {
                     email: data.email,
-                    estado: data.estado as any,
+                    estado: data.usuarioEstado as any,
                 };
 
                 if (data.password && data.password.trim() !== '') {
@@ -86,7 +86,7 @@ export async function PUT(
                     documentoIdentidad: data.documentoIdentidad,
                     telefono: data.telefono,
                     fechaIngreso: ingresoDate,
-                    // estadoLaboral can be inferred or passed, sticking to basic fields for now
+                    estadoLaboral: data.estadoLaboral as any,
                 }
             });
 

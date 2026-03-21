@@ -130,7 +130,7 @@ export async function GET(req: Request) {
             // 2. Map All Invoices to Debts (History of Invoices)
             // Includes Pending, Partial, Paid, and Annulled
             const amountTotal = Number(f.total);
-            const amountPending = f.estadoFactura === 'ANULADA' || f.estadoFactura === 'PAGADA' ? 0 : Number(f.saldoPendiente);
+            const amountPending = f.estadoFactura === 'ANULADA' ? 0 : Number(f.saldoPendiente);
 
             debts.push({
                 id: `INV-${f.facturaId}`,

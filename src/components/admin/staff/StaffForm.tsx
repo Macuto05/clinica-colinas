@@ -42,8 +42,8 @@ const staffSchema = z.object({
     rolId: z.string().min(1, "El rol es requerido"),
     email: z.string().email("Email de usuario requerido"),
     password: z.string().optional(),
-    estadoLaboral: z.enum(["ACTIVO", "VACACIONES", "LICENCIA", "SUSPENDIDO", "RETIRADO"]).default("ACTIVO"),
-    usuarioEstado: z.enum(["ACTIVO", "INACTIVO", "BLOQUEADO"]).default("ACTIVO"),
+    estadoLaboral: z.enum(["ACTIVO", "VACACIONES", "LICENCIA", "SUSPENDIDO", "RETIRADO"]).optional(),
+    usuarioEstado: z.enum(["ACTIVO", "INACTIVO", "BLOQUEADO"]).optional(),
 });
 
 export type StaffFormData = z.infer<typeof staffSchema>;

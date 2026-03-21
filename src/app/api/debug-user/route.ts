@@ -5,8 +5,9 @@ import prisma from "@/infrastructure/database/prisma/client";
 export async function GET() {
     try {
         const email = 'admin@clinica.com';
-        const user = await prisma.user.findUnique({
-            where: { email }
+        const user = await prisma.usuario.findUnique({
+            where: { email },
+            include: { rol: true }
         });
 
         if (!user) {
@@ -16,9 +17,9 @@ export async function GET() {
         return NextResponse.json({
             message: "User Analysis",
             email: user.email,
-            role: user.role,
-            roleType: typeof user.role,
-            isStringAdmin: user.role === 'ADMIN',
+            role: user.rol?.nombre,
+            roleType: typeof user.rol?.nombre,
+            isStringAdmin: user.rol?.nombre === 'ADMINISTRADOR',
             rawUser: user
         });
     } catch (error) {

@@ -55,7 +55,6 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
             doctor: h.medico.empleado.nombres + " " + h.medico.empleado.apellidos,
             diagnostico: h.diagnostico ? {
                 descripcion: h.diagnostico.descripcion,
-                tipo: h.diagnostico.tipo,
                 notas: h.diagnostico.notas
             } : null,
             receta: h.receta ? {

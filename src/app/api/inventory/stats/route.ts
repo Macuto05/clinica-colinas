@@ -28,10 +28,10 @@ export async function GET() {
         const insumos = await prisma.insumo.findMany({
             where: { activo: true },
             select: {
-                stockMinimo: true,
                 stock: {
                     select: {
-                        cantidadActual: true
+                        cantidadActual: true,
+                        stockMinimo: true
                     }
                 }
             }
@@ -41,7 +41,8 @@ export async function GET() {
 
         insumos.forEach(insumo => {
             const totalStock = insumo.stock.reduce((sum, s) => sum + Number(s.cantidadActual), 0);
-            if (totalStock <= Number(insumo.stockMinimo)) {
+            const totalMinimo = insumo.stock.reduce((sum, s) => sum + Number(s.stockMinimo), 0);
+            if (insumo.stock.length > 0 && totalStock <= totalMinimo) {
                 stockBajoCount++;
             }
         });

@@ -14,9 +14,12 @@ export async function getDoctorsBySpecialtySlug(slug: string) {
         // Find doctors by specialty string in Medico table
         const doctors = await prisma.medico.findMany({
             where: {
-                especialidad: specialtyData.name
+                especialidad: {
+                    nombre: specialtyData.name
+                }
             },
             include: {
+                especialidad: true,
                 empleado: {
                     include: {
                         usuario: true
@@ -31,7 +34,7 @@ export async function getDoctorsBySpecialtySlug(slug: string) {
             name: `${doctor.empleado.nombres} ${doctor.empleado.apellidos}`,
             credentials: doctor.licenciaProfesional || "Médico Especialista",
             experience: "Especialista con amplia experiencia.", // Placeholder as biography is not in Schema
-            specialty: doctor.especialidad,
+            specialty: doctor.especialidad.nombre,
             imageUrl: "/images/doctors/default.jpg" // Default image or handle if DB has it. Schema doesn't show imageUrl.
         }));
 
@@ -48,6 +51,7 @@ export async function getDoctorById(id: number) {
                 empleadoId: id
             },
             include: {
+                especialidad: true,
                 empleado: {
                     include: {
                         usuario: true
@@ -64,7 +68,7 @@ export async function getDoctorById(id: number) {
             email: doctor.empleado.usuario?.email || "",
             phone: doctor.empleado.telefono,
             address: "", // Address is on Patient usually, or we need to add to Empleado/Medico
-            specialty: doctor.especialidad,
+            specialty: doctor.especialidad.nombre,
             biography: "",
             license: doctor.licenciaProfesional,
             schedule: [], // Schedule removed

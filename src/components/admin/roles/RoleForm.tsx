@@ -11,7 +11,7 @@ import { FormInput } from "@/components/auth/FormInput";
 const roleSchema = z.object({
     nombre: z.string().min(3, "El nombre debe tener al menos 3 caracteres").max(50, "Máximo 50 caracteres"),
     descripcion: z.string().max(200, "Máximo 200 caracteres").optional().or(z.literal("")),
-    activo: z.boolean().default(true)
+    activo: z.boolean().optional()
 });
 
 export type RoleFormData = z.infer<typeof roleSchema>;

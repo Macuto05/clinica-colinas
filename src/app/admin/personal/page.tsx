@@ -57,7 +57,7 @@ export default async function AdminStaffPage({
     }
 
     if (status && status !== 'ALL') {
-        where.estadoLaboral = status as $Enums.EstadoLaboral;
+        where.estadoLaboral = status as $Enums.EmpleadoEstadoLaboral;
     }
 
     // 1. Fetch staff with filters

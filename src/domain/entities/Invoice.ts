@@ -45,7 +45,12 @@ export class Invoice {
     }
 
     get id(): number { return this.props.id; }
+    get appointmentId(): number { return this.props.appointmentId; }
     get invoiceNumber(): string | undefined { return this.props.invoiceNumber; }
+    get issueDate(): Date { return this.props.issueDate; }
+    get subtotal(): number { return this.props.subtotal; }
+    get discount(): number { return this.props.discount; }
+    get tax(): number { return this.props.tax; }
     get total(): number { return this.props.total; }
     get status(): InvoiceStatus { return this.props.status; }
     get items(): InvoiceItemProps[] { return this.props.items || []; }

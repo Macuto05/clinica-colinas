@@ -43,11 +43,11 @@ const patientSchema = z.object({
 
     correo: z.string().email("Correo inválido").optional().or(z.literal("")),
     direccion: z.string().optional(),
-    estado: z.enum(["ACTIVO", "INACTIVO", "BLOQUEADO", "FALLECIDO"]).default("ACTIVO"),
+    estado: z.enum(["ACTIVO", "INACTIVO", "BLOQUEADO", "FALLECIDO"]).optional(),
 
     // User related fields
     email: z.string().email("Email de usuario inválido").optional().or(z.literal("")),
-    usuarioEstado: z.enum(["ACTIVO", "INACTIVO", "BLOQUEADO"]).default("ACTIVO"),
+    usuarioEstado: z.enum(["ACTIVO", "INACTIVO", "BLOQUEADO"]).optional(),
     password: z.string().optional(),
 });
 

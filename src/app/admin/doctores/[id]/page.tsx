@@ -21,6 +21,7 @@ export default async function AdminDoctorEditPage({ params }: PageProps) {
             empleadoId: doctorId
         },
         include: {
+            especialidad: true,
             empleado: {
                 include: {
                     usuario: true
@@ -42,7 +43,20 @@ export default async function AdminDoctorEditPage({ params }: PageProps) {
         notFound();
     }
 
+    // Transform for the Form
+    const formattedDoctor = {
+        id: Number(doctor.empleadoId),
+        license: doctor.licenciaProfesional,
+        user: {
+            name: `${doctor.empleado.nombres} ${doctor.empleado.apellidos}`,
+            email: doctor.empleado.usuario?.email || ""
+        },
+        speciality: {
+            name: doctor.especialidad.nombre
+        }
+    };
+
     return (
-        <DoctorEditForm doctor={doctor} />
+        <DoctorEditForm doctor={formattedDoctor} />
     );
 }

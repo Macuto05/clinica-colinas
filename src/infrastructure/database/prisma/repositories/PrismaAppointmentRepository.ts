@@ -74,7 +74,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
 
     async create(appointment: Appointment): Promise<Appointment> {
         // Reverse Map Enums
-        let estadoCita = CitaEstado.PROGRAMADA;
+        let estadoCita: CitaEstado = CitaEstado.PROGRAMADA;
         if (appointment.status === AppointmentStatus.CONFIRMED) estadoCita = CitaEstado.CONFIRMADA;
 
         // Helper to Create DateTime from Time String (dummy date)

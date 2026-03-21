@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/infrastructure/database/prisma/client";
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const id = BigInt(params.id);
+        const { id: idStr } = await params;
+        const id = BigInt(idStr);
         const body = await req.json();
         const { nombres, apellidos, documentoIdentidad, telefono, correo, fechaNacimiento, direccion, sexo, correoAcceso, password } = body;
 

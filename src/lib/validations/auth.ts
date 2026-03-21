@@ -25,9 +25,7 @@ export const registerSchema = z.object({
         .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "El apellido solo puede contener letras"),
 
     // Split ID Card
-    idType: z.enum(["V-", "E-", "J-"], {
-        required_error: "Tipo es requerido",
-    }),
+    idType: z.enum(["V-", "E-", "J-"]),
     idNumber: z
         .string()
         .min(6, "Mínimo 6 dígitos")
@@ -55,9 +53,7 @@ export const registerSchema = z.object({
         .min(1, "Sexo es requerido"),
 
     // Split Phone
-    phoneCode: z.enum(["0412-", "0414-", "0416-", "0424-", "0426-", "0422-"], {
-        required_error: "Código es requerido",
-    }),
+    phoneCode: z.enum(["0412-", "0414-", "0416-", "0424-", "0426-", "0422-"]),
     phoneNumber: z
         .string()
         .min(7, "Mínimo 7 dígitos")

@@ -10,16 +10,16 @@ export async function GET() {
                 estadoFactura: "PENDIENTE"
             },
             include: {
-                paciente: {
-                    select: {
-                        nombres: true,
-                        apellidos: true,
-                        documentoIdentidad: true
-                    }
-                },
                 cita: {
                     select: {
                         fechaCita: true,
+                        paciente: {
+                            select: {
+                                nombres: true,
+                                apellidos: true,
+                                documentoIdentidad: true
+                            }
+                        },
                         medico: {
                             include: {
                                 empleado: {
@@ -42,8 +42,8 @@ export async function GET() {
             facturaId: inv.facturaId.toString(),
             numeroFactura: inv.numeroFactura,
             fechaEmision: inv.fechaEmision.toISOString(),
-            paciente: inv.paciente ? `${inv.paciente.nombres} ${inv.paciente.apellidos}` : 'Desconocido',
-            cedula: inv.paciente?.documentoIdentidad || 'S/C',
+            paciente: inv.cita?.paciente ? `${inv.cita.paciente.nombres} ${inv.cita.paciente.apellidos}` : 'Desconocido',
+            cedula: inv.cita?.paciente?.documentoIdentidad || 'S/C',
             doctor: inv.cita?.medico?.empleado ? `Dr. ${inv.cita.medico.empleado.nombres} ${inv.cita.medico.empleado.apellidos}` : 'No asignado',
             total: Number(inv.total),
             saldoPendiente: Number(inv.saldoPendiente)

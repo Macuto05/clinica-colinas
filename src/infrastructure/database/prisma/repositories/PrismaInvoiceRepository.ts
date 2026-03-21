@@ -93,7 +93,7 @@ export class PrismaInvoiceRepository implements IInvoiceRepository {
     }
 
     async updateStatus(id: number, status: string): Promise<Invoice> {
-        let newStatus = FacturaEstado.PENDIENTE;
+        let newStatus: FacturaEstado = FacturaEstado.PENDIENTE;
         if (status === 'PAID') newStatus = FacturaEstado.PAGADA;
         if (status === 'VOID') newStatus = FacturaEstado.ANULADA;
 

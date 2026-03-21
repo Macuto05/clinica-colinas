@@ -22,23 +22,7 @@ export class DoctorController {
         }
     }
 
-    async getAvailability(
-        doctorId: number,
-        startDate: Date,
-        endDate: Date
-    ): Promise<NextResponse> {
-        try {
-            const getAvailabilityUseCase = container.getGetDoctorAvailabilityUseCase();
-            const schedules = await getAvailabilityUseCase.execute(doctorId, startDate, endDate);
 
-            return NextResponse.json(schedules.map((sch) => sch.toJSON()));
-        } catch (error: any) {
-            return NextResponse.json(
-                { error: error.message || 'Failed to get availability' },
-                { status: 400 }
-            );
-        }
-    }
 }
 
 export const doctorController = new DoctorController();

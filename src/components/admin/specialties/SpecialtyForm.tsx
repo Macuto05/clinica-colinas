@@ -10,7 +10,7 @@ import { Loader2, AlertCircle, CheckCircle, Edit } from "lucide-react";
 const specialtySchema = z.object({
     nombre: z.string().min(3, "El nombre es obligatorio (min 3)"),
     descripcion: z.string().optional(),
-    // icono: z.string().optional(), // Removed from UI
+    icono: z.string().optional(),
     activa: z.boolean().optional(),
 });
 

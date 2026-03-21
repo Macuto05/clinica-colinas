@@ -96,12 +96,19 @@ export class RegisterUser {
                 // C. Special logic for Medico
                 if (roleName === 'MEDICO') {
                     if (!data.specialty) throw new Error('Specialty required for Doctors');
+
+                    const specialty = await tx.especialidad.findFirst({
+                        where: { nombre: data.specialty }
+                    });
+                    
+                    if (!specialty) {
+                        throw new Error(`Specialty '${data.specialty}' not found`);
+                    }
+
                     await tx.medico.create({
                         data: {
                             empleadoId: empleado.empleadoId,
-                            especialidad: {
-                                connect: { nombre: data.specialty }
-                            },
+                            especialidadId: specialty.especialidadId,
                             numeroColegiatura: data.collegiateNumber,
                             activo: true
                         }

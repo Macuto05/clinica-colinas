@@ -76,7 +76,14 @@ export default async function NewAppointmentPage({ searchParams }: PageProps) {
                             </p>
                         </div>
 
-                        <AppointmentForm doctor={doctor} user={user} />
+                        <AppointmentForm 
+                            doctor={doctor} 
+                            user={{
+                                id: Number(user.usuarioId),
+                                name: user.paciente ? `${user.paciente.nombres} ${user.paciente.apellidos}` : (user.empleado ? `${user.empleado.nombres} ${user.empleado.apellidos}` : "Usuario"),
+                                email: user.email
+                            }} 
+                        />
                     </div>
                 </div>
             </div>

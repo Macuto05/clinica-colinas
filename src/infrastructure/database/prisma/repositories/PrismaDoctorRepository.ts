@@ -29,26 +29,39 @@ export class PrismaDoctorRepository implements IDoctorRepository {
         });
         if (!specialtyRecord) throw new Error("Specialty not found");
 
-        const created = await prisma.medico.create({
+        const createdEmpleado = await prisma.empleado.create({
             data: {
-                especialidadId: specialtyRecord.especialidadId,
-                numeroColegiatura: doctor.collegiateNumber,
-                licenciaProfesional: doctor.professionalLicense,
-                activo: doctor.isActive,
-                empleado: {
+                nombres: doctor.firstName,
+                apellidos: doctor.lastName,
+                medico: {
                     create: {
-                        nombres: doctor.firstName,
-                        apellidos: doctor.lastName,
+                        especialidadId: specialtyRecord.especialidadId,
+                        numeroColegiatura: doctor.collegiateNumber,
+                        licenciaProfesional: doctor.professionalLicense,
+                        activo: doctor.isActive,
                     }
                 }
             },
             include: {
-                empleado: true,
-                especialidad: true
+                medico: {
+                    include: {
+                        especialidad: true
+                    }
+                }
             }
         });
 
-        return this.mapToDomain(created);
+        if (!createdEmpleado.medico) {
+            throw new Error("Error creating doctor relation");
+        }
+
+        const fullMedico = {
+            ...createdEmpleado.medico,
+            empleado: createdEmpleado,
+            especialidad: createdEmpleado.medico.especialidad
+        };
+
+        return this.mapToDomain(fullMedico as any);
     }
 
     async findById(id: number): Promise<Doctor | null> {

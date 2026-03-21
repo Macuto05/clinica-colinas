@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { container } from '../../di/DIContainer';
 import { RegisterUserDTO } from '@/application/dto/RegisterUserDTO';
 import { LoginUserDTO } from '@/application/dto/LoginUserDTO';
-import { signToken } from '../../services/JWTService';
+import { JWTService } from '../../services/JWTService';
 
 export class AuthController {
     async register(request: NextRequest): Promise<NextResponse> {
@@ -19,7 +19,7 @@ export class AuthController {
             const user = await registerUseCase.execute(body);
 
             // Generate JWT token
-            const token = signToken({
+            const token = await JWTService.generateToken({
                 userId: user.id,
                 email: user.email,
                 role: user.role,
@@ -51,7 +51,7 @@ export class AuthController {
             const user = await loginUseCase.execute(body);
 
             // Generate JWT token
-            const token = signToken({
+            const token = await JWTService.generateToken({
                 userId: user.id,
                 email: user.email,
                 role: user.role,
