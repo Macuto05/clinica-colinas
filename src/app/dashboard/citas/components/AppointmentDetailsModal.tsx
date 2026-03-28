@@ -1,5 +1,5 @@
 import { Modal } from "@/components/ui/Modal";
-import { FileText, Pill, ClipboardList, Activity } from "lucide-react";
+import { FileText, Pill, ClipboardList, Activity, Clock, Calendar } from "lucide-react";
 
 interface AppointmentDetailsModalProps {
     isOpen: boolean;
@@ -26,39 +26,41 @@ export function AppointmentDetailsModal({ isOpen, onClose, appointment, loading 
                     No se pudo cargar la información.
                 </div>
             ) : (
-                <div className="space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar p-1">
-                    {/* Header Info */}
-                    <div className="bg-gray-50 dark:bg-zinc-800 p-4 rounded-xl border border-gray-100 dark:border-zinc-700">
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                                <p className="text-gray-500 text-xs uppercase font-bold">Médico</p>
-                                <p className="font-semibold text-gray-900 dark:text-white">Dr. {appointment.doctor.nombre}</p>
-                                <p className="text-xs text-lime-600">{appointment.doctor.especialidad}</p>
+                <div className="space-y-8 max-h-[75vh] overflow-y-auto custom-scrollbar p-1 pr-3">
+                    {/* Header Info Card */}
+                    <div className="bg-white/60 backdrop-blur-md p-6 rounded-3xl border border-white shadow-[0_4px_16px_rgba(0,0,0,0.04)]">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div className="space-y-1">
+                                <p className="text-gray-400 text-[10px] uppercase font-black tracking-widest">Atendido por</p>
+                                <p className="font-bold text-gray-900 text-lg leading-tight">Dr. {appointment.doctor.nombre}</p>
+                                <p className="text-sm font-bold text-lime-600/80 bg-lime-500/5 px-2 py-0.5 rounded-lg inline-block border border-lime-500/10">
+                                    {appointment.doctor.especialidad}
+                                </p>
                             </div>
-                            <div>
-                                <p className="text-gray-500 text-xs uppercase font-bold">Fecha</p>
-                                <p className="font-semibold text-gray-900 dark:text-white">
+                            <div className="space-y-1 sm:text-right">
+                                <p className="text-gray-400 text-[10px] uppercase font-black tracking-widest">Cita realizada el</p>
+                                <p className="font-bold text-gray-900 text-lg leading-tight">
                                     {new Date(appointment.fecha).toLocaleDateString('es-VE', { timeZone: 'UTC' })}
                                 </p>
-                                <p className="text-xs text-gray-500">{appointment.hora}</p>
+                                <p className="text-sm font-bold text-gray-500 italic">{appointment.hora}</p>
                             </div>
                         </div>
                     </div>
 
-                    {/* Diagnosis */}
-                    <div className="space-y-2">
-                        <h4 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                            <Activity size={18} className="text-lime-500" />
-                            Diagnóstico
+                    {/* Diagnosis Section */}
+                    <div className="space-y-4">
+                        <h4 className="font-black text-gray-900 uppercase tracking-widest text-[11px] flex items-center gap-2 px-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-lime-500 shadow-[0_0_8px_rgba(132,204,22,0.8)]" />
+                            Diagnóstico y Conclusiones
                         </h4>
-                        <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-gray-200 dark:border-zinc-700 shadow-sm">
-                            <p className="text-gray-800 dark:text-gray-200 font-medium whitespace-pre-wrap">
+                        <div className="bg-white/40 backdrop-blur-md p-6 rounded-3xl border border-white/50 shadow-sm">
+                            <p className="text-gray-800 font-semibold text-base leading-relaxed whitespace-pre-wrap">
                                 {appointment.diagnostico?.descripcion || "Sin diagnóstico registrado."}
                             </p>
                             {appointment.diagnostico?.notas && (
-                                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-zinc-800">
-                                    <p className="text-xs text-gray-500 uppercase font-bold mb-1">Notas / Tratamiento</p>
-                                    <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
+                                <div className="mt-6 pt-5 border-t border-white/40">
+                                    <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest mb-2">Plan de Tratamiento / Observaciones</p>
+                                    <p className="text-sm text-gray-600 font-medium whitespace-pre-wrap leading-relaxed">
                                         {appointment.diagnostico.notas}
                                     </p>
                                 </div>
@@ -66,28 +68,34 @@ export function AppointmentDetailsModal({ isOpen, onClose, appointment, loading 
                         </div>
                     </div>
 
-                    {/* Prescription */}
+                    {/* Prescription Section */}
                     {appointment.receta && appointment.receta.detalles.length > 0 && (
-                        <div className="space-y-2">
-                            <h4 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                <Pill size={18} className="text-green-500" />
-                                Receta Médica
+                        <div className="space-y-4">
+                            <h4 className="font-black text-gray-900 uppercase tracking-widest text-[11px] flex items-center gap-2 px-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                                Receta Médica Detallada
                             </h4>
-                            <div className="space-y-2">
+                            <div className="grid gap-3">
                                 {appointment.receta.detalles.map((med: any, idx: number) => (
-                                    <div key={idx} className="bg-white dark:bg-zinc-900 p-3 rounded-xl border border-gray-200 dark:border-zinc-700 shadow-sm">
-                                        <div className="flex justify-between items-start">
-                                            <span className="font-bold text-gray-900 dark:text-white">{med.medicamento}</span>
-                                            <span className="text-xs bg-lime-100 text-lime-700 px-2 py-0.5 rounded-full font-bold">{med.dosis}</span>
+                                    <div key={idx} className="group bg-white/50 backdrop-blur-sm p-4 rounded-2xl border border-white/60 shadow-sm hover:bg-white/70 transition-all hover:scale-[1.01]">
+                                        <div className="flex justify-between items-center">
+                                            <span className="font-black text-gray-900 text-base">{med.medicamento}</span>
+                                            <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-700 px-3 py-1 rounded-full border border-emerald-500/20 shadow-sm">{med.dosis}</span>
                                         </div>
-                                        <div className="text-sm text-gray-500 mt-1 flex gap-3">
-                                            <span>⏱ {med.frecuencia}</span>
-                                            <span>📅 {med.duracion}</span>
+                                        <div className="flex gap-4 mt-3">
+                                            <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500 bg-white/40 px-3 py-1 rounded-lg border border-white/60">
+                                                <Clock size={12} className="text-emerald-500" />
+                                                {med.frecuencia}
+                                            </div>
+                                            <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500 bg-white/40 px-3 py-1 rounded-lg border border-white/60">
+                                                <Calendar size={12} className="text-emerald-500" />
+                                                {med.duracion}
+                                            </div>
                                         </div>
                                         {med.instrucciones && (
-                                            <p className="text-xs text-gray-500 mt-2 italic border-l-2 border-gray-200 pl-2">
+                                            <div className="mt-3 p-3 bg-emerald-500/5 rounded-xl border border-emerald-500/10 italic text-xs text-gray-600 leading-relaxed font-medium">
                                                 "{med.instrucciones}"
-                                            </p>
+                                            </div>
                                         )}
                                     </div>
                                 ))}
@@ -95,18 +103,20 @@ export function AppointmentDetailsModal({ isOpen, onClose, appointment, loading 
                         </div>
                     )}
 
-                    {/* Orders */}
+                    {/* Orders Section */}
                     {appointment.ordenes && appointment.ordenes.length > 0 && (
-                        <div className="space-y-2">
-                            <h4 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                <ClipboardList size={18} className="text-blue-500" />
-                                Estudios y Órdenes
+                        <div className="space-y-4">
+                            <h4 className="font-black text-gray-900 uppercase tracking-widest text-[11px] flex items-center gap-2 px-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
+                                Estudios y Órdenes Médicas
                             </h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 {appointment.ordenes.map((ord: any, idx: number) => (
-                                    <div key={idx} className="bg-white dark:bg-zinc-900 p-3 rounded-xl border border-gray-200 dark:border-zinc-700 shadow-sm flex justify-between items-center">
-                                        <span className="font-medium text-sm text-gray-800 dark:text-gray-200">{ord.estudio}</span>
-                                        <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-1 rounded border border-blue-100 uppercase font-bold">{ord.tipo}</span>
+                                    <div key={idx} className="bg-white/50 backdrop-blur-sm p-4 rounded-2xl border border-white/60 shadow-sm flex justify-between items-center hover:bg-white/70 transition-all">
+                                        <span className="font-bold text-sm text-gray-800">{ord.estudio}</span>
+                                        <span className="text-[9px] font-black uppercase tracking-widest bg-blue-500/10 text-blue-700 px-2 py-1 rounded-lg border border-blue-500/10">
+                                            {ord.tipo}
+                                        </span>
                                     </div>
                                 ))}
                             </div>
