@@ -186,24 +186,24 @@ export function AppointmentActionModal({ isOpen, onClose, appointment, action, o
     if (!isOpen || !appointment) return null;
 
     return createPortal(
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className={`bg-white dark:bg-zinc-900 w-full ${action === 'RESCHEDULE' ? 'max-w-2xl' : 'max-w-md'} rounded-2xl shadow-xl border border-gray-200 dark:border-zinc-800 overflow-hidden animate-in zoom-in-95 duration-200`}>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in duration-200">
+            <div className={`bg-white/70 backdrop-blur-2xl backdrop-saturate-[1.2] w-full ${action === 'RESCHEDULE' ? 'max-w-2xl' : 'max-w-md'} rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.12)] border border-white/60 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200`}>
 
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-900">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <div className="flex items-center justify-between p-6 border-b border-white/40 bg-white/30 shrink-0">
+                    <h3 className="text-lg font-bold text-gray-900 tracking-tight flex items-center gap-2">
                         {action === 'CONFIRM' && <><CheckCircle className="text-lime-600" size={20} /> Confirmar Asistencia</>}
                         {action === 'CANCEL' && <><Ban className="text-red-500" size={20} /> Cancelar Cita</>}
                         {action === 'RESCHEDULE' && <><Calendar className="text-lime-600" size={20} /> Reprogramar Cita</>}
                     </h3>
-                    <button onClick={onClose} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                    <button onClick={onClose} className="p-2 text-gray-400 hover:text-red-500 hover:bg-white/60 rounded-full transition-colors">
                         <X size={20} />
                     </button>
                 </div>
 
                 {/* Body */}
-                <div className="p-6">
-                    <div className="mb-6 p-4 bg-gray-50 dark:bg-zinc-800 rounded-xl border border-gray-100 dark:border-zinc-700">
+                <div className="p-6 overflow-y-auto flex-1 space-y-6">
+                    <div className="mb-6 p-5 bg-white/40 backdrop-blur-md rounded-3xl border border-white/50 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
                         <div className="flex justify-between items-start">
                             <div>
                                 <p className="text-xs text-gray-500 uppercase tracking-wider font-bold mb-1">Paciente</p>
@@ -222,22 +222,24 @@ export function AppointmentActionModal({ isOpen, onClose, appointment, action, o
                     {action === 'CONFIRM' && (
                         <div className="text-center space-y-4">
                             {!appointment.isPaid ? (
-                                <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm flex items-center gap-2 justify-center">
+                                <div className="p-4 bg-red-50/70 border border-red-200/50 text-red-700 rounded-2xl text-sm flex items-center gap-2 justify-center backdrop-blur-sm shadow-sm">
                                     <AlertCircle size={16} />
-                                    <span>Esta cita no ha sido pagada. No se puede confirmar.</span>
+                                    <span className="font-bold">Esta cita no ha sido pagada. No se puede confirmar.</span>
                                 </div>
                             ) : (
-                                <p className="text-gray-600 dark:text-gray-400">
+                                <p className="text-gray-600 text-sm">
                                     ¿Confirmas que el paciente ha llegado o confirmado su asistencia para esta cita?
                                 </p>
                             )}
 
-                            <div className="flex justify-center gap-3 pt-2">
-                                <button onClick={onClose} className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg font-medium">Cancelar</button>
+                            <div className="flex justify-center gap-3 pt-4 border-t border-white/40">
+                                <button onClick={onClose} className="flex-1 py-3.5 rounded-2xl bg-white/50 border border-white/60 text-gray-700 font-bold hover:bg-white/80 transition-colors text-sm shadow-sm backdrop-blur-sm outline-none focus:ring-2 focus:ring-gray-300">
+                                    Cancelar
+                                </button>
                                 <button
                                     onClick={handleConfirm}
                                     disabled={loading || !appointment.isPaid}
-                                    className="px-6 py-2 bg-lime-600 hover:bg-lime-700 text-white rounded-lg font-bold shadow-lg shadow-lime-600/20 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="flex-1 py-3.5 rounded-2xl bg-lime-500/95 hover:bg-lime-500 text-white font-bold shadow-[0_8px_20px_rgba(132,204,22,0.3)] backdrop-blur-md border border-lime-400/50 outline-none focus:ring-2 focus:ring-lime-300 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                                 >
                                     {loading ? <Loader2 className="animate-spin" size={18} /> : <CheckCircle size={18} />}
                                     Confirmar
@@ -248,15 +250,17 @@ export function AppointmentActionModal({ isOpen, onClose, appointment, action, o
 
                     {action === 'NO_SHOW' && (
                         <div className="text-center space-y-4">
-                            <p className="text-gray-600 dark:text-gray-400">
+                            <p className="text-gray-600 text-sm">
                                 ¿Estás seguro de marcar que el paciente <strong>{appointment?.patientName}</strong> no asistió a su cita?
                             </p>
-                            <div className="flex justify-center gap-3 pt-2">
-                                <button onClick={onClose} className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg font-medium">Cancelar</button>
+                            <div className="flex justify-center gap-3 pt-4 border-t border-white/40">
+                                <button onClick={onClose} className="flex-1 py-3.5 rounded-2xl bg-white/50 border border-white/60 text-gray-700 font-bold hover:bg-white/80 transition-colors text-sm shadow-sm backdrop-blur-sm outline-none focus:ring-2 focus:ring-gray-300">
+                                    Cancelar
+                                </button>
                                 <button
                                     onClick={handleNoShow}
                                     disabled={loading}
-                                    className="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold shadow-lg shadow-orange-600/20 flex items-center gap-2"
+                                    className="flex-1 py-3.5 rounded-2xl bg-orange-500/95 hover:bg-orange-500 text-white font-bold shadow-[0_8px_20px_rgba(249,115,22,0.3)] backdrop-blur-md border border-orange-400/50 outline-none focus:ring-2 focus:ring-orange-300 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 text-sm"
                                 >
                                     {loading ? <Loader2 className="animate-spin" size={18} /> : <Ban size={18} />}
                                     Marcar No Asistió
@@ -268,21 +272,23 @@ export function AppointmentActionModal({ isOpen, onClose, appointment, action, o
                     {action === 'CANCEL' && (
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Motivo de cancelación</label>
+                                <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2">Motivo de cancelación</label>
                                 <textarea
-                                    className="w-full px-4 py-3 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-red-500 outline-none resize-none"
+                                    className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-red-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400 resize-none"
                                     rows={3}
                                     placeholder="Indica por qué se cancela la cita..."
                                     value={cancellationReason}
                                     onChange={(e) => setCancellationReason(e.target.value)}
                                 />
                             </div>
-                            <div className="flex justify-end gap-3 pt-2">
-                                <button onClick={onClose} className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg font-medium">Volver</button>
+                            <div className="flex justify-end gap-3 pt-4 border-t border-white/40">
+                                <button onClick={onClose} className="flex-1 py-3.5 rounded-2xl bg-white/50 border border-white/60 text-gray-700 font-bold hover:bg-white/80 transition-colors text-sm shadow-sm backdrop-blur-sm outline-none focus:ring-2 focus:ring-gray-300">
+                                    Volver
+                                </button>
                                 <button
                                     onClick={handleCancel}
                                     disabled={loading || !cancellationReason}
-                                    className="px-6 py-2 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 rounded-lg font-bold flex items-center gap-2 disabled:opacity-50"
+                                    className="flex-1 py-3.5 rounded-2xl bg-red-500/95 hover:bg-red-500 text-white font-bold shadow-[0_8px_20px_rgba(239,68,68,0.3)] backdrop-blur-md border border-red-400/50 outline-none focus:ring-2 focus:ring-red-300 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 text-sm"
                                 >
                                     {loading ? <Loader2 className="animate-spin" size={18} /> : <Ban size={18} />}
                                     Cancelar Cita
@@ -301,8 +307,8 @@ export function AppointmentActionModal({ isOpen, onClose, appointment, action, o
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Nueva Fecha</label>
-                                    <div className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+                                    <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2">Nueva Fecha</label>
+                                    <div className="bg-white/50 border border-white/60 rounded-3xl overflow-hidden p-4 shadow-inner backdrop-blur-sm">
                                         <CustomCalendar
                                             value={newDate ? parse(newDate, 'yyyy-MM-dd', new Date()) : null}
                                             onChange={(d) => {
@@ -316,12 +322,12 @@ export function AppointmentActionModal({ isOpen, onClose, appointment, action, o
                                     </div>
                                 </div>
                                 <div className="space-y-3">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Horarios Disponibles {newDate && <span className="text-gray-400 font-normal">({format(parse(newDate, 'yyyy-MM-dd', new Date()), 'dd/MM')})</span>}
+                                    <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2">
+                                        Horarios Disponibles {newDate && <span className="text-gray-400 font-normal normal-case">({format(parse(newDate, 'yyyy-MM-dd', new Date()), 'dd/MM')})</span>}
                                     </label>
 
                                     {!newDate ? (
-                                        <div className="text-center py-10 text-gray-400 text-sm bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                        <div className="text-center py-10 text-gray-500 text-sm bg-white/40 rounded-3xl border border-dashed border-white/60 backdrop-blur-sm font-medium">
                                             Selecciona una fecha primero
                                         </div>
                                     ) : isFetchingSlots ? (
@@ -329,7 +335,7 @@ export function AppointmentActionModal({ isOpen, onClose, appointment, action, o
                                             <Loader2 className="animate-spin mx-auto text-lime-600" />
                                         </div>
                                     ) : availableSlots.length === 0 ? (
-                                        <div className="p-4 bg-yellow-50 text-yellow-700 rounded-xl text-sm">No hay horarios.</div>
+                                        <div className="p-4 bg-yellow-50 text-yellow-700 rounded-2xl text-sm border border-yellow-200/50">No hay horarios.</div>
                                     ) : (
                                         <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto pr-1">
                                             {availableSlots.map((slot, idx) => (
@@ -337,10 +343,10 @@ export function AppointmentActionModal({ isOpen, onClose, appointment, action, o
                                                     key={idx}
                                                     onClick={() => setNewTime(slot.start)}
                                                     disabled={!slot.available}
-                                                    className={`px-2 py-2 text-sm font-medium rounded-lg border transition-all ${newTime === slot.start
-                                                        ? 'bg-lime-600 text-white border-lime-600 shadow-md'
-                                                        : 'bg-white text-gray-600 border-gray-200 hover:border-lime-400 hover:text-lime-600'
-                                                        } ${!slot.available && 'opacity-50 cursor-not-allowed bg-gray-50'}`}
+                                                    className={`px-2 py-3 text-sm font-bold rounded-2xl border transition-all ${newTime === slot.start
+                                                        ? 'border-lime-500/80 bg-lime-50 text-lime-700 shadow-[0_4px_12px_rgba(132,204,22,0.2)] ring-2 ring-lime-400/20 scale-[1.02]'
+                                                        : 'bg-white/40 text-gray-600 border-white/60 hover:bg-white/60 hover:shadow-sm'
+                                                        } ${!slot.available && 'opacity-50 cursor-not-allowed bg-white/20 border-white/30 text-gray-400'}`}
                                                 >
                                                     {slot.start}
                                                 </button>
@@ -350,21 +356,23 @@ export function AppointmentActionModal({ isOpen, onClose, appointment, action, o
                                 </div>
                             </div>
 
-                            <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+                            <div className="flex justify-between items-center pt-6 border-t border-white/40 mt-6 bg-white/30 backdrop-blur-sm -mx-6 -mb-6 p-6">
                                 <div className="text-sm">
                                     {newDate && newTime && (
-                                        <span className="flex items-center gap-2 text-lime-700 font-medium bg-lime-50 px-3 py-1 rounded-full border border-lime-100">
+                                        <span className="flex items-center gap-2 text-lime-700 font-bold bg-lime-50/70 px-4 py-2 rounded-full border border-lime-200/50 shadow-sm backdrop-blur-md">
                                             <ArrowRight size={14} />
                                             {format(new Date(new Date(newDate).getTime() + new Date(newDate).getTimezoneOffset() * 60000), "dd MMM")} a las {newTime}
                                         </span>
                                     )}
                                 </div>
                                 <div className="flex gap-3">
-                                    <button onClick={onClose} className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg font-medium">Cancelar</button>
+                                    <button onClick={onClose} className="px-6 py-3.5 rounded-2xl bg-white/50 border border-white/60 text-gray-700 font-bold hover:bg-white/80 transition-colors text-sm shadow-sm backdrop-blur-sm outline-none focus:ring-2 focus:ring-gray-300">
+                                        Cancelar
+                                    </button>
                                     <button
                                         onClick={handleReschedule}
                                         disabled={loading || !newDate || !newTime}
-                                        className="px-6 py-2 bg-lime-600 hover:bg-lime-700 text-white rounded-lg font-bold shadow-lg shadow-lime-600/20 flex items-center gap-2 disabled:opacity-50"
+                                        className="px-6 py-3.5 rounded-2xl bg-lime-500/95 hover:bg-lime-500 text-white font-bold shadow-[0_8px_20px_rgba(132,204,22,0.3)] backdrop-blur-md border border-lime-400/50 outline-none focus:ring-2 focus:ring-lime-300 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 text-sm"
                                     >
                                         {loading ? <Loader2 className="animate-spin" size={18} /> : <Calendar size={18} />}
                                         Reprogramar

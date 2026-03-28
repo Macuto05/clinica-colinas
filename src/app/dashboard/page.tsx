@@ -111,7 +111,7 @@ export default function DashboardPage() {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row gap-6">
                 {/* Welcome Card */}
-                <div className="flex-1 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <div className="flex-1 bg-white/40 backdrop-blur-md rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] border border-white/50">
                     <h1 className="text-2xl font-bold text-gray-900">
                         Hola, {displayName} 👋
                     </h1>
@@ -121,7 +121,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Billing Summary Card */}
-                <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg shadow-blue-600/20 w-full md:w-80 flex flex-col justify-between relative overflow-hidden">
+                <div className="bg-blue-600/90 backdrop-blur-xl rounded-[2.5rem] p-6 text-white shadow-[0_8px_32px_0_rgba(37,99,235,0.2)] border border-blue-400/50 w-full md:w-80 flex flex-col justify-between relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-4 opacity-10">
                         <CreditCard size={80} />
                     </div>
@@ -150,7 +150,7 @@ export default function DashboardPage() {
                         ) : (
                             <button
                                 onClick={() => handlePayClick()}
-                                className="mt-4 bg-white text-blue-700 px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-50 transition-colors w-full flex items-center justify-center gap-2 relative z-10"
+                                className="mt-4 bg-white/90 backdrop-blur-md text-blue-700 px-4 py-3 rounded-2xl text-sm font-bold hover:bg-white transition-colors w-full flex items-center justify-center gap-2 relative z-10 shadow-sm"
                             >
                                 <CreditCard size={16} /> Pagar Ahora
                             </button>
@@ -166,7 +166,7 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Quick Action: New Appointment */}
-                <div className="bg-gradient-to-br from-lime-500 to-lime-600 rounded-2xl p-6 text-white shadow-lg shadow-lime-600/20 relative overflow-hidden group cursor-pointer transition-transform hover:scale-[1.02]" onClick={() => router.push("/dashboard/citas/nueva")}>
+                <div className="bg-lime-500/95 backdrop-blur-xl rounded-3xl p-6 text-white shadow-[0_8px_20px_rgba(132,204,22,0.3)] border border-lime-400/50 relative overflow-hidden group cursor-pointer transition-transform hover:scale-[1.02]" onClick={() => router.push("/dashboard/citas/nueva")}>
                     <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                         <Calendar size={100} />
                     </div>
@@ -176,15 +176,15 @@ export default function DashboardPage() {
                         </div>
                         <h3 className="text-xl font-bold mb-1">Nueva Cita</h3>
                         <p className="text-lime-100 text-sm mb-4">Agenda una consulta con nuestros especialistas.</p>
-                        <button className="bg-white text-lime-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-lime-50 transition-colors w-full sm:w-auto">
+                        <button className="bg-white/90 backdrop-blur-md text-lime-700 px-5 py-2.5 rounded-2xl text-sm font-bold hover:bg-white hover:shadow-md transition-all w-full sm:w-auto">
                             Reservar Ahora
                         </button>
                     </div>
                 </div>
 
                 {/* Quick Action: My Appointments */}
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:border-lime-200 transition-colors cursor-pointer group" onClick={() => router.push("/dashboard/citas")}>
-                    <div className="bg-lime-50 w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:bg-lime-100 transition-colors">
+                <div className="bg-white/40 backdrop-blur-md rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] border border-white/50 hover:bg-white/60 hover:border-lime-300/50 transition-all cursor-pointer group hover:shadow-lg" onClick={() => router.push("/dashboard/citas")}>
+                    <div className="bg-lime-500/10 backdrop-blur-md border border-lime-500/20 shadow-inner w-12 h-12 rounded-full flex items-center justify-center mb-4 group-hover:bg-lime-500/20 transition-all">
                         <Calendar size={24} className="text-lime-600" />
                     </div>
                     <h3 className="text-lg font-bold text-gray-900 mb-1">Mis Citas</h3>
@@ -192,8 +192,8 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Quick Action: Profile */}
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:border-lime-200 transition-colors cursor-pointer group" onClick={() => router.push("/dashboard/perfil")}>
-                    <div className="bg-lime-50 w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:bg-lime-100 transition-colors">
+                <div className="bg-white/40 backdrop-blur-md rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] border border-white/50 hover:bg-white/60 hover:border-lime-300/50 transition-all cursor-pointer group hover:shadow-lg" onClick={() => router.push("/dashboard/perfil")}>
+                    <div className="bg-lime-500/10 backdrop-blur-md border border-lime-500/20 shadow-inner w-12 h-12 rounded-full flex items-center justify-center mb-4 group-hover:bg-lime-500/20 transition-all">
                         <UserIcon size={24} className="text-lime-600" />
                     </div>
                     <h3 className="text-lg font-bold text-gray-900 mb-1">Mi Perfil</h3>
@@ -202,16 +202,16 @@ export default function DashboardPage() {
             </div>
 
             {/* Recent Activity / Next Appointment */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            <div className="bg-white/40 backdrop-blur-md rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] border border-white/50">
                 <h2 className="text-lg font-bold text-gray-900 mb-4">Próxima Cita</h2>
                 {isLoadingNextAppt ? (
                     <div className="text-center py-8">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-lime-600 mx-auto"></div>
                     </div>
                 ) : nextAppointment ? (
-                    <div className="bg-lime-50 border border-lime-100 rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div className="bg-white/50 backdrop-blur-md border border-white/60 rounded-3xl p-5 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                         <div className="flex items-start gap-4">
-                            <div className="bg-white p-3 rounded-lg shadow-sm">
+                            <div className="bg-white/70 backdrop-blur-sm p-3 rounded-2xl border border-white/80 shadow-sm">
                                 <Calendar className="text-lime-600" size={24} />
                             </div>
                             <div>
@@ -249,7 +249,7 @@ export default function DashboardPage() {
                             ) : (
                                 <button
                                     onClick={() => handlePayClick()}
-                                    className="bg-lime-600 text-white font-semibold text-sm px-6 py-2 rounded-lg hover:bg-lime-700 transition-colors shadow-sm flex items-center gap-2"
+                                    className="bg-lime-500/95 text-white font-bold text-sm px-6 py-3 rounded-2xl hover:bg-lime-600 transition-colors shadow-[0_4px_12px_rgba(132,204,22,0.3)] border border-lime-400/50 flex items-center gap-2"
                                 >
                                     <CreditCard size={16} />
                                     Pagar
@@ -258,12 +258,12 @@ export default function DashboardPage() {
                         )}
                     </div>
                 ) : (
-                    <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                        <Calendar size={48} className="mx-auto text-gray-300 mb-3" />
-                        <p className="text-gray-500 font-medium">No tienes citas programadas próximamente</p>
+                    <div className="text-center py-10 bg-white/30 backdrop-blur-sm rounded-3xl border border-dashed border-white/60">
+                        <Calendar size={48} className="mx-auto text-gray-400/80 mb-3" />
+                        <p className="text-gray-500 font-bold">No tienes citas programadas próximamente</p>
                         <button
                             onClick={() => router.push("/dashboard/citas/nueva")}
-                            className="text-lime-600 text-sm font-semibold hover:underline mt-2"
+                            className="text-lime-700 text-sm font-bold bg-white/50 px-5 py-2.5 rounded-2xl border border-white/60 shadow-[0_4px_12px_rgba(0,0,0,0.02)] hover:bg-white hover:shadow-md transition-all mt-4"
                         >
                             Agendar una cita
                         </button>

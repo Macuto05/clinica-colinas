@@ -231,128 +231,180 @@ export default function NewAppointmentPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
-            <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-                <h1 className="text-2xl font-bold text-gray-900 mb-6">Nueva Cita</h1>
-
-                {error && (
-                    <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg flex items-center gap-2">
-                        <AlertCircle size={20} />
-                        {error}
+        <div className="flex justify-center p-4 sm:p-6 md:p-8 animate-in fade-in duration-300">
+            <div className="bg-white/70 backdrop-blur-2xl w-full max-w-2xl rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.12)] border border-white/60 flex flex-col overflow-hidden">
+                
+                {/* Header */}
+                <div className="p-6 sm:p-8 border-b border-white/40 bg-white/30 backdrop-blur-md flex items-center justify-between shrink-0">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Nueva Cita</h1>
+                        <p className="text-sm text-gray-500/80 font-medium tracking-wider mt-1">Agenda una consulta con nuestros especialistas</p>
                     </div>
-                )}
-
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Specialty */}
-                    <Select
-                        label="Especialidad"
-                        value={selectedSpeciality}
-                        onChange={(e) => setSelectedSpeciality(e.target.value)}
-                        placeholder="Selecciona una especialidad"
-                        options={specialities.map(s => ({ value: s.id.toString(), label: s.name }))}
-                    />
-
-                    {/* Doctor */}
-                    <Select
-                        label="Médico"
-                        value={selectedDoctor}
-                        onChange={(e) => handleDoctorChange(e.target.value)}
-                        disabled={!selectedSpeciality}
-                        placeholder="Selecciona un médico"
-                        options={doctors.map(d => ({ value: d.id.toString(), label: `Dr. ${d.firstName} ${d.lastName}` }))}
-                    />
-
-
-
-                    {/* Date Selection - Inline Calendar */}
-                    <div className="space-y-4">
-                        <label className="block text-sm font-medium text-gray-700">Selecciona Fecha</label>
-                        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                            <CustomCalendar
-                                value={selectedDate ? parse(selectedDate, 'yyyy-MM-dd', new Date()) : null}
-                                onChange={(date) => {
-                                    setSelectedDate(format(date, 'yyyy-MM-dd'));
-                                    // Reset slot when date changes
-                                    setSelectedSlot("");
-                                    setAvailableSlots([]);
-                                }}
-                                doctorId={selectedDoctor}
-                            />
-                        </div>
+                    <div className="w-12 h-12 bg-lime-500/10 rounded-full border border-lime-500/20 shadow-inner flex items-center justify-center">
+                        <Calendar className="text-lime-600 w-6 h-6" />
                     </div>
+                </div>
 
-                    {/* Available Slots Section (appears when date is selected) */}
-                    {selectedDoctor && selectedDate && (
-                        <div className="space-y-3 animate-in fade-in slide-in-from-top-4 duration-300">
-                            <div className="flex items-center gap-2 text-gray-800">
-                                <Clock className="w-5 h-5 text-lime-600" />
-                                <h3 className="font-medium">Horarios Disponibles para el {format(parse(selectedDate, 'yyyy-MM-dd', new Date()), "d 'de' MMMM", { locale: es })}</h3>
+                {/* Form Body */}
+                <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
+                    <div className="p-6 sm:p-8 space-y-6">
+                        
+                        {error && (
+                            <div className="p-4 bg-red-50 text-red-700/90 rounded-2xl flex items-center gap-2 border border-red-200/50 shadow-sm backdrop-blur-md">
+                                <AlertCircle size={20} />
+                                <span className="text-sm font-bold">{error}</span>
+                            </div>
+                        )}
+
+                        {/* Section 1: Especialidad y Médico */}
+                        <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-5 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] space-y-4">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="w-7 h-7 rounded-full bg-gray-900/90 text-white shadow-md text-xs font-black flex items-center justify-center shrink-0">1</span>
+                                <h4 className="font-bold text-gray-800 text-base">Especialidad y Médico</h4>
                             </div>
 
-                            {isFetchingSlots ? (
-                                <div className="p-8 text-center bg-gray-50 rounded-lg border border-gray-100">
-                                    <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-lime-600 mb-2"></div>
-                                    <p className="text-sm text-gray-500">Buscando horarios...</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2 block">Especialidad</label>
+                                    <select
+                                        value={selectedSpeciality}
+                                        onChange={(e) => setSelectedSpeciality(e.target.value)}
+                                        className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all text-gray-800 cursor-pointer"
+                                    >
+                                        <option value="" disabled>Selecciona especialidad</option>
+                                        {specialities.map(s => (
+                                            <option key={s.id} value={s.id.toString()}>{s.name}</option>
+                                        ))}
+                                    </select>
                                 </div>
-                            ) : availableSlots.length > 0 ? (
-                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                                    {availableSlots.map((slot, idx) => (
-                                        <button
-                                            key={idx}
-                                            type="button"
-                                            disabled={!slot.available}
-                                            onClick={() => setSelectedSlot(slot.start)}
-                                            className={`
-                                                relative px-4 py-3 text-sm font-semibold rounded-xl border transition-all duration-200 flex flex-col items-center gap-1
-                                                ${selectedSlot === slot.start
-                                                    ? "bg-lime-600 text-white border-lime-600 shadow-lg scale-105 ring-2 ring-lime-200"
-                                                    : slot.available
-                                                        ? "bg-white text-gray-700 border-gray-200 hover:border-lime-500 hover:text-lime-700 hover:bg-lime-50 hover:shadow-md"
-                                                        : "bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed"}
-                                            `}
-                                        >
-                                            <span className="text-base">{slot.start}</span>
-                                        </button>
-                                    ))}
+                                <div>
+                                    <label className="text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2 block">Médico</label>
+                                    <select
+                                        value={selectedDoctor}
+                                        onChange={(e) => handleDoctorChange(e.target.value)}
+                                        disabled={!selectedSpeciality}
+                                        className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all text-gray-800 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <option value="" disabled>Selecciona un médico</option>
+                                        {doctors.map(d => (
+                                            <option key={d.id} value={d.id.toString()}>Dr. {d.firstName} {d.lastName}</option>
+                                        ))}
+                                    </select>
                                 </div>
-                            ) : (
-                                <div className="p-6 bg-red-50 text-red-700 rounded-xl border border-red-100 flex items-center justify-center gap-2">
-                                    <AlertCircle className="w-5 h-5" />
-                                    <span>No hay horarios disponibles para esta fecha.</span>
-                                </div>
-                            )}
-                        </div>
-                    )}
+                            </div>
+                        </section>
 
-                    {/* Reason */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Motivo de consulta</label>
-                        <textarea
-                            rows={3}
-                            value={reason}
-                            onChange={(e) => setReason(e.target.value)}
-                            placeholder="Describe brevemente tus síntomas..."
-                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-lime-500 focus:ring-lime-500 px-4 py-2 border bg-white/50 backdrop-blur-sm transition-all duration-200"
-                        />
+                        {/* Section 2: Fecha y Hora */}
+                        <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-5 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] space-y-4">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="w-7 h-7 rounded-full bg-gray-900/90 text-white shadow-md text-xs font-black flex items-center justify-center shrink-0">2</span>
+                                <h4 className="font-bold text-gray-800 text-base">Fecha y Hora</h4>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2 block">Selecciona la Fecha</label>
+                                    <div className="bg-white/50 rounded-[1.5rem] border border-white/60 shadow-sm overflow-hidden p-2">
+                                        <CustomCalendar
+                                            value={selectedDate ? parse(selectedDate, 'yyyy-MM-dd', new Date()) : null}
+                                            onChange={(date) => {
+                                                setSelectedDate(format(date, 'yyyy-MM-dd'));
+                                                setSelectedSlot("");
+                                                setAvailableSlots([]);
+                                            }}
+                                            doctorId={selectedDoctor}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Available Slots Section */}
+                                {selectedDoctor && selectedDate && (
+                                    <div className="space-y-3 animate-in fade-in slide-in-from-top-4 duration-300 pt-2">
+                                        <div className="flex items-center gap-2 text-gray-800">
+                                            <Clock className="w-5 h-5 text-lime-600" />
+                                            <h3 className="font-bold text-sm">Disponibilidad para el {format(parse(selectedDate, 'yyyy-MM-dd', new Date()), "d 'de' MMMM", { locale: es })}</h3>
+                                        </div>
+
+                                        {isFetchingSlots ? (
+                                            <div className="p-8 text-center bg-white/30 backdrop-blur-sm rounded-2xl border border-white/50 shadow-inner">
+                                                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-lime-600 mb-2"></div>
+                                                <p className="text-sm font-bold text-gray-500">Buscando horarios...</p>
+                                            </div>
+                                        ) : availableSlots.length > 0 ? (
+                                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                                                {availableSlots.map((slot, idx) => (
+                                                    <button
+                                                        key={idx}
+                                                        type="button"
+                                                        disabled={!slot.available}
+                                                        onClick={() => setSelectedSlot(slot.start)}
+                                                        className={`
+                                                            relative px-4 py-3 text-sm font-bold rounded-2xl border transition-all duration-200 flex flex-col items-center gap-1 focus:outline-none
+                                                            ${selectedSlot === slot.start
+                                                                ? "border-lime-500/80 bg-lime-50 text-lime-700 shadow-[0_4px_12px_rgba(132,204,22,0.2)] ring-2 ring-lime-400/20 scale-[1.02]"
+                                                                : slot.available
+                                                                    ? "border-white/60 bg-white/40 text-gray-500 opacity-80 hover:opacity-100 hover:bg-white/60 shadow-sm"
+                                                                    : "bg-gray-100/50 text-gray-300 border-white/40 cursor-not-allowed"}
+                                                        `}
+                                                    >
+                                                        <span className="text-base tracking-wide">{slot.start}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="p-5 bg-red-50 text-red-700/80 rounded-2xl border border-red-200 flex items-center justify-center gap-2 shadow-sm font-bold text-sm">
+                                                <AlertCircle className="w-5 h-5" />
+                                                <span>No hay horarios disponibles para esta fecha.</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </section>
+
+                        {/* Section 3: Motivo */}
+                        <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-5 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] space-y-4">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="w-7 h-7 rounded-full bg-gray-900/90 text-white shadow-md text-xs font-black flex items-center justify-center shrink-0">3</span>
+                                <h4 className="font-bold text-gray-800 text-base">Motivo de consulta</h4>
+                            </div>
+                            <div>
+                                <textarea
+                                    rows={3}
+                                    value={reason}
+                                    onChange={(e) => setReason(e.target.value)}
+                                    placeholder="Describe brevemente tus síntomas o motivo de consulta..."
+                                    className="w-full px-5 py-4 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400 resize-none text-gray-800"
+                                />
+                            </div>
+                        </section>
                     </div>
 
-                    <div className="pt-4 flex gap-3">
-                        <Button
+                    {/* Footer Actions */}
+                    <div className="p-6 sm:p-8 border-t border-white/40 flex gap-3 shrink-0 bg-white/30 backdrop-blur-md">
+                        <button
                             type="button"
-                            variant="outline"
                             onClick={() => router.back()}
-                            className="flex-1"
+                            className="flex-1 py-3.5 rounded-2xl bg-white/50 border border-white/60 text-gray-700 font-bold hover:bg-white/80 transition-colors text-sm shadow-sm backdrop-blur-sm outline-none focus:ring-2 focus:ring-gray-300"
                         >
                             Cancelar
-                        </Button>
-                        <Button
+                        </button>
+                        <button
                             type="submit"
-                            isLoading={isLoading}
-                            disabled={!selectedSlot}
-                            className="flex-1"
+                            disabled={!selectedSlot || isLoading}
+                            className={`flex-1 py-3.5 rounded-2xl font-bold transition-all text-sm flex items-center justify-center gap-2 outline-none
+                                ${!selectedSlot || isLoading 
+                                    ? "bg-gray-100 text-gray-400 border border-white/40 cursor-not-allowed shadow-none" 
+                                    : "bg-red-500/95 hover:bg-red-500 text-white shadow-[0_8px_20px_rgba(239,68,68,0.3)] border border-red-400/50 focus:ring-2 focus:ring-red-300"
+                                }
+                            `}
                         >
-                            Confirmar Cita
-                        </Button>
+                            {isLoading ? (
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                            ) : (
+                                "Confirmar Cita"
+                            )}
+                        </button>
                     </div>
                 </form>
             </div>

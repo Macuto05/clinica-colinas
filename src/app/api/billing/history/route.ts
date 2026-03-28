@@ -141,6 +141,7 @@ export async function GET(req: Request) {
                 concept: formatConcept(f.cita),
                 amountTotal: amountTotal,
                 amountPending: amountPending, // 0 if Paid/Annulled
+                amountInsured: Number((f as any).montoAsegurado || 0),
                 status: f.estadoFactura,
                 rawDate: f.fechaEmision
             });

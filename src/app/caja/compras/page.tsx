@@ -123,16 +123,16 @@ export default function CajaComprasPage() {
 
             {/* Pending Section */}
             <div>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                    <Clock size={20} className="text-yellow-500" />
+                <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2 tracking-tight">
+                    <Clock size={20} className="text-yellow-500 drop-shadow-sm" />
                     Solicitudes Pendientes ({pendingPedidos.length})
                 </h2>
 
                 <div className="space-y-4">
                     {isLoading ? (
-                        <div className="p-4 text-center text-gray-500">Cargando pedidos...</div>
+                        <div className="p-8 text-center text-gray-500 font-medium bg-white/40 backdrop-blur-md rounded-3xl border border-white/50">Cargando pedidos...</div>
                     ) : pendingPedidos.length === 0 ? (
-                        <p className="text-gray-400 italic">No hay solicitudes pendientes.</p>
+                        <p className="p-8 text-center text-gray-400 font-medium italic bg-white/40 backdrop-blur-md rounded-3xl border border-white/50 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">No hay solicitudes pendientes.</p>
                     ) : (
                         pendingPedidos.map(pedido => (
                             <PedidoCard
@@ -148,14 +148,14 @@ export default function CajaComprasPage() {
                 </div>
             </div>
 
-            <div className="border-t border-gray-200 dark:border-zinc-800" />
+            <div className="border-t border-white/40" />
 
             {/* History Section */}
             <div>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Historial Reciente</h2>
-                <div className="space-y-4 opacity-75">
+                <h2 className="text-lg font-bold text-gray-800 mb-4 tracking-tight">Historial Reciente</h2>
+                <div className="space-y-4 opacity-75 grayscale-[0.2]">
                     {historyPedidos.length === 0 ? (
-                        <p className="text-gray-400 italic">No hay historial.</p>
+                        <p className="p-8 text-center text-gray-400 font-medium italic bg-white/40 backdrop-blur-md rounded-3xl border border-white/50 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">No hay historial.</p>
                     ) : (
                         historyPedidos.slice(0, 5).map(pedido => (
                             <PedidoCard
@@ -184,65 +184,67 @@ export default function CajaComprasPage() {
 
 function PedidoCard({ pedido, isExpanded, isProcessing, onToggle, onAction, readOnly = false }: any) {
     return (
-        <div className={`bg-white dark:bg-zinc-900 rounded-xl border transition-all ${isExpanded ? 'border-lime-500 shadow-md' : 'border-gray-200 dark:border-zinc-800'}`}>
-            <div className="p-4 flex items-center justify-between cursor-pointer" onClick={onToggle}>
+        <div className={`bg-white/40 backdrop-blur-md rounded-3xl border transition-all shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] hover:shadow-[0_8px_32px_0_rgba(0,0,0,0.06)] overflow-hidden ${isExpanded ? 'border-lime-400 shadow-[0_8px_32px_0_rgba(132,204,22,0.1)] bg-white/60' : 'border-white/50'}`}>
+            <div className="p-5 flex items-center justify-between cursor-pointer" onClick={onToggle}>
                 <div className="flex items-center gap-4">
-                    <div className={`p-2 rounded-full ${pedido.estado === 'PENDIENTE' ? 'bg-yellow-100 text-yellow-600' : (pedido.estado === 'APROBADO' || pedido.estado === 'DESPACHADO') ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                    <div className={`p-2.5 rounded-2xl shadow-inner border border-white/60 ${pedido.estado === 'PENDIENTE' ? 'bg-yellow-50/80 text-yellow-600' : (pedido.estado === 'APROBADO' || pedido.estado === 'DESPACHADO') ? 'bg-green-50/80 text-green-600' : 'bg-red-50/80 text-red-600'}`}>
                         {pedido.estado === 'PENDIENTE' ? <Clock size={20} /> : (pedido.estado === 'APROBADO' || pedido.estado === 'DESPACHADO') ? <CheckCircle size={20} /> : <XCircle size={20} />}
                     </div>
                     <div>
-                        <h3 className="font-bold text-gray-900 dark:text-white">Pedido #{pedido.pedidoId}</h3>
-                        <p className="text-xs text-gray-500">Solicitado por: {pedido.solicitante.email} • {new Date(pedido.fechaSolicitud).toLocaleDateString()}</p>
+                        <h3 className="font-bold text-gray-900 text-base">Pedido #{pedido.pedidoId}</h3>
+                        <p className="text-xs font-bold text-gray-500/80 uppercase tracking-wider mt-0.5">Solicitado por: {pedido.solicitante.email} • {new Date(pedido.fechaSolicitud).toLocaleDateString()}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                    <span className="inline-flex items-center gap-1 text-xs font-bold bg-white/50 text-gray-700 border border-white/60 rounded-full px-3 py-1.5 shadow-sm backdrop-blur-sm">
                         {pedido.detalles.length} Items
                     </span>
-                    {isExpanded ? <ChevronUp size={20} className="text-gray-400" /> : <ChevronDown size={20} className="text-gray-400" />}
+                    <div className="p-1.5 bg-white/50 rounded-full border border-white/60 text-gray-500">
+                        {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                    </div>
                 </div>
             </div>
 
             {isExpanded && (
-                <div className="p-4 border-t border-gray-100 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-800/30">
+                <div className="p-6 border-t border-white/40 bg-white/30 backdrop-blur-md">
                     <div className="mb-4">
-                        <h4 className="text-xs font-semibold uppercase text-gray-500 mb-2">Detalle de Insumos</h4>
-                        <div className="grid grid-cols-1 gap-2">
+                        <h4 className="text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-3">Detalle de Insumos</h4>
+                        <div className="grid grid-cols-1 gap-2.5">
                             {pedido.detalles.map((d: any) => (
-                                <div key={d.detalleId} className="flex justify-between text-sm bg-white dark:bg-zinc-900 p-2 rounded border border-gray-100 dark:border-zinc-700">
-                                    <span className="text-gray-800 dark:text-gray-200">{d.insumo.nombre}</span>
-                                    <span className="font-mono font-medium text-gray-600 dark:text-gray-400">
+                                <div key={d.detalleId} className="flex justify-between items-center text-sm bg-white/50 border border-white/60 p-3.5 rounded-2xl shadow-inner transition-colors hover:bg-white/70">
+                                    <span className="font-bold text-gray-800">{d.insumo.nombre}</span>
+                                    <span className="font-black text-lime-700 bg-lime-50/80 px-2.5 py-1.5 rounded-xl border border-lime-200/50 shadow-sm">
                                         {d.cantidad} {d.insumo.unidadMedida}
                                     </span>
                                 </div>
                             ))}
                         </div>
                         {pedido.observaciones && (
-                            <div className="mt-3 text-sm text-gray-600 italic">
-                                " {pedido.observaciones} "
+                            <div className="mt-4 p-4 rounded-2xl bg-white/40 border border-white/50 text-sm font-medium text-gray-600 italic shadow-inner">
+                                "{pedido.observaciones}"
                             </div>
                         )}
                     </div>
 
                     {!readOnly && (
-                        <div className="flex gap-3 justify-end mt-4">
-                            <Button
-                                variant="danger"
-                                size="sm"
+                        <div className="flex gap-3 justify-end mt-6">
+                            <button
+                                type="button"
+                                disabled={isProcessing}
                                 onClick={(e: any) => { e.stopPropagation(); onAction(pedido.pedidoId, "RECHAZADO"); }}
-                                isLoading={isProcessing}
+                                className="px-6 py-2.5 rounded-2xl bg-white/50 border border-red-200 text-red-600 font-bold hover:bg-red-50 transition-colors text-sm shadow-sm backdrop-blur-sm outline-none focus:ring-2 focus:ring-red-300 disabled:opacity-50"
                             >
                                 Rechazar
-                            </Button>
-                            <Button
-                                variant="primary"
-                                size="sm"
+                            </button>
+                            <button
+                                type="button"
+                                disabled={isProcessing}
                                 onClick={(e: any) => { e.stopPropagation(); onAction(pedido.pedidoId, "APROBADO"); }}
-                                isLoading={isProcessing}
-                                leftIcon={<CheckCircle size={16} />}
+                                className="px-6 py-2.5 rounded-2xl bg-lime-500/95 hover:bg-lime-500 text-white font-bold shadow-[0_8px_20px_rgba(132,204,22,0.3)] backdrop-blur-md border border-lime-400/50 outline-none focus:ring-2 focus:ring-lime-300 transition-colors flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed text-sm"
                             >
-                                Aprobar Pedido
-                            </Button>
+                                <CheckCircle size={18} />
+                                {isProcessing ? "Procesando..." : "Aprobar Pedido"}
+                            </button>
                         </div>
                     )}
                 </div>

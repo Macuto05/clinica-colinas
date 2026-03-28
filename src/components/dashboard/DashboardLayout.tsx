@@ -37,7 +37,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     const isActive = (path: string) => pathname === path;
 
     return (
-        <div className="min-h-screen bg-gray-50 flex">
+        <div className="min-h-screen bg-gradient-to-br from-slate-100 via-green-50/30 to-lime-50/30 flex">
             {/* Mobile Menu Overlay */}
             {isMobileMenuOpen && (
                 <div
@@ -49,13 +49,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             {/* Sidebar */}
             <aside
                 className={`
-                    fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out
+                    fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white/60 backdrop-blur-xl border-r border-white/50 shadow-[2px_0_16px_0_rgba(0,0,0,0.06)] transform transition-transform duration-200 ease-in-out
                     ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
                 `}
             >
                 <div className="h-full flex flex-col">
                     {/* Logo */}
-                    <div className="h-16 flex items-center px-6 border-b border-gray-100">
+                    <div className="h-16 flex items-center px-6 border-b border-white/50">
                         <Link href="/" className="flex items-center gap-2">
                             <div className="relative h-8 w-32 transition-transform hover:scale-105">
                                 <img
@@ -68,9 +68,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     </div>
 
                     {/* User Profile Summary */}
-                    <div className="p-4 border-b border-gray-100 bg-gray-50/50">
+                    <div className="p-4 border-b border-white/50 bg-white/30 backdrop-blur-md">
                         <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-lime-100 flex items-center justify-center text-lime-700 font-bold border-2 border-white shadow-sm">
+                            <div className="h-10 w-10 rounded-full bg-lime-500/10 flex items-center justify-center text-lime-700 font-black shadow-inner border border-lime-500/20 backdrop-blur-md">
                                 {user?.name?.charAt(0) || "U"}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -94,10 +94,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                                     href={item.href}
                                     onClick={() => setIsMobileMenuOpen(false)}
                                     className={`
-                                        flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group
+                                        flex items-center gap-3 px-3 py-2.5 rounded-2xl border text-sm font-bold transition-all duration-200 group
                                         ${active
-                                            ? "bg-lime-50 text-lime-700 shadow-sm ring-1 ring-lime-200"
-                                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                            ? "border-lime-500/80 bg-lime-50/80 text-lime-700 shadow-[0_4px_12px_rgba(132,204,22,0.2)] ring-2 ring-lime-400/20 scale-[1.02] backdrop-blur-sm"
+                                            : "border-transparent bg-transparent text-gray-500/80 hover:bg-white/50 hover:border-white/60 hover:text-gray-700 hover:shadow-sm"
                                         }
                                     `}
                                 >
@@ -116,10 +116,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     </nav>
 
                     {/* Logout */}
-                    <div className="p-4 border-t border-gray-100">
+                    <div className="p-4 border-t border-white/50 bg-white/30 backdrop-blur-md">
                         <button
                             onClick={() => logout()}
-                            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-2xl border border-transparent text-sm font-bold text-red-600 hover:bg-white/60 hover:border-white/80 hover:shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-red-200"
                         >
                             <LogOut size={20} />
                             Cerrar Sesión
@@ -131,10 +131,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             {/* Main Content */}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 {/* Mobile Header */}
-                <header className="lg:hidden h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4">
+                <header className="lg:hidden h-16 bg-white/60 backdrop-blur-xl border-b border-white/50 flex items-center justify-between px-4">
                     <button
                         onClick={() => setIsMobileMenuOpen(true)}
-                        className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                        className="p-2 -ml-2 text-gray-600 hover:bg-white/60 rounded-xl transition-colors"
                     >
                         <Menu size={24} />
                     </button>

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { MoreVertical, Edit, Trash, Lock } from "lucide-react";
+import { MoreVertical, Edit, Trash, Lock, Shield } from "lucide-react";
 import PatientForm from "./PatientForm";
 import { Modal } from "@/components/ui/Modal";
+import PatientInsuranceSection from "@/components/insurance/PatientInsuranceSection";
 
 interface PatientActionsProps {
     patient: any; // Type strictly later
@@ -12,6 +13,7 @@ interface PatientActionsProps {
 export default function PatientActions({ patient }: PatientActionsProps) {
     const [showOptions, setShowOptions] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showInsuranceModal, setShowInsuranceModal] = useState(false);
 
     return (
         <div className="relative">
@@ -40,14 +42,16 @@ export default function PatientActions({ patient }: PatientActionsProps) {
                             <Edit className="w-4 h-4" />
                             Editar Perfil
                         </button>
-
-                        {/* Future options placeholder */}
-                        {/* 
-                <button className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2">
-                    <Trash className="w-4 h-4" />
-                    Eliminar
-                </button>
-                */}
+                        <button
+                            onClick={() => {
+                                setShowInsuranceModal(true);
+                                setShowOptions(false);
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700 flex items-center gap-2"
+                        >
+                            <Shield className="w-4 h-4" />
+                            Seguros Médicos
+                        </button>
                     </div>
                 </>
             )}
@@ -63,6 +67,16 @@ export default function PatientActions({ patient }: PatientActionsProps) {
                     onClose={() => setShowEditModal(false)}
                 />
             </Modal>
+
+            {/* Insurance Modal */}
+            <Modal
+                isOpen={showInsuranceModal}
+                onClose={() => setShowInsuranceModal(false)}
+                title={`Seguros Médicos — ${patient.nombres} ${patient.apellidos}`}
+            >
+                <PatientInsuranceSection pacienteId={patient.pacienteId} />
+            </Modal>
         </div>
     );
 }
+

@@ -31,10 +31,19 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
                 }
             });
 
-            // 3. Update Invoice Balance
-            const currentBalance = Number(pago.factura.saldoPendiente);
+            // 3. Update Invoice Balance (accounting for insurance coverage)
+            const invoiceTotal = Number(pago.factura.total);
+            const insuredAmount = Number(pago.factura.montoAsegurado || 0);
             const paymentAmount = Number(pago.monto);
-            const newBalance = currentBalance - paymentAmount;
+
+            // Get ALL validated payments for this invoice (including this one being approved)
+            const allValidatedPayments = await tx.pago.findMany({
+                where: { facturaId: pago.facturaId, estadoPago: 'VALIDADO' }
+            });
+            const totalValidatedPayments = allValidatedPayments.reduce((sum, p) => sum + Number(p.monto), 0) + paymentAmount;
+
+            // New balance = total - insured - all validated payments
+            const newBalance = Math.max(0, invoiceTotal - insuredAmount - totalValidatedPayments);
 
             // Determine new Invoice Status
             let newStatus = pago.factura.estadoFactura;

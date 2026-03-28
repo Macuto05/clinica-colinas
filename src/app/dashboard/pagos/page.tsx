@@ -95,24 +95,24 @@ export default function FinancialHistoryPage() {
         switch (status) {
             case 'VALIDADO':
             case 'PAGADA':
-                return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-100"><CheckCircle size={12} /> Pagada</span>;
+                return <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-800 border border-emerald-500/30 backdrop-blur-sm shadow-inner"><CheckCircle size={12} /> Pagada</span>;
 
             case 'PENDIENTE':
-                return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-yellow-50 text-yellow-600 border border-yellow-100"><History size={12} /> Pendiente</span>;
+                return <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-800 border border-amber-500/30 backdrop-blur-sm shadow-inner"><History size={12} /> Pendiente</span>;
 
             case 'POR PAGAR':
             case 'PARCIAL':
             case 'RESTANTE':
-                return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-600 border border-red-100"><AlertCircle size={12} /> Parcial</span>;
+                return <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-800 border border-rose-500/30 backdrop-blur-sm shadow-inner"><AlertCircle size={12} /> Parcial</span>;
 
             case 'ANULADA':
-                return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-500 border border-gray-200"><Ban size={12} /> Anulada</span>;
+                return <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-white/40 text-gray-600 border border-white/60 backdrop-blur-sm shadow-sm"><Ban size={12} /> Anulada</span>;
 
             case 'RECHAZADO':
-                return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-600 border border-red-100"><XCircle size={12} /> Rechazado</span>;
+                return <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-red-500/20 text-red-800 border border-red-500/30 backdrop-blur-sm shadow-inner"><XCircle size={12} /> Rechazado</span>;
 
             default:
-                return <span className="px-2 py-1 bg-gray-50 text-gray-600 rounded-full text-xs font-bold border border-gray-200">{status}</span>;
+                return <span className="px-3 py-1.5 bg-white/40 text-gray-700 rounded-full text-xs font-bold border border-white/60 backdrop-blur-sm shadow-sm">{status}</span>;
         }
     };
 
@@ -137,30 +137,33 @@ export default function FinancialHistoryPage() {
                     <p className="text-gray-500">Gestiona tus pagos pendientes y revisa tu historial.</p>
                 </div>
 
-                <div className="flex gap-4">
-                    <div className="bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3">
-                        <div className="bg-green-100 p-2 rounded-lg text-green-600">
-                            <CheckCircle size={20} />
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="bg-white/50 backdrop-blur-md px-5 py-3 rounded-2xl shadow-sm border border-white/60 flex items-center gap-4 transition-all hover:bg-white/60">
+                        <div className="bg-emerald-500/10 p-2.5 rounded-xl text-emerald-700 border border-emerald-500/20 shadow-inner block">
+                            <CheckCircle size={22} className="opacity-90" />
                         </div>
                         <div>
-                            <p className="text-xs text-gray-500 font-bold uppercase">Total Pagado</p>
-                            <p className="text-lg font-bold text-gray-900">${summary.totalPagado.toFixed(2)}</p>
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-0.5">Total Pagado</p>
+                            <p className="text-xl font-bold text-gray-900 leading-none">${summary.totalPagado.toFixed(2)}</p>
                         </div>
                     </div>
-                    <div className="bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3">
-                        <div className="bg-red-50 p-2 rounded-lg text-red-500">
-                            <AlertCircle size={20} />
+                    <div className="bg-white/50 backdrop-blur-md px-5 py-3 rounded-2xl shadow-sm border border-white/60 flex items-center gap-4 transition-all hover:bg-white/60">
+                        <div className="bg-rose-500/10 p-2.5 rounded-xl text-rose-700 border border-rose-500/20 shadow-inner block">
+                            <AlertCircle size={22} className="opacity-90" />
                         </div>
                         <div>
-                            <p className="text-xs text-gray-500 font-bold uppercase">Por Pagar</p>
-                            <p className="text-lg font-bold text-gray-900">${summary.totalPendiente.toFixed(2)}</p>
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-0.5">Por Pagar</p>
+                            <p className="text-xl font-bold text-gray-900 leading-none">${summary.totalPendiente.toFixed(2)}</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Tabs */}
-            <div className="bg-white rounded-t-xl border-b border-gray-200 px-4 pt-4 flex gap-6">
+            {/* Main Content Card */}
+            <div className="bg-white/40 backdrop-blur-md rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.06)] border border-white/50 overflow-hidden flex flex-col">
+                
+                {/* Tabs */}
+                <div className="bg-white/30 backdrop-blur-sm border-b border-white/50 px-6 sm:px-8 pt-6 flex gap-8">
                 <button
                     onClick={() => setActiveTab('debts')}
                     className={`pb-4 px-2 text-sm font-semibold transition-colors border-b-2 flex items-center gap-2 ${activeTab === 'debts'
@@ -201,17 +204,17 @@ export default function FinancialHistoryPage() {
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="bg-gray-50/50 border-b border-gray-100">
-                                    <th className="p-5 text-xs font-semibold text-gray-400 uppercase tracking-wider">ID Factura</th>
-                                    <th className="p-5 text-xs font-semibold text-gray-400 uppercase tracking-wider">Fecha</th>
-                                    <th className="p-5 text-xs font-semibold text-gray-400 uppercase tracking-wider">Concepto</th>
-                                    <th className="p-5 text-xs font-semibold text-gray-400 uppercase tracking-wider text-right">Total ($)</th>
-                                    <th className="p-5 text-xs font-semibold text-gray-400 uppercase tracking-wider text-right">Restante ($)</th>
-                                    <th className="p-5 text-xs font-semibold text-gray-400 uppercase tracking-wider text-right">Estado</th>
-                                    <th className="p-5 text-xs font-semibold text-gray-400 uppercase tracking-wider text-center">Acción</th>
+                                <tr className="bg-white/50 border-b border-white/60 backdrop-blur-md">
+                                    <th className="p-5 px-6 text-xs font-black text-gray-500 uppercase tracking-wider">ID Factura</th>
+                                    <th className="p-5 px-6 text-xs font-black text-gray-500 uppercase tracking-wider">Fecha</th>
+                                    <th className="p-5 px-6 text-xs font-black text-gray-500 uppercase tracking-wider">Concepto</th>
+                                    <th className="p-5 px-6 text-xs font-black text-gray-500 uppercase tracking-wider text-right">Total ($)</th>
+                                    <th className="p-5 px-6 text-xs font-black text-gray-500 uppercase tracking-wider text-right">Restante ($)</th>
+                                    <th className="p-5 px-6 text-xs font-black text-gray-500 uppercase tracking-wider text-right">Estado</th>
+                                    <th className="p-5 px-6 text-xs font-black text-gray-500 uppercase tracking-wider text-center">Acción</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-50">
+                            <tbody className="divide-y divide-white/30">
                                 {debts.length === 0 ? (
                                     <tr>
                                         <td colSpan={7} className="p-12 text-center text-gray-400">
@@ -230,12 +233,12 @@ export default function FinancialHistoryPage() {
                                         const isFullyInReview = maxPayable <= 0.01; // Epsilon for float
 
                                         return (
-                                            <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
-                                                <td className="p-5 text-sm font-mono text-gray-500">#{item.numeroFactura !== '-' ? item.numeroFactura : item.facturaId}</td>
-                                                <td className="p-5 text-sm text-gray-500">{new Date(item.date).toLocaleDateString()}</td>
-                                                <td className="p-5 text-sm font-medium text-gray-700">{item.concept}</td>
-                                                <td className="p-5 text-sm text-gray-500 text-right">${item.amountTotal.toFixed(2)}</td>
-                                                <td className="p-5 text-sm font-bold text-red-600 text-right">
+                                            <tr key={item.id} className="hover:bg-white/60 transition-colors border-b border-white/20 last:border-none">
+                                                <td className="p-5 px-6 text-sm font-bold text-gray-600">#{item.numeroFactura !== '-' ? item.numeroFactura : item.facturaId}</td>
+                                                <td className="p-5 px-6 text-sm font-medium text-gray-600">{new Date(item.date).toLocaleDateString()}</td>
+                                                <td className="p-5 px-6 text-sm font-bold text-gray-800">{item.concept}</td>
+                                                <td className="p-5 px-6 text-sm font-bold text-gray-600 text-right">${item.amountTotal.toFixed(2)}</td>
+                                                <td className="p-5 px-6 text-sm font-black text-rose-600 text-right">
                                                     {item.status === 'ANULADA' ? '-' : `$${item.amountPending.toFixed(2)}`}
                                                     {pendingForInvoice > 0 && item.status !== 'ANULADA' && (
                                                         <div className="text-[10px] text-yellow-600 font-normal mt-1 flex justify-end gap-1 items-center">
@@ -252,16 +255,16 @@ export default function FinancialHistoryPage() {
                                                         isFullyInReview ? (
                                                             <button
                                                                 disabled
-                                                                className="px-4 py-2 bg-yellow-100/50 text-yellow-700 text-xs font-bold rounded-lg cursor-not-allowed border border-yellow-200/50 flex items-center justify-center gap-1 mx-auto"
+                                                                className="px-5 py-2 bg-amber-500/10 text-amber-700 text-xs font-bold rounded-xl cursor-not-allowed border border-amber-500/20 flex items-center justify-center gap-1 mx-auto shadow-inner backdrop-blur-sm"
                                                             >
                                                                 En Revisión
                                                             </button>
                                                         ) : (
                                                             <button
                                                                 onClick={() => handleOpenPayment({ ...item, amountPending: maxPayable })}
-                                                                className="px-4 py-2 bg-lime-500 hover:bg-lime-600 text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
+                                                                className="px-5 py-2.5 bg-lime-500/95 hover:bg-lime-600 text-white text-xs font-bold rounded-xl transition-all shadow-[0_4px_12px_rgba(132,204,22,0.3)] border border-lime-400/50 hover:shadow-md focus:ring-2 focus:ring-lime-300"
                                                             >
-                                                                Registrar Pago {/* (${maxPayable.toFixed(2)}) Option to show amount */}
+                                                                Pagar Ahora
                                                             </button>
                                                         )
                                                     ) : (
@@ -284,19 +287,19 @@ export default function FinancialHistoryPage() {
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="bg-gray-50/50 border-b border-gray-100">
-                                    <th className="p-5 text-xs font-semibold text-gray-400 uppercase tracking-wider">ID Pago</th>
-                                    <th className="p-5 text-xs font-semibold text-gray-400 uppercase tracking-wider">ID Factura</th>
-                                    <th className="p-5 text-xs font-semibold text-gray-400 uppercase tracking-wider">Fecha</th>
-                                    <th className="p-5 text-xs font-semibold text-gray-400 uppercase tracking-wider">Concepto</th>
-                                    <th className="p-5 text-xs font-semibold text-gray-400 uppercase tracking-wider">Método</th>
-                                    <th className="p-5 text-xs font-semibold text-gray-400 uppercase tracking-wider">Destino</th>
-                                    <th className="p-5 text-xs font-semibold text-gray-400 uppercase tracking-wider text-right whitespace-nowrap">Monto ($)</th>
-                                    <th className="p-5 text-xs font-semibold text-gray-400 uppercase tracking-wider text-right whitespace-nowrap">Monto (Bs)</th>
-                                    <th className="p-5 text-xs font-semibold text-gray-400 uppercase tracking-wider text-right">Estado</th>
+                                <tr className="bg-white/50 border-b border-white/60 backdrop-blur-md">
+                                    <th className="p-5 px-6 text-xs font-black text-gray-500 uppercase tracking-wider">ID Pago</th>
+                                    <th className="p-5 px-6 text-xs font-black text-gray-500 uppercase tracking-wider">ID Factura</th>
+                                    <th className="p-5 px-6 text-xs font-black text-gray-500 uppercase tracking-wider">Fecha</th>
+                                    <th className="p-5 px-6 text-xs font-black text-gray-500 uppercase tracking-wider">Concepto</th>
+                                    <th className="p-5 px-6 text-xs font-black text-gray-500 uppercase tracking-wider">Método</th>
+                                    <th className="p-5 px-6 text-xs font-black text-gray-500 uppercase tracking-wider">Destino</th>
+                                    <th className="p-5 px-6 text-xs font-black text-gray-500 uppercase tracking-wider text-right whitespace-nowrap">Monto ($)</th>
+                                    <th className="p-5 px-6 text-xs font-black text-gray-500 uppercase tracking-wider text-right whitespace-nowrap">Monto (Bs)</th>
+                                    <th className="p-5 px-6 text-xs font-black text-gray-500 uppercase tracking-wider text-right">Estado</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-50">
+                            <tbody className="divide-y divide-white/30">
                                 {payments.length === 0 ? (
                                     <tr>
                                         <td colSpan={9} className="p-12 text-center text-gray-400">
@@ -306,16 +309,16 @@ export default function FinancialHistoryPage() {
                                     </tr>
                                 ) : (
                                     payments.map((item) => (
-                                        <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
-                                            <td className="p-5 text-sm font-mono text-gray-500">#{item.pagoId}</td>
-                                            <td className="p-5 text-sm font-mono text-gray-400">#{item.facturaId}</td>
-                                            <td className="p-5 text-sm text-gray-500 whitespace-nowrap">{new Date(item.date).toLocaleDateString()}</td>
-                                            <td className="p-5 text-sm font-medium text-gray-700">{item.concept}</td>
-                                            <td className="p-5 text-xs font-medium text-gray-400 uppercase tracking-wide">{item.method}</td>
-                                            <td className="p-5 text-sm text-gray-500">{item.destination}</td>
-                                            <td className="p-5 text-sm font-medium text-gray-700 text-right whitespace-nowrap">${item.amountUsd.toFixed(2)}</td>
-                                            <td className="p-5 text-sm text-gray-400 text-right whitespace-nowrap">{item.status === 'VALIDADO' && item.amountBs > 0 ? `Bs ${item.amountBs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}` : '-'}</td>
-                                            <td className="p-5 text-right flex justify-end">
+                                        <tr key={item.id} className="hover:bg-white/60 transition-colors border-b border-white/20 last:border-none">
+                                            <td className="p-5 px-6 text-sm font-bold text-gray-600">#{item.pagoId}</td>
+                                            <td className="p-5 px-6 text-sm font-bold text-gray-500">#{item.facturaId}</td>
+                                            <td className="p-5 px-6 text-sm font-medium text-gray-600 whitespace-nowrap">{new Date(item.date).toLocaleDateString()}</td>
+                                            <td className="p-5 px-6 text-sm font-bold text-gray-800">{item.concept}</td>
+                                            <td className="p-5 px-6 text-xs font-black text-gray-500 uppercase tracking-wide">{item.method}</td>
+                                            <td className="p-5 px-6 text-sm font-medium text-gray-600">{item.destination}</td>
+                                            <td className="p-5 px-6 text-sm font-bold text-gray-800 text-right whitespace-nowrap">${item.amountUsd.toFixed(2)}</td>
+                                            <td className="p-5 px-6 text-sm font-medium text-gray-500 text-right whitespace-nowrap">{item.status === 'VALIDADO' && item.amountBs > 0 ? `Bs ${item.amountBs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}` : '-'}</td>
+                                            <td className="p-5 px-6 text-right flex justify-end">
                                                 {getStatusBadge(item.status)}
                                             </td>
                                         </tr>
@@ -325,6 +328,7 @@ export default function FinancialHistoryPage() {
                         </table>
                     </div>
                 )}
+                </div>
             </div>
 
             {/* Payment Modal */}

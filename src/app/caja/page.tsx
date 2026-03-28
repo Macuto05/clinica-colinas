@@ -3,13 +3,16 @@ import { WalletCards, ShoppingCart, Users, ArrowUpRight, ArrowDownRight } from "
 export default function CajaDashboard() {
     return (
         <div className="space-y-6">
-            <div className="bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                    Bienvenido, Cajero
-                </h1>
-                <p className="text-gray-500 dark:text-gray-400">
-                    Panel de facturación, gestión de proveedores y aprobación de compras.
-                </p>
+            <div className="bg-white/40 backdrop-blur-md p-8 rounded-3xl border border-white/50 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-lime-400/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
+                <div className="relative z-10">
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">
+                        Bienvenido, Cajero
+                    </h1>
+                    <p className="text-gray-600 font-medium">
+                        Panel de facturación, gestión de proveedores y aprobación de compras.
+                    </p>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -38,7 +41,10 @@ export default function CajaDashboard() {
                 />
             </div>
 
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900 rounded-xl p-4 text-blue-800 dark:text-blue-300 text-sm">
+            <div className="bg-blue-100/70 border border-blue-200/60 rounded-2xl p-4 text-blue-800 font-bold text-sm backdrop-blur-sm shadow-sm flex items-center gap-3">
+                <div className="p-2 bg-blue-200/50 rounded-xl">
+                    <WalletCards size={20} className="text-blue-700" />
+                </div>
                 Selecciona una opción del menú lateral para comenzar a gestionar el flujo de caja.
             </div>
         </div>
@@ -47,24 +53,24 @@ export default function CajaDashboard() {
 
 function StatCard({ title, value, icon, trend, trendUp, href }: any) {
     return (
-        <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white/40 backdrop-blur-md p-6 rounded-3xl border border-white/50 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] hover:shadow-[0_8px_24px_0_rgba(0,0,0,0.04)] transition-all hover:bg-white/50 group">
             <div className="flex justify-between items-start mb-4">
-                <div className={`p-3 rounded-lg ${trendUp === true ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-gray-100 dark:bg-zinc-800'}`}>
+                <div className={`p-3 rounded-2xl shadow-inner border border-white/60 bg-white/50`}>
                     {icon}
                 </div>
                 {href && (
-                    <a href={href} className="text-xs font-medium text-gray-500 hover:text-lime-600 flex items-center gap-1">
+                    <a href={href} className="px-3 py-1.5 rounded-full bg-white/50 border border-white/60 text-xs font-bold text-gray-500 hover:text-lime-700 hover:bg-white/80 transition-colors flex items-center gap-1 shadow-sm backdrop-blur-sm">
                         Ir <ArrowUpRight size={12} />
                     </a>
                 )}
             </div>
             <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</p>
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{value}</h3>
+                <p className="text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-1">{title}</p>
+                <h3 className="text-3xl font-bold text-gray-900 tracking-tight">{value}</h3>
             </div>
             {trend && (
-                <div className="mt-4 flex items-center gap-2 text-xs">
-                    <span className="text-gray-400">{trend}</span>
+                <div className="mt-4 flex items-center gap-2 text-xs font-bold text-gray-400">
+                    <span>{trend}</span>
                 </div>
             )}
         </div>

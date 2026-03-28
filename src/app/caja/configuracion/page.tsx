@@ -17,11 +17,14 @@ interface BankAccount {
 
 export default function CajaConfigPage() {
     return (
-        <div className="space-y-6 max-w-6xl mx-auto">
+        <div className="space-y-8 max-w-4xl mx-auto">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Configuración Financiera</h1>
-                    <p className="text-gray-500 dark:text-gray-400">Administra precios y cuentas bancarias</p>
+                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
+                        <Banknote className="text-lime-600" />
+                        Configuración Financiera
+                    </h1>
+                    <p className="text-gray-500 font-medium mt-1">Administra precios base y cuentas bancarias receptoras.</p>
                 </div>
             </div>
 
@@ -67,37 +70,37 @@ function ConsultationPriceCard() {
     };
 
     return (
-        <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 p-6">
-            <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                    <Banknote className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+        <div className="bg-white/50 backdrop-blur-xl rounded-3xl shadow-[0_4px_16px_0_rgba(0,0,0,0.04)] border border-white/60 p-6 sm:p-8">
+            <div className="flex items-center gap-3 mb-6">
+                <div className="p-2.5 bg-lime-100/80 rounded-2xl border border-lime-200/50 shadow-sm">
+                    <Banknote className="w-6 h-6 text-lime-600" />
                 </div>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Precio Consulta Base</h2>
+                <h2 className="text-xl font-bold text-gray-900 tracking-tight">Precio Consulta Base</h2>
             </div>
 
             <div className="flex items-end gap-4 max-w-md">
                 <div className="flex-1">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider pl-1 mb-1.5">
                         Monto en USD ($)
                     </label>
                     <input
                         type="number"
                         value={price}
                         onChange={(e) => setPrice(e.target.value)}
-                        className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono text-lg"
+                        className="w-full px-5 py-3.5 bg-white/50 border border-white/60 rounded-2xl focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none transition-all font-mono text-xl font-bold shadow-inner placeholder:text-gray-400"
                         placeholder="0.00"
                     />
                 </div>
                 <button
                     onClick={handleSave}
                     disabled={saving || loading}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+                    className="flex items-center gap-2 px-8 py-3.5 bg-lime-50 text-lime-700 rounded-2xl font-bold transition-all shadow-[0_4px_12px_rgba(132,204,22,0.2)] border border-lime-500/80 ring-2 ring-lime-400/20 disabled:scale-100 focus:scale-[1.02] hover:scale-[1.02] disabled:opacity-50 disabled:shadow-none outline-none"
                 >
-                    <Save size={18} />
+                    <Save size={20} />
                     {saving ? "Guardando..." : "Guardar"}
                 </button>
             </div>
-            <p className="mt-2 text-sm text-gray-500">Este valor se usará para generar la deuda inicial de todas las nuevas citas.</p>
+            <p className="mt-3 text-sm font-medium text-gray-500 bg-lime-50/60 border border-lime-200/40 p-3 rounded-2xl inline-block">Este valor se usará para generar la deuda inicial de todas las nuevas citas registradas.</p>
         </div>
     );
 }
@@ -176,13 +179,14 @@ function BankAccountsCard() {
     };
 
     return (
-        <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 p-6">
-            <div className="flex items-center justify-between mb-6">
+        <>
+            <div className="bg-white/50 backdrop-blur-xl rounded-3xl shadow-[0_4px_16px_0_rgba(0,0,0,0.04)] border border-white/60 p-6 sm:p-8">
+                <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
-                        <Building className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                    <div className="p-2.5 bg-sky-100/80 rounded-2xl border border-sky-200/50 shadow-sm">
+                        <Building className="w-6 h-6 text-sky-600" />
                     </div>
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Cuentas Bancarias</h2>
+                    <h2 className="text-xl font-bold text-gray-900 tracking-tight">Cuentas Bancarias</h2>
                 </div>
                 <button
                     onClick={() => {
@@ -190,80 +194,166 @@ function BankAccountsCard() {
                         setEditingId(null);
                         setShowForm(true);
                     }}
-                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+                    className="flex items-center gap-2 px-6 py-3 bg-lime-50 text-lime-700 rounded-2xl text-sm font-bold transition-all shadow-[0_4px_12px_rgba(132,204,22,0.2)] border border-lime-500/80 ring-2 ring-lime-400/20 scale-[1.02]"
                 >
                     <Plus size={18} />
                     Agregar Cuenta
                 </button>
             </div>
 
-            {/* Add Form */}
+            {/* List */}
+            {
+                loading ? (
+                    <div className="text-center py-8 text-gray-500 font-bold animate-pulse">Cargando cuentas...</div>
+                ) : accounts.length === 0 ? (
+                    <div className="text-center py-16 bg-white/30 backdrop-blur-md rounded-3xl border border-dashed border-white/60 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
+                        <div className="w-16 h-16 bg-white/50 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/60 shadow-inner">
+                            <CreditCard className="text-gray-400 w-8 h-8" />
+                        </div>
+                        <p className="text-gray-500 font-bold text-lg">No hay cuentas bancarias registradas.</p>
+                        <p className="text-gray-400 text-sm mt-1">Registra una cuenta para recibir pagos por transferencia.</p>
+                    </div>
+                ) : (
+                    <div className="grid gap-4 md:grid-cols-2">
+                        {accounts.map(acc => (
+                            <div key={acc.cuentaId} className="relative p-6 rounded-3xl border border-white/60 bg-white/40 backdrop-blur-md group hover:bg-white/60 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all">
+                                <div className="flex justify-between items-start mb-4">
+                                    <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
+                                        <div className="p-2 bg-white/70 rounded-xl border border-white/80 shadow-sm"><CreditCard size={18} className="text-sky-600" /></div>
+                                        {acc.banco}
+                                    </h3>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`text-xs px-3 py-1 rounded-full font-bold border shadow-sm ${acc.activa ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                                            {acc.activa ? 'Activa' : 'Inactiva'}
+                                        </span>
+                                        <button
+                                            onClick={() => handleEdit(acc)}
+                                            className="p-2 text-sky-600 font-bold hover:text-sky-700 hover:bg-sky-50 bg-white/60 outline-none focus:ring-2 focus:ring-sky-300 rounded-xl transition-all border border-sky-100 shadow-sm"
+                                            title="Editar Cuenta"
+                                        >
+                                            <Pencil size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+                                <p className="font-mono text-xl text-gray-800 tracking-wider mb-4 font-bold bg-white/50 inline-block px-4 py-2 rounded-2xl border border-white/60 shadow-inner">{acc.numeroCuenta}</p>
+                                <div className="text-sm text-gray-500/80 font-medium space-y-1 bg-white/30 p-4 rounded-2xl border border-white/40">
+                                    <p><span className="font-bold text-gray-700 uppercase tracking-wider text-xs mr-2">Titular</span> <span className="text-gray-900">{acc.titular}</span></p>
+                                    <p><span className="font-bold text-gray-700 uppercase tracking-wider text-xs mr-2">RIF / Tipo</span> <span className="text-gray-900">{acc.rifTitular} • {acc.tipo}</span></p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )
+            }
+        </div>
+
+        {/* Add Form */}
             {showForm && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-200 dark:border-zinc-800">
-                        <div className="px-6 py-4 border-b border-gray-100 dark:border-zinc-800 flex justify-between items-center bg-gray-50/50 dark:bg-zinc-800/50">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                                {editingId ? "Editar Cuenta Bancaria" : "Nueva Cuenta Bancaria"}
-                            </h3>
-                            <button
-                                onClick={handleCancel}
-                                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
-                            >
-                                <X size={20} />
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md transition-all animate-in fade-in duration-200">
+                    <div className="bg-white/70 backdrop-blur-2xl w-full max-w-2xl rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.12)] border border-white/60 max-h-[90vh] flex flex-col overflow-hidden">
+
+                        {/* Header */}
+                        <div className="p-6 border-b border-white/40 flex justify-between items-center shrink-0 bg-white/30">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-lime-500/10 border border-lime-500/20 shadow-inner flex items-center justify-center backdrop-blur-md">
+                                    {editingId ? <Pencil size={18} className="text-sky-600" /> : <Building size={18} className="text-lime-600" />}
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-gray-900 text-lg tracking-tight">
+                                        {editingId ? "Editar Cuenta Bancaria" : "Nueva Cuenta Bancaria"}
+                                    </h3>
+                                    <p className="text-xs text-gray-500/80 font-medium">Completa los datos de la cuenta receptora</p>
+                                </div>
+                            </div>
+                            <button type="button" onClick={handleCancel} className="p-2.5 rounded-full bg-white/40 hover:bg-white/60 border border-white/50 shadow-sm text-gray-500 hover:text-gray-700 transition-all">
+                                <X size={20} strokeWidth={2.5} />
                             </button>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="col-span-1 md:col-span-2">
-                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Banco</label>
-                                <input required className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                    value={formData.banco} onChange={e => setFormData({ ...formData, banco: e.target.value })} placeholder="Ej. Banco Mercantil" />
-                            </div>
-                            <div className="col-span-1 md:col-span-2">
-                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Nro. Cuenta</label>
-                                <input required className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 font-mono focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                    value={formData.numeroCuenta} onChange={e => setFormData({ ...formData, numeroCuenta: e.target.value })} placeholder="0105..." />
-                            </div>
-                            <div className="col-span-1 md:col-span-2">
-                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Titular</label>
-                                <input required className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                    value={formData.titular} onChange={e => setFormData({ ...formData, titular: e.target.value })} placeholder="Nombre titular" />
-                            </div>
-                            <div className="col-span-1">
-                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">RIF</label>
-                                <input required className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                    value={formData.rifTitular} onChange={e => setFormData({ ...formData, rifTitular: e.target.value })} placeholder="J-12345678" />
-                            </div>
-                            <div className="col-span-1">
-                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Tipo</label>
-                                <select className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                    value={formData.tipo} onChange={e => setFormData({ ...formData, tipo: e.target.value })}>
-                                    <option value="CORRIENTE">Corriente</option>
-                                    <option value="AHORRO">Ahorro</option>
-                                </select>
+                        {/* Scrollable body */}
+                        <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 flex flex-col">
+                            <div className="p-6 space-y-5 flex-1">
+
+                                {/* Sección: Datos de la cuenta */}
+                                <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-5 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] space-y-4">
+                                    <div className="flex items-center gap-3 mb-1">
+                                        <span className="w-7 h-7 rounded-full bg-gray-900/90 text-white shadow-md text-xs font-black flex items-center justify-center">1</span>
+                                        <h4 className="font-bold text-gray-800 text-base">Datos del Banco</h4>
+                                    </div>
+
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2 block">Banco *</label>
+                                        <input required
+                                            className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400"
+                                            value={formData.banco} onChange={e => setFormData({ ...formData, banco: e.target.value })} placeholder="Ej. Banco Mercantil" />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2 block">Nro. Cuenta *</label>
+                                        <input required
+                                            className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none font-mono text-sm tracking-widest shadow-inner transition-all placeholder:text-gray-400"
+                                            value={formData.numeroCuenta} onChange={e => setFormData({ ...formData, numeroCuenta: e.target.value })} placeholder="0105-1234-5678-9012" />
+                                    </div>
+                                </section>
+
+                                {/* Sección: Titular */}
+                                <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-5 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] space-y-4">
+                                    <div className="flex items-center gap-3 mb-1">
+                                        <span className="w-7 h-7 rounded-full bg-gray-900/90 text-white shadow-md text-xs font-black flex items-center justify-center">2</span>
+                                        <h4 className="font-bold text-gray-800 text-base">Datos del Titular</h4>
+                                    </div>
+
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2 block">Nombre del Titular *</label>
+                                        <input required
+                                            className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400"
+                                            value={formData.titular} onChange={e => setFormData({ ...formData, titular: e.target.value })} placeholder="Clínica Colinas C.A." />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2 block">RIF *</label>
+                                            <input required
+                                                className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400"
+                                                value={formData.rifTitular} onChange={e => setFormData({ ...formData, rifTitular: e.target.value })} placeholder="J-12345678" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2 block">Tipo de Cuenta</label>
+                                            <select
+                                                className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-bold text-gray-800 shadow-inner transition-all"
+                                                value={formData.tipo} onChange={e => setFormData({ ...formData, tipo: e.target.value })}>
+                                                <option value="CORRIENTE">Corriente</option>
+                                                <option value="AHORRO">Ahorro</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                {/* Toggle Switch (only on edit) */}
+                                {editingId && (
+                                    <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-5 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <h4 className="font-bold text-gray-800 text-base">{formData.activa ? 'Cuenta Activa' : 'Cuenta Inactiva'}</h4>
+                                                <p className="text-sm text-gray-500 font-medium mt-0.5">{formData.activa ? 'Los pacientes verán esta cuenta en los métodos de pago.' : 'Esta cuenta estará oculta.'}</p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, activa: !formData.activa })}
+                                                className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${formData.activa ? 'bg-emerald-500/90 shadow-[0_4px_12px_rgba(16,185,129,0.3)]' : 'bg-gray-300 shadow-inner'}`}
+                                            >
+                                                <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-md border border-gray-100 ${formData.activa ? 'translate-x-6' : 'translate-x-1'}`} />
+                                            </button>
+                                        </div>
+                                    </section>
+                                )}
                             </div>
 
-                            {/* Toggle Switch */}
-                            {editingId && (
-                                <div className="col-span-1 md:col-span-2 flex items-center gap-3 mt-2 p-3 bg-gray-50 dark:bg-zinc-800/50 rounded-lg border border-gray-100 dark:border-zinc-800">
-                                    <button
-                                        type="button"
-                                        onClick={() => setFormData({ ...formData, activa: !formData.activa })}
-                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${formData.activa ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-zinc-600'}`}
-                                    >
-                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.activa ? 'translate-x-6' : 'translate-x-1'}`} />
-                                    </button>
-                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                        {formData.activa ? 'Cuenta Activa' : 'Cuenta Inactiva'}
-                                    </span>
-                                </div>
-                            )}
-
-                            <div className="col-span-1 md:col-span-2 flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-zinc-800">
-                                <button type="button" onClick={handleCancel} className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
+                            {/* Footer */}
+                            <div className="p-6 border-t border-white/40 flex gap-3 shrink-0 bg-white/30 backdrop-blur-md">
+                                <button type="button" onClick={handleCancel} className="flex-1 py-3.5 rounded-2xl bg-white/50 border border-white/60 text-gray-700 font-bold hover:bg-white/80 transition-colors text-sm shadow-sm backdrop-blur-sm outline-none focus:ring-2 focus:ring-gray-300">
                                     Cancelar
                                 </button>
-                                <button type="submit" className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium transition-colors shadow-sm">
+                                <button type="submit" className="flex-1 py-3.5 rounded-2xl bg-lime-50 hover:bg-lime-100 text-lime-700 font-bold transition-all text-sm flex items-center justify-center gap-2 shadow-[0_4px_12px_rgba(132,204,22,0.25)] border border-lime-500/80 ring-2 ring-lime-400/20 outline-none focus:ring-lime-400/40">
+                                    <Save size={18} />
                                     {editingId ? "Actualizar Cuenta" : "Guardar Cuenta"}
                                 </button>
                             </div>
@@ -271,47 +361,6 @@ function BankAccountsCard() {
                     </div>
                 </div>
             )}
-
-            {/* List */}
-            {
-                loading ? (
-                    <div className="text-center py-8 text-gray-500">Cargando cuentas...</div>
-                ) : accounts.length === 0 ? (
-                    <div className="text-center py-12 bg-gray-50 dark:bg-zinc-800/50 rounded-lg border border-dashed border-gray-300 dark:border-zinc-700">
-                        <p className="text-gray-500">No hay cuentas bancarias registradas.</p>
-                    </div>
-                ) : (
-                    <div className="grid gap-4 md:grid-cols-2">
-                        {accounts.map(acc => (
-                            <div key={acc.cuentaId} className="relative p-5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gradient-to-br from-gray-50 to-white dark:from-zinc-800 dark:to-zinc-900 group hover:shadow-md transition-all">
-                                <div className="flex justify-between items-start mb-2">
-                                    <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                        <CreditCard size={18} className="text-gray-400" />
-                                        {acc.banco}
-                                    </h3>
-                                    <div className="flex items-center gap-2">
-                                        <span className={`text-xs px-2 py-1 rounded-full ${acc.activa ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700'}`}>
-                                            {acc.activa ? 'Activa' : 'Inactiva'}
-                                        </span>
-                                        <button
-                                            onClick={() => handleEdit(acc)}
-                                            className="p-1 text-lime-600 hover:text-lime-700 hover:bg-lime-50 dark:hover:bg-lime-900/10 rounded transition-colors"
-                                            title="Editar Cuenta"
-                                        >
-                                            <Pencil size={18} />
-                                        </button>
-                                    </div>
-                                </div>
-                                <p className="font-mono text-lg text-gray-800 dark:text-gray-200 tracking-wider mb-2">{acc.numeroCuenta}</p>
-                                <div className="text-sm text-gray-500 space-y-1">
-                                    <p><span className="font-medium">Titular:</span> {acc.titular}</p>
-                                    <p><span className="font-medium">RIF:</span> {acc.rifTitular} • {acc.tipo}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )
-            }
-        </div >
+        </>
     );
 }

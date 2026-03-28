@@ -66,7 +66,7 @@ export default function ReceptionPatientsPage() {
                 <button
                     onClick={handleCreate}
                     suppressHydrationWarning
-                    className="flex items-center gap-2 bg-lime-600 hover:bg-lime-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
+                    className="px-4 py-2.5 rounded-2xl bg-lime-500/95 hover:bg-lime-500 text-white font-bold shadow-[0_4px_12px_rgba(132,204,22,0.3)] backdrop-blur-md border border-lime-400/50 outline-none focus:ring-2 focus:ring-lime-300 transition-colors flex items-center gap-2 text-sm"
                 >
                     <Plus size={18} />
                     Nuevo Paciente
@@ -75,21 +75,21 @@ export default function ReceptionPatientsPage() {
 
             {/* Search Bar */}
             <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                 <input
                     type="text"
                     placeholder="Buscar por nombre, apellido o cédula..."
-                    className="w-full pl-10 pr-4 py-3 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-lime-500 focus:border-transparent outline-none transition-all"
+                    className="w-full pl-11 pr-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />
             </div>
 
             {/* Table */}
-            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm">
+            <div className="bg-white/40 backdrop-blur-md rounded-3xl shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] border border-white/50 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm">
-                        <thead className="bg-gray-50 dark:bg-zinc-800/50 text-gray-500 dark:text-gray-400 font-medium border-b border-gray-100 dark:border-zinc-800">
+                        <thead className="bg-white/30 text-gray-500/80 text-xs font-bold uppercase tracking-wider border-b border-white/40 backdrop-blur-sm">
                             <tr>
                                 <th className="px-6 py-4">Paciente</th>
                                 <th className="px-6 py-4">Documento</th>
@@ -97,7 +97,7 @@ export default function ReceptionPatientsPage() {
                                 <th className="px-6 py-4 text-right">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
+                        <tbody className="divide-y divide-white/30 glass-rows">
                             {loading ? (
                                 <tr>
                                     <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
@@ -114,30 +114,30 @@ export default function ReceptionPatientsPage() {
                                 </tr>
                             ) : (
                                 patients.map((patient) => (
-                                    <tr key={patient.id} className="hover:bg-gray-50 dark:hover:bg-zinc-800/30 transition-colors">
+                                    <tr key={patient.id} className="hover:bg-white/60 transition-colors">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
                                                 <div>
-                                                    <div className="font-semibold text-gray-900 dark:text-white">
+                                                    <div className="font-bold text-gray-900 text-base">
                                                         {patient.nombres} {patient.apellidos}
                                                     </div>
-                                                    <div className="text-xs text-gray-500">ID: {patient.id}</div>
+                                                    <div className="text-xs text-gray-500 font-mono mt-0.5">ID: {patient.id}</div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-gray-600 dark:text-gray-300 font-medium">
+                                        <td className="px-6 py-4 text-gray-800 font-medium">
                                             {patient.documento || "N/A"}
                                         </td>
-                                        <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
+                                        <td className="px-6 py-4 text-gray-600">
                                             <div className="flex flex-col text-xs gap-1">
                                                 <span>{patient.telefono || "Sin teléfono"}</span>
-                                                <span className="text-gray-500">{patient.contactEmail !== 'N/A' ? patient.contactEmail : ''}</span>
+                                                <span className="text-gray-500/80 font-medium">{patient.contactEmail !== 'N/A' ? patient.contactEmail : ''}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <button
                                                 onClick={() => handleEdit(patient)}
-                                                className="p-2 text-gray-400 hover:text-lime-600 hover:bg-lime-50 rounded-lg transition-colors"
+                                                className="p-2 text-lime-700 hover:text-lime-800 bg-white/50 hover:bg-white/80 rounded-xl shadow-sm border border-white/60 transition-colors backdrop-blur-sm"
                                                 title="Editar Paciente"
                                             >
                                                 <Edit2 size={18} />
@@ -151,21 +151,21 @@ export default function ReceptionPatientsPage() {
                 </div>
 
                 {/* Pagination */}
-                <div className="px-6 py-4 border-t border-gray-100 dark:border-zinc-800 flex items-center justify-between">
+                <div className="px-6 py-4 border-t border-white/40 bg-white/30 backdrop-blur-md flex items-center justify-between">
                     <button
                         onClick={() => setPage(p => Math.max(1, p - 1))}
                         disabled={page === 1}
-                        className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="p-2 text-gray-700 bg-white/50 hover:bg-white/80 rounded-xl border border-white/60 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm backdrop-blur-sm transition-colors"
                     >
                         <ChevronLeft size={20} />
                     </button>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                    <span className="text-sm font-bold text-gray-600">
                         Página {page} de {totalPages}
                     </span>
                     <button
                         onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                         disabled={page === totalPages}
-                        className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="p-2 text-gray-700 bg-white/50 hover:bg-white/80 rounded-xl border border-white/60 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm backdrop-blur-sm transition-colors"
                     >
                         <ChevronRight size={20} />
                     </button>

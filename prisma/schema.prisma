@@ -100,6 +100,8 @@ model Paciente {
   citas              CitaMedica[]
   usuario            Usuario?       @relation(fields: [usuarioId], references: [usuarioId])
   historiaClinica    HistoriaClinica?
+  polizas            Poliza[]
+  emergencias        Emergencia[]
 
   @@map("paciente")
 }
@@ -156,6 +158,8 @@ model CitaMedica {
   diagnostico       Diagnostico?
   receta            Receta?
   ordenes           OrdenMedica[]
+  cartasAval        CartaAval[]
+  emergencia        Emergencia?
 
   @@unique([medicoId, fechaCita, horaInicio], name: "uq_cita_slot")
   @@map("cita_medica")
@@ -182,6 +186,7 @@ model Factura {
   impuestoTotal  Decimal          @default(0) @map("impuesto_total") @db.Decimal(12, 2)
   total          Decimal          @default(0) @db.Decimal(12, 2)
   saldoPendiente Decimal          @default(0) @map("saldo_pendiente") @db.Decimal(12, 2)
+  montoAsegurado Decimal          @default(0) @map("monto_asegurado") @db.Decimal(12, 2)
   observaciones  String?
   usuarioEmision BigInt           @map("usuario_emision")
   cita           CitaMedica       @relation(fields: [citaId], references: [citaId])
@@ -449,6 +454,7 @@ enum CitaTipo {
   CONSULTA
   CONTROL
   ESPECIALIDAD
+  EMERGENCIA
   OTRA
 }
 
@@ -476,6 +482,7 @@ enum PagoEstado {
 enum PagoCanal {
   ONLINE
   PRESENCIAL
+  SEGURO
 }
 
 enum MovimientoTipo {
@@ -671,4 +678,117 @@ model HistoriaClinica {
   updatedBy   Usuario? @relation("UsuarioActualizaHistoria", fields: [updatedById], references: [usuarioId])
 
   @@map("historia_clinica")
+}
+
+// ========== SEGUROS MÉDICOS ==========
+
+model Aseguradora {
+  aseguradoraId BigInt   @id @default(autoincrement()) @map("aseguradora_id")
+  nombre        String   @unique @db.VarChar(160)
+  rifNif        String?  @unique @map("rif_nif") @db.VarChar(40)
+  telefono      String?  @db.VarChar(40)
+  correo        String?  @db.VarChar(255)
+  direccion     String?
+  activa        Boolean  @default(true)
+  polizas       Poliza[]
+
+  @@map("aseguradora")
+}
+
+model Poliza {
+  polizaId      BigInt       @id @default(autoincrement()) @map("poliza_id")
+  pacienteId    BigInt       @map("paciente_id")
+  aseguradoraId BigInt       @map("aseguradora_id")
+  numeroPoliza  String       @map("numero_poliza") @db.VarChar(60)
+  tipoCobertura String?      @map("tipo_cobertura") @db.VarChar(80)
+  fechaInicio   DateTime?    @map("fecha_inicio") @db.Date
+  fechaVence    DateTime?    @map("fecha_vence") @db.Date
+  estado        PolizaEstado @default(ACTIVA)
+  observaciones String?
+  paciente      Paciente     @relation(fields: [pacienteId], references: [pacienteId])
+  aseguradora   Aseguradora  @relation(fields: [aseguradoraId], references: [aseguradoraId])
+  cartasAval    CartaAval[]
+
+  @@unique([pacienteId, aseguradoraId, numeroPoliza], name: "uq_poliza")
+  @@map("poliza")
+}
+
+model CartaAval {
+  cartaAvalId    BigInt          @id @default(autoincrement()) @map("carta_aval_id")
+  polizaId       BigInt          @map("poliza_id")
+  citaId         BigInt?         @map("cita_id")
+  emergenciaId   BigInt?         @map("emergencia_id")
+  codigoAval     String?         @map("codigo_aval") @db.VarChar(80)
+  montoAprobado  Decimal?        @map("monto_aprobado") @db.Decimal(12, 2)
+  estado         CartaAvalEstado @default(SOLICITADA)
+  fechaSolicitud DateTime        @default(now()) @map("fecha_solicitud") @db.Timestamptz(6)
+  fechaRespuesta DateTime?       @map("fecha_respuesta") @db.Timestamptz(6)
+  observaciones  String?
+  poliza         Poliza          @relation(fields: [polizaId], references: [polizaId])
+  cita           CitaMedica?     @relation(fields: [citaId], references: [citaId])
+  emergencia     Emergencia?     @relation(fields: [emergenciaId], references: [emergenciaId])
+
+  @@map("carta_aval")
+}
+
+// ========== EMERGENCIAS ==========
+
+model Emergencia {
+  emergenciaId     BigInt             @id @default(autoincrement()) @map("emergencia_id")
+  pacienteId       BigInt             @map("paciente_id")
+  citaId           BigInt?            @unique @map("cita_id")
+  motivoIngreso    String             @map("motivo_ingreso")
+  nivelUrgencia    NivelUrgencia      @default(MODERADO) @map("nivel_urgencia")
+  estadoEmergencia EmergenciaEstado   @default(TRIAJE) @map("estado_emergencia")
+  verificacionPago VerificacionPago   @default(PENDIENTE) @map("verificacion_pago")
+  tipoPago         TipoPagoEmergencia @default(PENDIENTE) @map("tipo_pago")
+  fechaIngreso     DateTime           @default(now()) @map("fecha_ingreso") @db.Timestamptz(6)
+  fechaAlta        DateTime?          @map("fecha_alta") @db.Timestamptz(6)
+  observaciones    String?
+  paciente         Paciente           @relation(fields: [pacienteId], references: [pacienteId])
+  cita             CitaMedica?        @relation(fields: [citaId], references: [citaId])
+  cartasAval       CartaAval[]
+
+  @@map("emergencia")
+}
+
+enum PolizaEstado {
+  ACTIVA
+  VENCIDA
+  SUSPENDIDA
+}
+
+enum CartaAvalEstado {
+  SOLICITADA
+  APROBADA
+  RECHAZADA
+  PENDIENTE_PAGO
+}
+
+enum NivelUrgencia {
+  CRITICO
+  URGENTE
+  MODERADO
+  LEVE
+}
+
+enum EmergenciaEstado {
+  TRIAJE
+  EN_ATENCION
+  HOSPITALIZADO
+  CIRUGIA_URGENTE
+  REFERIDO
+  ALTA
+}
+
+enum VerificacionPago {
+  PENDIENTE
+  CONFIRMADO
+  SIN_COBERTURA
+}
+
+enum TipoPagoEmergencia {
+  PARTICULAR
+  ASEGURADO
+  PENDIENTE
 }

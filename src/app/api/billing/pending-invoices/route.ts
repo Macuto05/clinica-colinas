@@ -46,6 +46,7 @@ export async function GET() {
             cedula: inv.cita?.paciente?.documentoIdentidad || 'S/C',
             doctor: inv.cita?.medico?.empleado ? `Dr. ${inv.cita.medico.empleado.nombres} ${inv.cita.medico.empleado.apellidos}` : 'No asignado',
             total: Number(inv.total),
+            montoAsegurado: Number((inv as any).montoAsegurado || 0),
             saldoPendiente: Number(inv.saldoPendiente)
         }));
 

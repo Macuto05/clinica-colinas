@@ -47,16 +47,15 @@ export async function POST(req: Request) {
         };
 
         if (paymentData.canalPago === 'PRESENCIAL') {
-            // STRICT REQUIREMENT: "Los demas quedan vacios"
             paymentData.montoBs = null;
             paymentData.tasaCambio = null;
-            paymentData.referenciaExterna = "PRESENCIAL"; // User requested PRESENCIAL marker, usually in reference or just implied. Leaving as PRESENCIAL for visibility unless explicitly requested NULL.
-            // User said: "los campos que se cargan... pago id, canal pago, estado pago, factura id, monto $, y usuario registro. Los demas quedan vacios."
-            // So Referencia might need to be null or empty? 
-            // In the previous request he said "referencia: PRESENCIAL" is how the cashier filters.
-            // In the CURRENT request he says: "canal pago: PRESENCIAL... manera de filtrar... sera por el canal pago presencial"
-            // So Referencia can be null.
-            paymentData.referenciaExterna = "PRESENCIAL"; // Keeping it as "PRESENCIAL" is safer for now for visibility, or I can set it null if he insists on "vacios". I will set 'PRESENCIAL' as he previously liked it, but I'll ensure bank accounts etc are null.
+            paymentData.referenciaExterna = "PRESENCIAL";
+            paymentData.cuentaBancariaId = null;
+        } else if (paymentData.canalPago === 'SEGURO') {
+            // Insurance payment: no exchange rate, no bank account
+            paymentData.montoBs = null;
+            paymentData.tasaCambio = null;
+            paymentData.referenciaExterna = referencia || "SEGURO"; // Carta aval code
             paymentData.cuentaBancariaId = null;
         } else {
             // ONLINE Calculation

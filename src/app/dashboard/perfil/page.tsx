@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { User, Mail, Phone, MapPin, Calendar, CreditCard, Edit2, Lock, Save, X, FileDown, Loader2, Clock } from "lucide-react";
+import { User, Mail, Phone, MapPin, Calendar, CreditCard, Edit2, Lock, Save, X, FileDown, Loader2, Clock, AlertCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -149,21 +149,21 @@ export default function ProfilePage() {
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-start justify-between">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white pt-2">Mi Perfil</h1>
-                <div className="flex gap-3 items-start">
+        <div className="space-y-6 pt-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Mi Perfil</h1>
+                <div className="flex flex-col sm:flex-row gap-3 items-end sm:items-center">
                     <div className="flex flex-col items-end gap-1">
                         <button
                             onClick={handleDownloadHistory}
                             disabled={isDownloading}
-                            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50 shadow-sm"
+                            className="flex items-center gap-2 px-5 py-2.5 bg-white/60 backdrop-blur-md border border-white/80 text-gray-700 font-bold rounded-2xl hover:bg-white transition-all disabled:opacity-50 shadow-sm focus:ring-2 focus:ring-lime-300"
                         >
-                            {isDownloading ? <Loader2 size={16} className="animate-spin" /> : <FileDown size={16} />}
+                            {isDownloading ? <Loader2 size={18} className="animate-spin text-lime-600" /> : <FileDown size={18} className="text-lime-600" />}
                             Descargar Historial Médico
                         </button>
                         {historyDate && (
-                            <span className="text-[10px] text-gray-400 dark:text-gray-500 mr-1 flex items-center gap-1">
+                            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mr-1">
                                 Última modificación: {historyDate.toLocaleDateString()}
                             </span>
                         )}
@@ -178,35 +178,35 @@ export default function ProfilePage() {
                                 address: user.address || "",
                             });
                         }}
-                        className="flex items-center gap-2 px-4 py-2 bg-lime-600 text-white rounded-lg hover:bg-lime-700 transition-colors shadow-sm"
+                        className="flex items-center gap-2 px-5 py-2.5 bg-lime-500/95 backdrop-blur-md text-white font-bold rounded-2xl border border-lime-400/50 hover:bg-lime-600 shadow-[0_4px_12px_rgba(132,204,22,0.3)] transition-all focus:ring-2 focus:ring-lime-300"
                     >
-                        <Edit2 size={16} />
+                        <Edit2 size={18} />
                         Editar Perfil
                     </button>
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden">
+            <div className="bg-white/40 backdrop-blur-md rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.06)] border border-white/50 overflow-hidden">
                 <div className="relative h-32 bg-gradient-to-r from-lime-500 to-lime-600">
                     <div className="absolute -bottom-12 left-8">
-                        <div className="h-24 w-24 rounded-full bg-white dark:bg-zinc-900 p-1">
-                            <div className="h-full w-full rounded-full bg-lime-100 dark:bg-zinc-800 flex items-center justify-center text-lime-600 font-bold text-3xl border-4 border-white">
+                        <div className="h-24 w-24 rounded-full bg-white/40 backdrop-blur-md p-1 border border-white/50 shadow-lg">
+                            <div className="h-full w-full rounded-full bg-white/80 backdrop-blur-xl flex items-center justify-center text-lime-700 font-black text-4xl shadow-inner border border-white">
                                 {user.firstName?.charAt(0)}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="pt-16 pb-8 px-8">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <div className="pt-16 pb-8 px-8 sm:px-10">
+                    <h2 className="text-3xl font-bold text-gray-900 tracking-tight">
                         {user.firstName} {user.lastName}
                     </h2>
-                    <p className="text-gray-500 dark:text-gray-400">{user.email}</p>
+                    <p className="text-gray-500 font-medium text-lg mt-1">{user.email}</p>
 
                     <div className="mt-8 grid gap-6 md:grid-cols-2">
                         {/* Personal Info - READ ONLY */}
-                        <div className="space-y-6">
-                            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b pb-2">
+                        <div className="bg-white/50 backdrop-blur-md rounded-3xl p-6 border border-white/60 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] space-y-6">
+                            <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider border-b border-white pb-3">
                                 Información Personal
                             </h3>
 
@@ -234,8 +234,8 @@ export default function ProfilePage() {
                         </div>
 
                         {/* Contact Info - EDITABLE via Modal, Read Only here */}
-                        <div className="space-y-6">
-                            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b pb-2">
+                        <div className="bg-white/50 backdrop-blur-md rounded-3xl p-6 border border-white/60 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] space-y-6">
+                            <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider border-b border-white pb-3">
                                 Información de Contacto y Cuenta
                             </h3>
 
@@ -252,106 +252,131 @@ export default function ProfilePage() {
 
             {/* Edit Modal */}
             {isEditing && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
-                        <div className="p-6 border-b flex justify-between items-center sticky top-0 bg-white z-10">
-                            <h2 className="text-xl font-bold">Editar Perfil</h2>
-                            <button onClick={() => setIsEditing(false)} className="text-gray-500 hover:text-gray-700">
-                                <X size={24} />
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6 md:p-8 animate-in fade-in duration-200">
+                    <div className="bg-white/70 backdrop-blur-2xl rounded-[2.5rem] w-full max-w-2xl max-h-full flex flex-col shadow-[0_8px_32px_0_rgba(0,0,0,0.12)] border border-white/60 overflow-hidden">
+                        
+                        {/* Header */}
+                        <div className="p-6 sm:p-8 border-b border-white/40 bg-white/30 backdrop-blur-md flex justify-between items-center shrink-0">
+                            <div>
+                                <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Editar Perfil</h2>
+                                <p className="text-sm font-medium text-gray-500 tracking-wider mt-1">Actualiza tus datos personales y de cuenta.</p>
+                            </div>
+                            <button onClick={() => setIsEditing(false)} className="w-10 h-10 bg-white/50 hover:bg-white rounded-full flex items-center justify-center border border-white/60 shadow-sm transition-all text-gray-500 hover:text-gray-800">
+                                <X size={20} />
                             </button>
                         </div>
 
-                        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
-                            {error && (
-                                <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm">
-                                    {error}
-                                </div>
-                            )}
+                        {/* Scrolling Body */}
+                        <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 space-y-6 custom-scrollbar">
+                            <form id="editProfileForm" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                                {error && (
+                                    <div className="p-4 bg-red-50 text-red-700/90 rounded-2xl flex items-center gap-2 border border-red-200/50 shadow-sm backdrop-blur-md">
+                                        <AlertCircle size={20} />
+                                        <span className="text-sm font-bold">{error}</span>
+                                    </div>
+                                )}
 
-                            <div className="space-y-4">
-                                <h3 className="font-semibold text-gray-900">Datos de Contacto</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                        <label className="text-sm font-medium">Teléfono</label>
-                                        <input
-                                            {...register("phone")}
-                                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-lime-500 outline-none"
-                                        />
+                                {/* Section 1: Datos de Contacto */}
+                                <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-5 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] space-y-5">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <span className="w-7 h-7 rounded-full bg-gray-900/90 text-white shadow-md text-xs font-black flex items-center justify-center shrink-0">1</span>
+                                        <h4 className="font-bold text-gray-800 text-base">Datos de Contacto</h4>
                                     </div>
-                                    <div className="space-y-1">
-                                        <label className="text-sm font-medium">Dirección</label>
-                                        <input
-                                            {...register("address")}
-                                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-lime-500 outline-none"
-                                        />
-                                    </div>
-                                    <div className="space-y-1 md:col-span-2">
-                                        <label className="text-sm font-medium">Correo de Contacto</label>
-                                        <input
-                                            {...register("contactEmail")}
-                                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-lime-500 outline-none"
-                                        />
-                                        <p className="text-xs text-gray-500">Para notificaciones y resultados.</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4 pt-4 border-t">
-                                <h3 className="font-semibold text-gray-900">Seguridad y Acceso</h3>
-                                <div className="space-y-4">
-                                    <div className="space-y-1">
-                                        <label className="text-sm font-medium">Correo de Acceso (Login)</label>
-                                        <input
-                                            {...register("accessEmail")}
-                                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-lime-500 outline-none"
-                                        />
-                                    </div>
-
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="space-y-1">
-                                            <label className="text-sm font-medium">Nueva Contraseña (Opcional)</label>
+                                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Teléfono</label>
                                             <input
-                                                type="password"
-                                                {...register("password")}
-                                                placeholder="Dejar vacía para no cambiar"
-                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-lime-500 outline-none"
+                                                {...register("phone")}
+                                                className="w-full px-4 py-3 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all text-gray-800"
                                             />
-                                            {errors.password && <p className="text-red-500 text-xs">{errors.password.message}</p>}
                                         </div>
                                         <div className="space-y-1">
-                                            <label className="text-sm font-medium">Confirmar Contraseña</label>
+                                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Dirección</label>
                                             <input
-                                                type="password"
-                                                {...register("confirmPassword")}
-                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-lime-500 outline-none"
+                                                {...register("address")}
+                                                className="w-full px-4 py-3 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all text-gray-800"
                                             />
-                                            {errors.confirmPassword && <p className="text-red-500 text-xs">{errors.confirmPassword.message}</p>}
+                                        </div>
+                                        <div className="space-y-2 md:col-span-2">
+                                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Correo de Contacto</label>
+                                            <input
+                                                {...register("contactEmail")}
+                                                className="w-full px-4 py-3 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all text-gray-800"
+                                            />
+                                            <p className="text-xs font-medium text-gray-400/80 italic ml-1">Utilizado para notificaciones y envío de resultados médicos.</p>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
+                                </section>
 
-                            <div className="pt-4 flex justify-end gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsEditing(false)}
-                                    className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={isLoading}
-                                    className="px-6 py-2 bg-lime-600 text-white rounded-lg hover:bg-lime-700 disabled:opacity-50 flex items-center gap-2"
-                                >
-                                    {isLoading ? "Guardando..." : (
-                                        <>
-                                            <Save size={18} /> Guardar Cambios
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        </form>
+                                {/* Section 2: Seguridad y Acceso */}
+                                <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-5 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] space-y-5">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <span className="w-7 h-7 rounded-full bg-gray-900/90 text-white shadow-md text-xs font-black flex items-center justify-center shrink-0">2</span>
+                                        <h4 className="font-bold text-gray-800 text-base">Seguridad y Acceso</h4>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Correo de Acceso (Login)</label>
+                                            <input
+                                                {...register("accessEmail")}
+                                                className="w-full px-4 py-3 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all text-gray-800"
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-white/50 pt-4">
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Nueva Contraseña</label>
+                                                <input
+                                                    type="password"
+                                                    {...register("password")}
+                                                    placeholder="Dejar vacía para no cambiar"
+                                                    className="w-full px-4 py-3 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all text-gray-800 placeholder:text-gray-400"
+                                                />
+                                                {errors.password && <p className="text-red-500 text-xs font-bold">{errors.password.message}</p>}
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Confirmar Contraseña</label>
+                                                <input
+                                                    type="password"
+                                                    {...register("confirmPassword")}
+                                                    placeholder="Confirmar nueva contraseña"
+                                                    className="w-full px-4 py-3 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all text-gray-800 placeholder:text-gray-400"
+                                                />
+                                                {errors.confirmPassword && <p className="text-red-500 text-xs font-bold">{errors.confirmPassword.message}</p>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                            </form>
+                        </div>
+
+                        {/* Footer (Sticky Actions) */}
+                        <div className="p-6 sm:p-8 border-t border-white/40 flex justify-end gap-3 shrink-0 bg-white/30 backdrop-blur-md">
+                            <button
+                                type="button"
+                                onClick={() => setIsEditing(false)}
+                                className="px-6 py-3.5 rounded-2xl bg-white/50 border border-white/60 text-gray-700 font-bold hover:bg-white transition-colors text-sm shadow-sm backdrop-blur-sm outline-none focus:ring-2 focus:ring-gray-300"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="submit"
+                                form="editProfileForm"
+                                disabled={isLoading}
+                                className="px-8 py-3.5 bg-lime-500/95 backdrop-blur-md text-white font-bold rounded-2xl hover:bg-lime-600 disabled:opacity-50 flex items-center gap-2 shadow-[0_4px_12px_rgba(132,204,22,0.3)] border border-lime-400/50 transition-all outline-none focus:ring-2 focus:ring-lime-300"
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                        <span>Guardando...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Save size={18} /> Guardar Cambios
+                                    </>
+                                )}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
@@ -361,13 +386,13 @@ export default function ProfilePage() {
 
 function BioItem({ icon: Icon, label, value }: { icon: any, label: string, value?: string | null }) {
     return (
-        <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
-            <div className="h-10 w-10 rounded-full bg-lime-50 dark:bg-zinc-800 flex items-center justify-center text-lime-600">
-                <Icon size={20} />
+        <div className="flex items-center gap-4 bg-white/30 backdrop-blur-sm p-3 rounded-2xl border border-white/50 transition-all hover:bg-white/50">
+            <div className="h-12 w-12 rounded-[1rem] bg-lime-500/10 flex items-center justify-center text-lime-700 shadow-inner border border-lime-500/20">
+                <Icon size={22} className="opacity-90" />
             </div>
-            <div>
-                <p className="text-xs text-gray-500">{label}</p>
-                <p className="font-medium">{value || "No registrado"}</p>
+            <div className="flex-1 min-w-0">
+                <p className="text-xs font-black uppercase text-gray-400 tracking-wider mb-0.5">{label}</p>
+                <p className="font-bold text-gray-800 text-sm truncate">{value || "No registrado"}</p>
             </div>
         </div>
     );

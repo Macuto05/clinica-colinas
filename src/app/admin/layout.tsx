@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { JWTService } from "@/infrastructure/services/JWTService";
 import { PrismaUserRepository } from "@/infrastructure/database/prisma/repositories/PrismaUserRepository";
-import { LayoutDashboard, Users, UserCog, Calendar, Activity, BarChart3, FileText, Settings, LogOut, Clock, ShoppingCart, Award, Briefcase, Shield } from "lucide-react";
+import { LayoutDashboard, Users, UserCog, Calendar, Activity, BarChart3, FileText, Settings, LogOut, Clock, ShoppingCart, Award, Briefcase, Shield, Siren } from "lucide-react";
 import AdminProfile from "./components/AdminProfile";
 import ExchangeRateWidget from "@/components/admin/ExchangeRateWidget";
 
@@ -67,6 +67,8 @@ export default async function AdminLayout({
                     </p>
                     <NavItem href="/admin/citas" icon={<Calendar size={20} />} label="Citas Médicas" />
                     <NavItem href="/admin/especialidades" icon={<Activity size={20} />} label="Especialidades" />
+                    <NavItem href="/admin/aseguradoras" icon={<Shield size={20} />} label="Aseguradoras" />
+                    <NavItem href="/emergencias" icon={<Siren size={20} />} label="Emergencias" />
 
 
 

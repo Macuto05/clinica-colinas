@@ -244,23 +244,23 @@ export function PatientModal({ isOpen, onClose, patient, onSuccess }: PatientMod
     if (!isOpen) return null;
 
     return createPortal(
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-zinc-900 w-full max-w-5xl rounded-2xl shadow-xl border border-gray-200 dark:border-zinc-800 overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-0 sm:p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in duration-200">
+            <div className="bg-white/70 backdrop-blur-2xl backdrop-saturate-[1.2] w-full max-w-5xl rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.12)] border border-white/60 overflow-hidden max-h-[100vh] sm:max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200">
 
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-900">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                <div className="p-6 border-b border-white/40 bg-white/30 shrink-0 flex items-center justify-between">
+                    <h3 className="text-xl font-bold text-gray-900 tracking-tight">
                         {patient ? "Editar Paciente" : "Registrar Nuevo Paciente"}
                     </h3>
-                    <button onClick={onClose} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                    <button onClick={onClose} className="p-2 text-gray-400 hover:text-red-500 hover:bg-white/60 rounded-full transition-colors">
                         <X size={20} />
                     </button>
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-8 max-h-[90vh] overflow-y-auto">
+                <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-8 flex-1 overflow-y-auto">
                     {error && (
-                        <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg text-sm flex items-center gap-2">
+                        <div className="p-4 bg-red-50/70 border border-red-200/50 text-red-600 rounded-2xl text-sm flex items-center gap-2 backdrop-blur-sm shadow-sm font-bold">
                             <AlertCircle size={16} /> {error}
                         </div>
                     )}
@@ -268,44 +268,44 @@ export function PatientModal({ isOpen, onClose, patient, onSuccess }: PatientMod
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         {/* Personal Info */}
                         <div className="space-y-5">
-                            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider pb-1 border-b border-gray-100 dark:border-zinc-800">Información Personal</h4>
+                            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider pb-1 border-b border-white/40">Información Personal</h4>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombres</label>
-                                    <input {...register("nombres")} className="w-full px-3 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-lime-500 outline-none transition-all" placeholder="Juan" />
+                                    <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2">Nombres</label>
+                                    <input {...register("nombres")} className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400" placeholder="Juan" />
                                     {errors.nombres && <p className="text-red-500 text-xs mt-1">{errors.nombres.message}</p>}
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Apellidos</label>
-                                    <input {...register("apellidos")} className="w-full px-3 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-lime-500 outline-none transition-all" placeholder="Pérez" />
+                                    <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2">Apellidos</label>
+                                    <input {...register("apellidos")} className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400" placeholder="Pérez" />
                                     {errors.apellidos && <p className="text-red-500 text-xs mt-1">{errors.apellidos.message}</p>}
                                 </div>
                             </div>
 
                             {/* Split ID */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Documento Identidad</label>
+                                <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2">Documento Identidad</label>
                                 <div className="flex gap-2">
-                                    <select {...register("idType")} className="w-24 px-3 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-lime-500 outline-none">
+                                    <select {...register("idType")} className="w-24 px-4 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all">
                                         <option value="V-">V-</option>
                                         <option value="E-">E-</option>
                                         <option value="J-">J-</option>
                                     </select>
-                                    <input {...register("idNumber")} className="flex-1 px-3 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-lime-500 outline-none transition-all" placeholder="12345678" />
+                                    <input {...register("idNumber")} className="flex-1 px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400" placeholder="12345678" />
                                 </div>
                                 {errors.idNumber && <p className="text-red-500 text-xs mt-1">{errors.idNumber.message}</p>}
                             </div>
 
                             {/* Stacked Date & Sex for better spacing layout */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha Nacimiento</label>
-                                <input type="date" {...register("fechaNacimiento")} className="w-full px-3 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-lime-500 outline-none transition-all" />
+                                <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2">Fecha Nacimiento</label>
+                                <input type="date" {...register("fechaNacimiento")} className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400" />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sexo</label>
-                                <select {...register("sexo")} className="w-full px-3 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-lime-500 outline-none transition-all">
+                                <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2">Sexo</label>
+                                <select {...register("sexo")} className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all">
                                     <option value="">Seleccionar</option>
                                     <option value="MASCULINO">Masculino</option>
                                     <option value="FEMENINO">Femenino</option>
@@ -317,13 +317,13 @@ export function PatientModal({ isOpen, onClose, patient, onSuccess }: PatientMod
 
                         {/* Contact Info */}
                         <div className="space-y-5">
-                            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider pb-1 border-b border-gray-100 dark:border-zinc-800">Contacto</h4>
+                            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider pb-1 border-b border-white/40">Contacto</h4>
 
                             {/* Split Phone */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono</label>
+                                <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2">Teléfono</label>
                                 <div className="flex gap-2">
-                                    <select {...register("phoneCode")} className="w-28 px-3 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-lime-500 outline-none">
+                                    <select {...register("phoneCode")} className="w-28 px-4 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all">
                                         <option value="0412-">0412</option>
                                         <option value="0414-">0414</option>
                                         <option value="0424-">0424</option>
@@ -331,47 +331,47 @@ export function PatientModal({ isOpen, onClose, patient, onSuccess }: PatientMod
                                         <option value="0426-">0426</option>
                                         <option value="0422-">0422</option>
                                     </select>
-                                    <input {...register("phoneNumber")} className="flex-1 px-3 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-lime-500 outline-none transition-all" placeholder="1234567" />
+                                    <input {...register("phoneNumber")} className="flex-1 px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400" placeholder="1234567" />
                                 </div>
                                 {errors.phoneNumber && <p className="text-red-500 text-xs mt-1">{errors.phoneNumber.message}</p>}
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Correo de Contacto</label>
-                                <input {...register("correo")} className="w-full px-3 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-lime-500 outline-none transition-all" placeholder="contacto@ejemplo.com" />
+                                <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2">Correo de Contacto</label>
+                                <input {...register("correo")} className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400" placeholder="contacto@ejemplo.com" />
                                 <p className="text-xs text-gray-500 mt-1">Donde recibirá notificaciones</p>
                                 {errors.correo && <p className="text-red-500 text-xs mt-1">{errors.correo.message}</p>}
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dirección</label>
-                                <textarea {...register("direccion")} rows={5} className="w-full px-3 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-lime-500 outline-none resize-none transition-all" placeholder="Dirección completa..." />
+                                <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2">Dirección</label>
+                                <textarea {...register("direccion")} rows={5} className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400 resize-none" placeholder="Dirección completa..." />
                             </div>
                         </div>
 
                         {/* Account Data - Always Visible to Allow Edits */}
                         <div className="space-y-4">
-                            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider pb-1 border-b border-gray-100 dark:border-zinc-800">Cuenta de Acceso</h4>
+                            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider pb-1 border-b border-white/40">Cuenta de Acceso</h4>
                             <div className="space-y-5">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Correo de Acceso</label>
-                                    <input {...register("correoAcceso")} className="w-full px-3 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-lime-500 outline-none transition-all" placeholder="usuario@login.com" />
+                                    <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2">Correo de Acceso</label>
+                                    <input {...register("correoAcceso")} className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400" placeholder="usuario@login.com" />
                                     <p className="text-xs text-gray-500 mt-1">Para acceso al sistema</p>
                                     {errors.correoAcceso && <p className="text-red-500 text-xs mt-1">{errors.correoAcceso.message}</p>}
                                 </div>
                                 <div className="space-y-5">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2">
                                             {patient ? "Nueva Contraseña (Opcional)" : "Contraseña"}
                                         </label>
                                         <div className="relative">
                                             <input
                                                 type={showPassword ? "text" : "password"}
                                                 {...register("password")}
-                                                className="w-full px-3 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-lime-500 outline-none transition-all pr-10"
+                                                className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400 pr-10"
                                                 placeholder={patient ? "Dejar vacía para mantener actual" : "••••••••"}
                                             />
-                                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                                                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                             </button>
                                         </div>
@@ -379,15 +379,15 @@ export function PatientModal({ isOpen, onClose, patient, onSuccess }: PatientMod
                                         {password && <PasswordStrengthIndicator password={password} />}
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirmar Contraseña</label>
+                                        <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2">Confirmar Contraseña</label>
                                         <div className="relative">
                                             <input
                                                 type={showConfirmPassword ? "text" : "password"}
                                                 {...register("confirmPassword")}
-                                                className="w-full px-3 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-lime-500 outline-none transition-all pr-10"
+                                                className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400 pr-10"
                                                 placeholder="••••••••"
                                             />
-                                            <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                            <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                                                 {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                             </button>
                                         </div>
@@ -399,18 +399,18 @@ export function PatientModal({ isOpen, onClose, patient, onSuccess }: PatientMod
                     </div>
 
                     {/* Footer Actions */}
-                    <div className="pt-6 border-t border-gray-100 dark:border-zinc-800 flex justify-end gap-3">
+                    <div className="p-6 border-t border-white/40 flex gap-3 shrink-0 bg-white/30 backdrop-blur-md">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors"
+                            className="flex-1 py-3.5 rounded-2xl bg-white/50 border border-white/60 text-gray-700 font-bold hover:bg-white/80 transition-colors text-sm shadow-sm backdrop-blur-sm outline-none focus:ring-2 focus:ring-gray-300"
                         >
                             Cancelar
                         </button>
                         <button
                             type="submit"
                             disabled={isSaving}
-                            className="px-6 py-2 bg-lime-600 hover:bg-lime-700 text-white rounded-lg font-bold shadow-lg shadow-lime-600/20 transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                            className="flex-[2] py-3.5 rounded-2xl bg-lime-500/95 hover:bg-lime-500 text-white font-bold shadow-[0_8px_20px_rgba(132,204,22,0.3)] backdrop-blur-md border border-lime-400/50 outline-none focus:ring-2 focus:ring-lime-300 transition-colors flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed text-sm"
                         >
                             {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
                             {patient ? "Guardar Cambios" : "Registrar Paciente"}

@@ -106,7 +106,7 @@ export default function AppointmentsPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
+        <div className="p-4 sm:p-6 md:p-8">
             <div className="max-w-5xl mx-auto space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
@@ -127,11 +127,11 @@ export default function AppointmentsPage() {
                         <p className="mt-2 text-gray-500">Cargando citas...</p>
                     </div>
                 ) : appointments.length === 0 ? (
-                    <div className="bg-white rounded-2xl p-12 text-center border border-gray-100 shadow-sm">
-                        <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <div className="bg-white/40 backdrop-blur-md rounded-3xl p-12 text-center border border-white/50 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
+                        <div className="mx-auto w-16 h-16 bg-white/50 rounded-full flex items-center justify-center mb-4 border border-white/60 shadow-inner">
                             <Calendar size={32} className="text-gray-400" />
                         </div>
-                        <h3 className="text-lg font-medium text-gray-900">No tienes citas programadas</h3>
+                        <h3 className="text-lg font-bold text-gray-900">No tienes citas programadas</h3>
                         <p className="text-gray-500 mt-1 mb-6">Agenda tu primera consulta con nuestros especialistas.</p>
                         <Button
                             onClick={() => router.push("/dashboard/citas/nueva")}
@@ -144,9 +144,9 @@ export default function AppointmentsPage() {
                         {appointments.map((apt) => {
                             const isCompleted = ['ATENDIDA', 'COMPLETADA', 'FINALIZADA'].includes(apt.status);
                             return (
-                                <div key={apt.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:shadow-md">
+                                <div key={apt.id} className="bg-white/40 backdrop-blur-md p-6 rounded-3xl shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] border border-white/50 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:bg-white/60 hover:border-white/60 hover:shadow-lg">
                                     <div className="flex items-start gap-4">
-                                        <div className="w-12 h-12 bg-lime-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <div className="w-12 h-12 bg-white/70 backdrop-blur-sm rounded-2xl border border-white/80 shadow-sm flex items-center justify-center flex-shrink-0">
                                             <Calendar className="text-lime-600" />
                                         </div>
                                         <div>
@@ -189,7 +189,7 @@ export default function AppointmentsPage() {
                                         {isCompleted && (
                                             <button
                                                 onClick={() => handleOpenDetails(apt.id)}
-                                                className="text-xs font-bold text-lime-600 bg-lime-50 hover:bg-lime-100 px-3 py-1.5 rounded-full flex items-center gap-1 transition-colors"
+                                                className="text-xs font-bold text-lime-700 bg-white/60 backdrop-blur-sm hover:bg-white border border-white/80 shadow-sm px-4 py-2 rounded-full flex items-center gap-1 transition-all focus:ring-2 focus:ring-lime-300"
                                             >
                                                 Ver Resultados <ArrowRight size={12} />
                                             </button>
@@ -208,8 +208,8 @@ export default function AppointmentsPage() {
                 onClose={() => setReasonModal({ ...reasonModal, isOpen: false })}
                 title="Motivo de Consulta"
             >
-                <div className="p-4">
-                    <p className="text-gray-700 dark:text-gray-300 text-lg italic bg-gray-50 dark:bg-zinc-800 p-6 rounded-xl border border-gray-100 dark:border-zinc-700 text-center">
+                <div className="p-6">
+                    <p className="text-gray-800 text-lg sm:text-xl font-medium italic bg-white/50 backdrop-blur-sm p-6 sm:p-8 rounded-[2rem] border border-white/60 shadow-inner text-center leading-relaxed">
                         "{reasonModal.text}"
                     </p>
                 </div>

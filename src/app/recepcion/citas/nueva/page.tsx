@@ -197,7 +197,7 @@ export default function ReceptionNewAppointmentPage() {
                 <div className="lg:col-span-2 space-y-8">
 
                     {/* Step 1: Patient Selection */}
-                    <section className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-gray-100 dark:border-zinc-800 shadow-sm">
+                    <section className="bg-white/40 backdrop-blur-md p-6 rounded-3xl border border-white/50 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
                         <div className="flex items-center gap-2 mb-4">
                             <div className="bg-lime-100 dark:bg-lime-900/30 p-2 rounded-lg">
                                 <UserCheck className="text-lime-600 dark:text-lime-400" size={20} />
@@ -217,7 +217,7 @@ export default function ReceptionNewAppointmentPage() {
                     {/* Step 2: Appointment Details - Only show if patient is selected */}
                     {selectedPatient && (
                         <form onSubmit={handleSubmit} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                            <section className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-gray-100 dark:border-zinc-800 shadow-sm space-y-6">
+                            <section className="bg-white/40 backdrop-blur-md p-6 rounded-3xl border border-white/50 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] space-y-6">
                                 <div className="flex items-center gap-2 mb-4">
                                     <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg">
                                         <Calendar className="text-blue-600 dark:text-blue-400" size={20} />
@@ -246,8 +246,8 @@ export default function ReceptionNewAppointmentPage() {
 
                                 {/* Calendar & Slots */}
                                 <div className="space-y-4 pt-2">
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Fecha y Hora</label>
-                                    <div className="bg-gray-50 dark:bg-zinc-800/50 rounded-xl border border-gray-200 dark:border-zinc-700 p-4">
+                                    <label className="block text-sm font-bold text-gray-500/80 uppercase tracking-wider mb-2">Fecha y Hora</label>
+                                    <div className="bg-white/50 backdrop-blur-sm rounded-3xl border border-white/60 shadow-inner p-4">
                                         <CustomCalendar
                                             value={selectedDate ? parse(selectedDate, 'yyyy-MM-dd', new Date()) : null}
                                             onChange={(date) => {
@@ -281,12 +281,12 @@ export default function ReceptionNewAppointmentPage() {
                                                         disabled={!slot.available}
                                                         onClick={() => setSelectedSlot(slot.start)}
                                                         className={`
-                                                            px-2 py-2 text-sm font-semibold rounded-lg border transition-all
+                                                            px-2 py-3 text-sm font-bold rounded-2xl border transition-all
                                                             ${selectedSlot === slot.start
-                                                                ? "bg-lime-600 text-white border-lime-600 shadow-md transform scale-105"
+                                                                ? "border-lime-500/80 bg-lime-50 text-lime-700 shadow-[0_4px_12px_rgba(132,204,22,0.2)] ring-2 ring-lime-400/20 scale-[1.02]"
                                                                 : slot.available
-                                                                    ? "bg-white dark:bg-zinc-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-zinc-700 hover:border-lime-500 hover:text-lime-600"
-                                                                    : "bg-gray-50 dark:bg-zinc-800/50 text-gray-300 dark:text-gray-600 border-gray-100 dark:border-zinc-800 cursor-not-allowed"}
+                                                                    ? "border-white/60 bg-white/40 text-gray-500 opacity-80 hover:opacity-100 hover:bg-white/60 shadow-sm"
+                                                                    : "bg-white/20 text-gray-400 border-white/30 cursor-not-allowed"}
                                                         `}
                                                     >
                                                         {slot.start}
@@ -303,17 +303,17 @@ export default function ReceptionNewAppointmentPage() {
 
                                 {/* Reason */}
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Motivo (Opcional)</label>
+                                    <label className="block text-sm font-bold text-gray-500/80 uppercase tracking-wider mb-2">Motivo (Opcional)</label>
                                     <textarea
                                         rows={2}
                                         value={reason}
                                         onChange={(e) => setReason(e.target.value)}
                                         placeholder="Nota para el médico..."
-                                        className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-lime-500 outline-none resize-none"
+                                        className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400 resize-none"
                                     />
                                 </div>
 
-                                <div className="pt-4 border-t border-gray-100 dark:border-zinc-800 flex justify-end gap-3">
+                                <div className="pt-4 border-t border-white/40 flex justify-end gap-3 mt-8">
                                     <Button
                                         type="button"
                                         variant="outline"
@@ -336,8 +336,8 @@ export default function ReceptionNewAppointmentPage() {
 
                 {/* Right Column: Summary Preview */}
                 <div className="hidden lg:block">
-                    <div className="sticky top-24 bg-white dark:bg-zinc-900 rounded-2xl border border-gray-100 dark:border-zinc-800 p-6 shadow-sm space-y-6">
-                        <h3 className="font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-zinc-800 pb-2">Resumen</h3>
+                    <div className="sticky top-40 bg-white/40 backdrop-blur-xl rounded-[2.5rem] border border-white/50 p-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.06)] space-y-6">
+                        <h3 className="font-bold text-gray-900 border-b border-white/40 pb-4 text-lg tracking-tight">Resumen</h3>
 
                         <div className="space-y-4 text-sm">
                             <div>

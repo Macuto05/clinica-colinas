@@ -41,6 +41,7 @@ export async function GET(req: Request) {
                 fecha: f.fechaEmision,
                 total: Number(f.total),
                 saldoPendiente: deuda,
+                montoAsegurado: Number(f.montoAsegurado),
                 enRevision: enRevision,
                 estado: f.estadoFactura,
                 descripcion: `Consulta del ${new Date(f.cita.fechaCita).toLocaleDateString()}`
