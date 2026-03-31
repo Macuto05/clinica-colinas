@@ -32,9 +32,9 @@ Liquid Glass simulates frosted glass surfaces that are:
 
 ```
 Background overlay:   bg-slate-900/30   (page-level modal scrim)
-Panel (deep):         bg-white/70  backdrop-blur-2xl  backdrop-saturate-[1.2]
+Panel (deep):         bg-white/70 or bg-slate-100/40 backdrop-blur-2xl
 Panel (shallow):      bg-white/40  backdrop-blur-md
-Card / Section:       bg-white/40  backdrop-blur-md
+Card / Section:       bg-white/60  backdrop-blur-md border-white/80
 Input / Field:        bg-white/50  border-white/60
 Input focus:          bg-white/80  ring-2 ring-[accent]/50
 Header strip:         bg-white/30  backdrop-blur-md
@@ -127,10 +127,21 @@ Colored shadow: shadow-md  shadow-[color]-200
 </div>
 ```
 
-### 6.2 Section / Card (inside modal or page)
+### 6.2 Form Section / Card (inside modal or page)
+**CRITICAL**: Every section inside a form MUST be clearly separated. The outer background should be slightly grey/frosted (like `bg-slate-100/40`), and the inner form sections must be `bg-white/60` to pop out. Also, the section MUST have a numbered step circle header.
+
 ```tsx
-<section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-5 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
-  ...
+<section className="bg-white/60 backdrop-blur-md border border-white/80 rounded-3xl p-6 md:p-8 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] space-y-5">
+    {/* Step Header */}
+    <div className="flex items-center gap-3 mb-4">
+        <span className="w-7 h-7 rounded-full bg-gray-900/90 text-white shadow-md text-xs font-black flex items-center justify-center shrink-0">
+            1
+        </span>
+        <h4 className="font-bold text-gray-800 text-base">Título de Sección</h4>
+    </div>
+    
+    {/* Content */}
+    ...
 </section>
 ```
 
