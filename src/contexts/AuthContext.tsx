@@ -38,6 +38,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 const data = await response.json();
                 if (data.user) {
                     setUser(data.user);
+                    
+                    // Automatic Role Redirection after session restore (only if at home or dashboard root)
+                    const path = window.location.pathname;
+                    if (path === "/" || path === "/dashboard" || path === "/login") {
+                        handleRoleRedirect(data.user);
+                    }
                 } else {
                     setUser(null);
                 }
@@ -52,45 +58,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    const handleRoleRedirect = (userData: Partial<User>) => {
+        const role = (userData.role || "").toUpperCase();
+        
+        if (role === "ADMIN") {
+            router.push("/admin");
+        } else if (role === "DOCTOR" || role === "MEDICO") {
+            router.push("/medico");
+        } else if (role === "ALMACEN") {
+            router.push("/almacen");
+        } else if (["CAJA", "CAJA Y FACTURACION", "CAJA Y FACTURACIÓN", "CAJA/FACTURACION", "CAJA/FACTURACIÓN"].includes(role)) {
+            router.push("/caja");
+        } else if (role === "RECEPCION") {
+            router.push("/recepcion");
+        } else {
+            router.push("/dashboard");
+        }
+    };
+
     const login = (userData: Partial<User>, redirectPath?: string) => {
         setUser(userData);
-
-        // Smart Redirect Logic
-        // If user is ADMIN and attempts to go to the default patient dashboard, force them to Admin Panel
-        if (userData.role === "ADMIN") {
-            if (!redirectPath || redirectPath.startsWith("/dashboard") || redirectPath === "/") {
-                router.push("/admin");
-                return;
-            }
-        }
-
-        // If user is DOCTOR and attempts to go to default dashboard
-        if (userData.role === "DOCTOR") {
-            if (!redirectPath || redirectPath === "/dashboard" || redirectPath === "/") {
-                router.push("/dashboard/doctor");
-                return;
-            }
-        }
 
         if (redirectPath) {
             router.push(redirectPath);
             return;
         }
 
-        // Default redirects if no specific path was requested
-        if (userData.role === "ADMIN") {
-            router.push("/admin");
-        } else if (userData.role === "DOCTOR" || userData.role === "MEDICO") { // Added MEDICO role
-            router.push("/medico");
-        } else if (userData.role === "ALMACEN") {
-            router.push("/almacen");
-        } else if (["CAJA", "CAJA Y FACTURACION", "CAJA Y FACTURACIÓN", "CAJA/FACTURACION", "CAJA/FACTURACIÓN"].includes(userData.role?.toUpperCase() || "")) {
-            router.push("/caja");
-        } else if (userData.role === "RECEPCION") {
-            router.push("/recepcion");
-        } else {
-            router.push("/dashboard");
-        }
+        handleRoleRedirect(userData);
     };
 
     const logout = async () => {

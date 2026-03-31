@@ -26,7 +26,6 @@ export function SpecialtyActions({ specialty }: SpecialtyActionsProps) {
         id: specialty.especialidadId.toString(),
         nombre: specialty.nombre,
         descripcion: specialty.descripcion || "",
-        icono: specialty.icono || "",
         activa: specialty.activa,
     };
 

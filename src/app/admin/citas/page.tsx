@@ -43,15 +43,24 @@ export default function AdminAppointmentsPage() {
 
     const StatusBadge = ({ status }: { status: string }) => {
         const styles: Record<string, string> = {
-            PROGRAMADA: "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800",
-            CONFIRMADA: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800",
-            CANCELADA: "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800",
-            ATENDIDA: "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800",
-            NO_ASISTIO: "bg-gray-100 text-gray-800 border-gray-200 dark:bg-zinc-800 dark:text-gray-400 dark:border-zinc-700",
+            PROGRAMADA: "bg-amber-50/50 text-amber-700 border-amber-200/50",
+            CONFIRMADA: "bg-blue-50/50 text-blue-700 border-blue-200/50",
+            CANCELADA: "bg-red-50/50 text-red-700 border-red-200/50",
+            ATENDIDA: "bg-green-50/50 text-green-700 border-green-200/50",
+            NO_ASISTIO: "bg-gray-50/50 text-gray-700 border-gray-200/50",
+        };
+
+        const dots: Record<string, string> = {
+            PROGRAMADA: "bg-amber-500",
+            CONFIRMADA: "bg-blue-500",
+            CANCELADA: "bg-red-500",
+            ATENDIDA: "bg-green-500",
+            NO_ASISTIO: "bg-gray-400",
         };
 
         return (
-            <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${styles[status] || styles.PROGRAMADA}`}>
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border shadow-sm ${styles[status] || styles.PROGRAMADA}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${dots[status] || "bg-gray-400"}`} />
                 {status}
             </span>
         );
@@ -64,81 +73,89 @@ export default function AdminAppointmentsPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <Calendar className="text-lime-600" />
-                        Gestión de Citas
-                    </h1>
-                    <p className="text-gray-500 text-sm">Visualiza y gestiona todas las citas de la clínica.</p>
+            <div className="flex justify-between items-center bg-white/40 backdrop-blur-md p-8 rounded-[2.5rem] border border-white/50 shadow-sm">
+                <div className="flex items-center gap-6">
+                    <div className="p-4 bg-lime-500 text-white rounded-3xl shadow-lg shadow-lime-200/50 -rotate-3 transition-transform hover:rotate-0 duration-500">
+                        <Calendar size={28} strokeWidth={2.5} />
+                    </div>
+                    <div>
+                        <h1 className="text-3xl font-black text-gray-900 tracking-tight">Gestión de Citas</h1>
+                        <p className="text-gray-500 font-medium mt-1">Monitoreo y administración global de la agenda clínica.</p>
+                    </div>
                 </div>
             </div>
 
             {/* Filters */}
-            <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800">
-                <div className="relative max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <div className="bg-white/40 backdrop-blur-md p-6 rounded-[2rem] border border-white/50 shadow-sm">
+                <div className="relative max-w-md group">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-lime-500 transition-colors" size={18} />
                     <input
                         type="text"
                         placeholder="Buscar por paciente o doctor..."
-                        className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 focus:ring-2 focus:ring-lime-500 outline-none"
+                        className="w-full pl-11 pr-4 py-3 rounded-2xl border border-white/60 bg-white/50 focus:bg-white/80 focus:ring-4 focus:ring-lime-500/10 outline-none transition-all placeholder:text-gray-400/60 shadow-inner text-sm font-medium"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
             </div>
 
-            {/* Table */}
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900 min-h-[400px]">
+            {/* Table Container */}
+            <div className="bg-white/40 backdrop-blur-md border border-white/50 rounded-[2.5rem] overflow-hidden shadow-[0_8px_32px_0_rgba(0,0,0,0.04)]">
                 {isLoading ? (
-                    <div className="p-12 flex justify-center">
-                        <Loader2 className="animate-spin text-lime-600" size={32} />
+                    <div className="p-40 flex flex-col items-center justify-center gap-4">
+                        <Loader2 className="animate-spin text-lime-500" size={40} strokeWidth={2.5} />
+                        <p className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Cargando agenda...</p>
                     </div>
                 ) : filtered.length === 0 ? (
-                    <div className="p-12 text-center text-gray-500">
-                        No se encontraron citas.
+                    <div className="py-32 text-center">
+                        <div className="bg-gray-50/50 border border-gray-100/50 w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4">
+                            <Calendar className="text-gray-300" size={24} />
+                        </div>
+                        <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">
+                            No se encontraron citas registradas
+                        </p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200 dark:divide-zinc-800 text-sm">
-                            <thead className="bg-gray-50 dark:bg-zinc-800">
-                                <tr>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Fecha y Hora</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Paciente</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Doctor</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Tipo</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Motivo</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Estado</th>
+                        <table className="min-w-full">
+                            <thead>
+                                <tr className="bg-white/30 border-b border-white/40">
+                                    <th scope="col" className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-gray-500/80 cursor-default">Fecha y Hora</th>
+                                    <th scope="col" className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-gray-500/80 cursor-default">Paciente</th>
+                                    <th scope="col" className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-gray-500/80 cursor-default">Doctor</th>
+                                    <th scope="col" className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-gray-500/80 cursor-default">Tipo</th>
+                                    <th scope="col" className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-gray-500/80 cursor-default">Motivo</th>
+                                    <th scope="col" className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-gray-500/80 cursor-default">Estado</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-200 bg-white dark:divide-zinc-800 dark:bg-zinc-900">
+                            <tbody className="divide-y divide-white/40">
                                 {filtered.map((appointment) => (
-                                    <tr key={appointment.id} className="hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors group">
-                                        <td className="px-6 py-4 whitespace-nowrap">
+                                    <tr key={appointment.id} className="hover:bg-white/60 transition-colors group">
+                                        <td className="px-6 py-5 whitespace-nowrap">
                                             <div className="flex flex-col">
-                                                <span className="font-medium text-gray-900 dark:text-white">
+                                                <span className="text-sm font-black text-gray-900 tracking-tight">
                                                     {format(new Date(appointment.datetime), "dd 'de' MMMM", { locale: es })}
                                                 </span>
-                                                <span className="text-gray-500 dark:text-gray-400 text-xs">
+                                                <span className="text-[10px] font-black text-lime-600 uppercase tracking-widest mt-0.5">
                                                     {format(new Date(appointment.datetime), "h:mm a")}
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="font-medium text-gray-900 dark:text-white">{appointment.patientName}</span>
+                                        <td className="px-6 py-5 whitespace-nowrap">
+                                            <span className="text-sm font-black text-gray-900 tracking-tight">{appointment.patientName}</span>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="font-medium text-gray-900 dark:text-white">Dr. {appointment.doctorName}</span>
+                                        <td className="px-6 py-5 whitespace-nowrap">
+                                            <span className="text-sm font-black text-gray-900 tracking-tight">Dr. {appointment.doctorName}</span>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800">
+                                        <td className="px-6 py-5 whitespace-nowrap">
+                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-purple-50/50 text-purple-700 border border-purple-200/50 shadow-sm">
                                                 {appointment.type}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
-                                            {appointment.reason || "Sin motivo"}
+                                        <td className="px-6 py-5 text-gray-500 font-bold text-sm truncate max-w-[200px]">
+                                            {appointment.reason || "Sin motivo especificado"}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
+                                        <td className="px-6 py-5 whitespace-nowrap">
                                             <StatusBadge status={appointment.status} />
                                         </td>
                                     </tr>
@@ -150,5 +167,5 @@ export default function AdminAppointmentsPage() {
             </div>
         </div>
     );
-
 }
+

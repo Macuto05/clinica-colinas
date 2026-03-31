@@ -203,9 +203,9 @@ export function DoctorForm({ initialData, onSuccess, onCancel, specialties }: Do
         <button
             type="button"
             onClick={() => setActiveTab(id)}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === id
-                ? "border-lime-600 text-lime-600 dark:text-lime-400"
-                : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+            className={`flex-1 flex items-center justify-center gap-2 py-3.5 text-xs font-black uppercase tracking-widest transition-all duration-300 border-b-2 ${activeTab === id
+                ? "border-lime-500 text-lime-700 bg-white/20"
+                : "border-transparent text-gray-400 hover:text-gray-600 hover:bg-white/10"
                 }`}
         >
             <Icon size={16} />
@@ -215,205 +215,194 @@ export function DoctorForm({ initialData, onSuccess, onCancel, specialties }: Do
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div className="flex border-b border-gray-100 dark:border-zinc-800 mb-6">
+            <div className="flex bg-white/30 backdrop-blur-md rounded-2xl overflow-hidden border border-white/40 mb-8">
                 <TabButton id="data" label="Datos Personales" icon={User} />
                 <TabButton id="schedule" label="Horario Base" icon={CalendarClock} />
             </div>
 
             {serverError && (
-                <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm border border-red-100">
+                <div className="p-4 bg-red-50/50 backdrop-blur-md text-red-700 rounded-2xl text-sm border border-red-200/50 font-bold flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
                     {serverError}
                 </div>
             )}
 
             {/* TAB 1: DATA */}
-            <div className={activeTab === 'data' ? 'block space-y-6' : 'hidden'}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormInput
-                        label="Nombres"
-                        placeholder="Ej: Juan Carlos"
-                        error={errors.nombres?.message}
-                        {...register("nombres")}
-                    />
-                    <FormInput
-                        label="Apellidos"
-                        placeholder="Ej: Pérez Rodríguez"
-                        error={errors.apellidos?.message}
-                        {...register("apellidos")}
-                    />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* ID Card Split */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Documento de Identidad
-                        </label>
-                        <div className="flex gap-2">
-                            <div className="w-24">
-                                <Select
-                                    options={[
-                                        { value: "V-", label: "V-" },
-                                        { value: "E-", label: "E-" },
-                                        { value: "J-", label: "J-" }
-                                    ]}
-                                    error={errors.idType?.message}
-                                    {...register("idType")}
-                                />
-                            </div>
-                            <div className="flex-1">
-                                <input
-                                    {...register("idNumber")}
-                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                    placeholder="12345678"
-                                />
-                            </div>
-                        </div>
-                        {errors.idNumber && <p className="text-red-500 text-xs mt-1">{errors.idNumber.message}</p>}
+            <div className={activeTab === 'data' ? 'block space-y-8' : 'hidden'}>
+                <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormInput
+                            label="Nombres"
+                            placeholder="Ej: Juan Carlos"
+                            error={errors.nombres?.message}
+                            {...register("nombres")}
+                        />
+                        <FormInput
+                            label="Apellidos"
+                            placeholder="Ej: Pérez Rodríguez"
+                            error={errors.apellidos?.message}
+                            {...register("apellidos")}
+                        />
                     </div>
 
-                    {/* Phone Split */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Teléfono
-                        </label>
-                        <div className="flex gap-2">
-                            <div className="w-28">
-                                <Select
-                                    options={[
-                                        { value: "0412-", label: "0412" },
-                                        { value: "0422-", label: "0422" },
-                                        { value: "0414-", label: "0414" },
-                                        { value: "0424-", label: "0424" },
-                                        { value: "0416-", label: "0416" },
-                                        { value: "0426-", label: "0426" }
-                                    ]}
-                                    error={errors.phoneCode?.message}
-                                    {...register("phoneCode")}
-                                />
-                            </div>
-                            <div className="flex-1">
-                                <input
-                                    {...register("phoneNumber")}
-                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                    placeholder="1234567"
-                                />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        {/* ID Card Split */}
+                        <div className="space-y-2">
+                            <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider ml-1">
+                                Documento de Identidad
+                            </label>
+                            <div className="flex gap-3">
+                                <div className="w-28">
+                                    <Select
+                                        options={[
+                                            { value: "V-", label: "V-" },
+                                            { value: "E-", label: "E-" },
+                                            { value: "J-", label: "J-" }
+                                        ]}
+                                        error={errors.idType?.message}
+                                        {...register("idType")}
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <FormInput
+                                        {...register("idNumber")}
+                                        placeholder="12345678"
+                                        error={errors.idNumber?.message}
+                                    />
+                                </div>
                             </div>
                         </div>
-                        {errors.phoneNumber && <p className="text-red-500 text-xs mt-1">{errors.phoneNumber.message}</p>}
-                    </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex flex-col gap-1">
-                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Especialidad</label>
-                        <select
+                        {/* Phone Split */}
+                        <div className="space-y-2">
+                            <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider ml-1">
+                                Teléfono
+                            </label>
+                            <div className="flex gap-3">
+                                <div className="w-32">
+                                    <Select
+                                        options={[
+                                            { value: "0412-", label: "0412" },
+                                            { value: "0422-", label: "0422" },
+                                            { value: "0414-", label: "0414" },
+                                            { value: "0424-", label: "0424" },
+                                            { value: "0416-", label: "0416" },
+                                            { value: "0426-", label: "0426" }
+                                        ]}
+                                        error={errors.phoneCode?.message}
+                                        {...register("phoneCode")}
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <FormInput
+                                        {...register("phoneNumber")}
+                                        placeholder="1234567"
+                                        error={errors.phoneNumber?.message}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        <Select
+                            label="Especialidad"
+                            placeholder="Seleccione una especialidad"
                             {...register("especialidad")}
-                            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 focus:ring-2 focus:ring-lime-500 outline-none transition-all"
-                        >
-                            <option value="">Seleccione una especialidad</option>
-                            {specialties.map((spec) => (
-                                <option key={spec.id} value={spec.id}>
-                                    {spec.nombre}
-                                </option>
-                            ))}
-                        </select>
-                        {errors.especialidad && (
-                            <p className="text-sm text-red-500">{errors.especialidad.message}</p>
-                        )}
+                            options={specialties.map(s => ({ value: s.id, label: s.nombre }))}
+                            error={errors.especialidad?.message}
+                        />
+                        <FormInput
+                            label="Fecha de Ingreso"
+                            type="date"
+                            error={errors.fechaIngreso?.message}
+                            {...register("fechaIngreso")}
+                        />
                     </div>
-                    <FormInput
-                        label="Fecha de Ingreso"
-                        type="date"
-                        error={errors.fechaIngreso?.message}
-                        {...register("fechaIngreso")}
-                    />
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormInput
-                        label="Licencia Profesional"
-                        placeholder="L-98765"
-                        error={errors.licenciaProfesional?.message}
-                        {...register("licenciaProfesional")}
-                    />
-                    <FormInput
-                        label="Nro. Colegiatura"
-                        placeholder="MPPS-12345"
-                        error={errors.numeroColegiatura?.message}
-                        {...register("numeroColegiatura")}
-                    />
-                </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        <FormInput
+                            label="Licencia Profesional"
+                            placeholder="L-98765"
+                            error={errors.licenciaProfesional?.message}
+                            {...register("licenciaProfesional")}
+                        />
+                        <FormInput
+                            label="Nro. Colegiatura"
+                            placeholder="MPPS-12345"
+                            error={errors.numeroColegiatura?.message}
+                            {...register("numeroColegiatura")}
+                        />
+                    </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormInput
-                        label="Correo de Contacto"
-                        type="email"
-                        placeholder="contacto@ejemplo.com"
-                        error={errors.correoInstitucional?.message}
-                        {...register("correoInstitucional")}
-                    />
-                </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        <FormInput
+                            label="Correo de Contacto"
+                            type="email"
+                            placeholder="contacto@ejemplo.com"
+                            error={errors.correoInstitucional?.message}
+                            {...register("correoInstitucional")}
+                        />
+                    </div>
+                </section>
 
 
                 {/* Status Fields (only for edit) */}
                 {isEditing && (
-                    <div className="border-t border-gray-100 dark:border-zinc-800 pt-4 mt-2">
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Estados y Disponibilidad</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
+                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-lime-500" />
+                            Estados y Disponibilidad
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-                            {/* 1. Medico Activo Checkbox */}
-                            <div className="flex items-start gap-2 pt-2">
-                                <div className="flex items-center h-5">
-                                    <input
-                                        type="checkbox"
-                                        id="activo"
-                                        {...register("activo")}
-                                        className="w-4 h-4 text-lime-600 bg-gray-100 border-gray-300 rounded focus:ring-lime-500"
-                                    />
+                            {/* 1. Medico Activo Toggle */}
+                            <div className="flex items-center justify-between p-4 bg-white/40 rounded-2xl border border-white/60">
+                                <div className="flex flex-col">
+                                    <label htmlFor="activo" className="text-xs font-bold text-gray-700 uppercase tracking-tight">Perfil Activo</label>
+                                    <p className="text-[10px] text-gray-500 font-medium tracking-tight">Citas habilitadas</p>
                                 </div>
-                                <div className="ml-2 text-sm">
-                                    <label htmlFor="activo" className="font-medium text-gray-900 dark:text-gray-300">Perfil Médico Activo</label>
-                                    <p className="text-gray-500 text-xs">Habilita/Deshabilita al doctor en el sistema de citas.</p>
-                                </div>
-                            </div>
-
-                            {/* 2. Empleado Estado Laboral */}
-                            <div className="flex flex-col gap-1">
-                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Estado Laboral</label>
-                                <Select
-                                    {...register("estadoLaboral")}
-                                    options={[
-                                        { value: "ACTIVO", label: "ACTIVO" },
-                                        { value: "VACACIONES", label: "VACACIONES" },
-                                        { value: "LICENCIA", label: "LICENCIA" },
-                                        { value: "SUSPENDIDO", label: "SUSPENDIDO" },
-                                        { value: "RETIRADO", label: "RETIRADO" }
-                                    ]}
-                                    error={errors.estadoLaboral?.message}
+                                <input
+                                    type="checkbox"
+                                    id="activo"
+                                    {...register("activo")}
+                                    className="w-5 h-5 accent-lime-500 rounded-md"
                                 />
                             </div>
 
-                            {/* 3. Usuario Estado */}
-                            <div className="flex flex-col gap-1">
-                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Estado de Usuario</label>
-                                <Select
-                                    {...register("usuarioEstado")}
-                                    options={[
-                                        { value: "ACTIVO", label: "ACTIVO" },
-                                        { value: "INACTIVO", label: "INACTIVO" },
-                                        { value: "BLOQUEADO", label: "BLOQUEADO" }
-                                    ]}
-                                    error={errors.usuarioEstado?.message}
-                                />
-                            </div>
+                            <Select
+                                label="Estado Laboral"
+                                {...register("estadoLaboral")}
+                                options={[
+                                    { value: "ACTIVO", label: "ACTIVO" },
+                                    { value: "VACACIONES", label: "VACACIONES" },
+                                    { value: "LICENCIA", label: "LICENCIA" },
+                                    { value: "SUSPENDIDO", label: "SUSPENDIDO" },
+                                    { value: "RETIRADO", label: "RETIRADO" }
+                                ]}
+                                error={errors.estadoLaboral?.message}
+                            />
+
+                            <Select
+                                label="Estado de Usuario"
+                                {...register("usuarioEstado")}
+                                options={[
+                                    { value: "ACTIVO", label: "ACTIVO" },
+                                    { value: "INACTIVO", label: "INACTIVO" },
+                                    { value: "BLOQUEADO", label: "BLOQUEADO" }
+                                ]}
+                                error={errors.usuarioEstado?.message}
+                            />
                         </div>
-                    </div>
+                    </section>
                 )}
 
-                <div className="border-t border-gray-100 dark:border-zinc-800 pt-4 mt-2">
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Credenciales de Acceso</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
+                    <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-lime-500" />
+                        Credenciales de Acceso
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <FormInput
                             label="Correo de Acceso (Usuario)"
                             type="email"
@@ -432,26 +421,24 @@ export function DoctorForm({ initialData, onSuccess, onCancel, specialties }: Do
                             {password && <PasswordStrengthIndicator password={password} />}
                         </div>
                     </div>
-                    {isEditing && (
-                        <p className="text-xs text-gray-500 mt-2">Dejar la contraseña en blanco para mantener la actual.</p>
-                    )}
-                </div>
+                </section>
             </div>
 
             {/* TAB 2: SCHEDULE */}
             <div className={activeTab === 'schedule' ? 'block' : 'hidden'}>
-                <ScheduleEditor
-                    value={schedule}
-                    onChange={setSchedule}
-                />
+                <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
+                    <ScheduleEditor
+                        value={schedule}
+                        onChange={setSchedule}
+                    />
+                </section>
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-zinc-800 mt-6">
+            <div className="flex justify-end gap-4 p-6 border-t border-white/40 mt-8 bg-white/30 backdrop-blur-md">
                 <Button
                     type="button"
                     variant="outline"
                     onClick={onCancel}
-                    className="dark:border-zinc-700 dark:text-gray-300 dark:hover:bg-zinc-700"
                 >
                     Cancelar
                 </Button>
@@ -459,7 +446,7 @@ export function DoctorForm({ initialData, onSuccess, onCancel, specialties }: Do
                     type="submit"
                     isLoading={isLoading}
                     disabled={isLoading}
-                    leftIcon={isEditing ? <Edit className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                    leftIcon={isEditing ? <Edit className="w-5 h-5" /> : <Save className="w-5 h-5" />}
                 >
                     {isEditing ? "Actualizar Todos los Datos" : "Guardar Médico y Horario"}
                 </Button>

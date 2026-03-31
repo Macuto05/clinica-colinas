@@ -78,7 +78,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                                     {user?.name || "Usuario"}
                                 </p>
                                 <p className="text-xs text-gray-500 truncate">
-                                    {user?.role === 'DOCTOR' ? 'Doctor' : user?.role === 'ADMIN' ? 'Administrador' : 'Paciente'}
+                                    {['DOCTOR', 'MEDICO'].includes(user?.role?.toUpperCase() || "") ? 'Médico' : user?.role === 'ADMIN' ? 'Administrador' : 'Paciente'}
                                 </p>
                             </div>
                         </div>

@@ -170,192 +170,191 @@ export default function StaffForm({ onSuccess, onCancel, roles, initialData }: S
     };
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {serverError && (
-                <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm border border-red-100">
-                    {serverError}
-                </div>
-            )}
+        <div className="flex flex-col h-full bg-transparent overflow-hidden">
+            <div className="flex-1 overflow-y-auto p-2 sm:p-4">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+                    {serverError && (
+                        <div className="p-4 bg-red-50/50 backdrop-blur-md text-red-700 rounded-2xl text-sm border border-red-200/50 font-bold flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                            {serverError}
+                        </div>
+                    )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormInput
-                    label="Nombres"
-                    placeholder="Ej: Juan Carlos"
-                    error={errors.nombres?.message}
-                    {...register("nombres")}
-                />
-                <FormInput
-                    label="Apellidos"
-                    placeholder="Ej: Pérez Rodríguez"
-                    error={errors.apellidos?.message}
-                    {...register("apellidos")}
-                />
+                    <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
+                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-lime-500" />
+                            Información Personal
+                        </h3>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FormInput
+                                label="Nombres"
+                                placeholder="Ej: Juan Carlos"
+                                error={errors.nombres?.message}
+                                {...register("nombres")}
+                            />
+                            <FormInput
+                                label="Apellidos"
+                                placeholder="Ej: Pérez Rodríguez"
+                                error={errors.apellidos?.message}
+                                {...register("apellidos")}
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                            {/* ID Card Split */}
+                            <div className="space-y-2">
+                                <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider ml-1">
+                                    Documento de Identidad
+                                </label>
+                                <div className="flex gap-3">
+                                    <div className="w-28">
+                                        <Select
+                                            options={[
+                                                { value: "V-", label: "V-" },
+                                                { value: "E-", label: "E-" },
+                                                { value: "J-", label: "J-" }
+                                            ]}
+                                            error={errors.idType?.message}
+                                            {...register("idType")}
+                                        />
+                                    </div>
+                                    <div className="flex-1">
+                                        <FormInput
+                                            {...register("idNumber")}
+                                            placeholder="12345678"
+                                            error={errors.idNumber?.message}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Phone Split */}
+                            <div className="space-y-2">
+                                <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider ml-1">
+                                    Teléfono
+                                </label>
+                                <div className="flex gap-3">
+                                    <div className="w-32">
+                                        <Select
+                                            options={[
+                                                { value: "0412-", label: "0412" },
+                                                { value: "0422-", label: "0422" },
+                                                { value: "0414-", label: "0414" },
+                                                { value: "0424-", label: "0424" },
+                                                { value: "0416-", label: "0416" },
+                                                { value: "0426-", label: "0426" }
+                                            ]}
+                                            error={errors.phoneCode?.message}
+                                            {...register("phoneCode")}
+                                        />
+                                    </div>
+                                    <div className="flex-1">
+                                        <FormInput
+                                            {...register("phoneNumber")}
+                                            placeholder="1234567"
+                                            error={errors.phoneNumber?.message}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                            <FormInput
+                                label="Correo de Contacto"
+                                type="email"
+                                placeholder="contacto@ejemplo.com"
+                                error={errors.correoInstitucional?.message}
+                                {...register("correoInstitucional")}
+                            />
+                            <FormInput
+                                label="Fecha de Ingreso"
+                                type="date"
+                                error={errors.fechaIngreso?.message}
+                                {...register("fechaIngreso")}
+                            />
+                        </div>
+                    </section>
+
+                    {isEditing && (
+                        <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
+                            <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-lime-500" />
+                                Estados Laborales
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <Select
+                                    label="Estado Laboral"
+                                    {...register("estadoLaboral")}
+                                    options={[
+                                        { value: "ACTIVO", label: "ACTIVO" },
+                                        { value: "VACACIONES", label: "VACACIONES" },
+                                        { value: "LICENCIA", label: "LICENCIA" },
+                                        { value: "SUSPENDIDO", label: "SUSPENDIDO" },
+                                        { value: "RETIRADO", label: "RETIRADO" }
+                                    ]}
+                                    error={errors.estadoLaboral?.message}
+                                />
+
+                                <Select
+                                    label="Estado de Usuario"
+                                    {...register("usuarioEstado")}
+                                    options={[
+                                        { value: "ACTIVO", label: "ACTIVO" },
+                                        { value: "INACTIVO", label: "INACTIVO" },
+                                        { value: "BLOQUEADO", label: "BLOQUEADO" }
+                                    ]}
+                                    error={errors.usuarioEstado?.message}
+                                />
+                            </div>
+                        </section>
+                    )}
+
+                    <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
+                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-lime-500" />
+                            Credenciales de Acceso
+                        </h3>
+
+                        <div className="grid grid-cols-1 gap-6 mb-6">
+                            <Select
+                                label="Rol del Empleado"
+                                {...register("rolId")}
+                                placeholder="Seleccione un rol..."
+                                options={roles.map((rol) => ({ value: rol.id, label: rol.nombre }))}
+                                error={errors.rolId?.message}
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FormInput
+                                label="Correo de Acceso (Usuario)"
+                                type="email"
+                                placeholder="usuario@login.com"
+                                error={errors.email?.message}
+                                {...register("email")}
+                            />
+                            <div className="space-y-2">
+                                <FormInput
+                                    label={isEditing ? "Nueva Contraseña (Opcional)" : "Contraseña"}
+                                    type="password"
+                                    placeholder="••••••••"
+                                    error={errors.password?.message}
+                                    {...register("password")}
+                                />
+                                {password && <PasswordStrengthIndicator password={password} />}
+                            </div>
+                        </div>
+                    </section>
+                </form>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* ID Card Split */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Documento de Identidad
-                    </label>
-                    <div className="flex gap-2">
-                        <div className="w-24">
-                            <Select
-                                options={[
-                                    { value: "V-", label: "V-" },
-                                    { value: "E-", label: "E-" },
-                                    { value: "J-", label: "J-" }
-                                ]}
-                                error={errors.idType?.message}
-                                {...register("idType")}
-                            />
-                        </div>
-                        <div className="flex-1">
-                            <input
-                                {...register("idNumber")}
-                                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                placeholder="12345678"
-                            />
-                        </div>
-                    </div>
-                    {errors.idNumber && <p className="text-red-500 text-xs mt-1">{errors.idNumber.message}</p>}
-                </div>
-
-                {/* Phone Split */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Teléfono
-                    </label>
-                    <div className="flex gap-2">
-                        <div className="w-28">
-                            <Select
-                                options={[
-                                    { value: "0412-", label: "0412" },
-                                    { value: "0422-", label: "0422" },
-                                    { value: "0414-", label: "0414" },
-                                    { value: "0424-", label: "0424" },
-                                    { value: "0416-", label: "0416" },
-                                    { value: "0426-", label: "0426" }
-                                ]}
-                                error={errors.phoneCode?.message}
-                                {...register("phoneCode")}
-                            />
-                        </div>
-                        <div className="flex-1">
-                            <input
-                                {...register("phoneNumber")}
-                                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                placeholder="1234567"
-                            />
-                        </div>
-                    </div>
-                    {errors.phoneNumber && <p className="text-red-500 text-xs mt-1">{errors.phoneNumber.message}</p>}
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormInput
-                    label="Correo de Contacto"
-                    type="email"
-                    placeholder="contacto@ejemplo.com"
-                    error={errors.correoInstitucional?.message}
-                    {...register("correoInstitucional")}
-                />
-                <FormInput
-                    label="Fecha de Ingreso"
-                    type="date"
-                    error={errors.fechaIngreso?.message}
-                    {...register("fechaIngreso")}
-                />
-            </div>
-
-            {isEditing && (
-                <div className="border-t border-gray-100 dark:border-zinc-800 pt-4 mt-2">
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Estados y Disponibilidad</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                        {/* 1. Empleado Estado Laboral */}
-                        <div className="flex flex-col gap-1">
-                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Estado Laboral</label>
-                            <Select
-                                {...register("estadoLaboral")}
-                                options={[
-                                    { value: "ACTIVO", label: "ACTIVO" },
-                                    { value: "VACACIONES", label: "VACACIONES" },
-                                    { value: "LICENCIA", label: "LICENCIA" },
-                                    { value: "SUSPENDIDO", label: "SUSPENDIDO" },
-                                    { value: "RETIRADO", label: "RETIRADO" }
-                                ]}
-                                error={errors.estadoLaboral?.message}
-                            />
-                        </div>
-
-                        {/* 3. Usuario Estado */}
-                        <div className="flex flex-col gap-1">
-                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Estado de Usuario</label>
-                            <Select
-                                {...register("usuarioEstado")}
-                                options={[
-                                    { value: "ACTIVO", label: "ACTIVO" },
-                                    { value: "INACTIVO", label: "INACTIVO" },
-                                    { value: "BLOQUEADO", label: "BLOQUEADO" }
-                                ]}
-                                error={errors.usuarioEstado?.message}
-                            />
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            <div className="border-t border-gray-100 dark:border-zinc-800 pt-4 mt-2">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Credenciales de Acceso</h3>
-
-                <div className="grid grid-cols-1 gap-4 mb-4">
-                    <div className="flex flex-col gap-1">
-                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Rol del Empleado</label>
-                        <select
-                            {...register("rolId")}
-                            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                        >
-                            <option value="">Seleccione un rol...</option>
-                            {roles.map((rol) => (
-                                <option key={rol.id} value={rol.id}>{rol.nombre}</option>
-                            ))}
-                        </select>
-                        {errors.rolId && <p className="text-sm text-red-500">{errors.rolId.message}</p>}
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormInput
-                        label="Correo de Acceso (Usuario)"
-                        type="email"
-                        placeholder="usuario@login.com"
-                        error={errors.email?.message}
-                        {...register("email")}
-                    />
-                    <div className="space-y-2">
-                        <FormInput
-                            label={isEditing ? "Nueva Contraseña (Opcional)" : "Contraseña"}
-                            type="password"
-                            placeholder="••••••••"
-                            error={errors.password?.message}
-                            {...register("password")}
-                        />
-                        {password && <PasswordStrengthIndicator password={password} />}
-                    </div>
-                </div>
-                {isEditing && (
-                    <p className="text-xs text-gray-500 mt-2">Dejar la contraseña en blanco para mantener la actual.</p>
-                )}
-            </div>
-
-            <div className="flex justify-end gap-3 pt-4">
+            <div className="bg-white/30 backdrop-blur-md px-6 py-6 flex items-center justify-end gap-3 border-t border-white/40 mt-4 rounded-b-[2.5rem]">
                 <Button
                     type="button"
                     variant="outline"
                     onClick={onCancel}
-                    className="dark:border-zinc-700 dark:text-gray-300 dark:hover:bg-zinc-700"
                 >
                     Cancelar
                 </Button>
@@ -363,11 +362,12 @@ export default function StaffForm({ onSuccess, onCancel, roles, initialData }: S
                     type="submit"
                     isLoading={isLoading}
                     disabled={isLoading}
-                    leftIcon={isEditing ? <Edit className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                    onClick={handleSubmit(onSubmit)}
+                    leftIcon={isEditing ? <Edit className="w-5 h-5" /> : <Save className="w-5 h-5" />}
                 >
                     {isEditing ? "Actualizar Empleado" : "Guardar Empleado"}
                 </Button>
             </div>
-        </form>
+        </div>
     );
 }

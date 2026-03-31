@@ -1,6 +1,9 @@
+"use client";
+
 import { useEffect, useState } from "react";
-import { Modal } from "@/components/ui/Modal";
 import { Loader2, Package, MapPin, AlertCircle, Pencil, Check, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface BatchDetailsModalProps {
     isOpen: boolean;
@@ -63,7 +66,6 @@ export function BatchDetailsModal({ isOpen, onClose, insumo, filterAlmacenId }: 
 
     const handleEditStart = (store: StockDetail) => {
         setEditingStoreId(store.almacenId);
-        // Safeguard against null/NaN values from backend
         const val = store.stockMinimo ?? 0;
         setTempMin(val.toString());
     };
@@ -88,8 +90,6 @@ export function BatchDetailsModal({ isOpen, onClose, insumo, filterAlmacenId }: 
             });
 
             if (res.ok) {
-                const data = await res.json();
-                // Update local state
                 setDetails(prev => prev.map(d =>
                     d.almacenId === almacenId ? { ...d, stockMinimo: parseFloat(tempMin) } : d
                 ));
@@ -105,161 +105,210 @@ export function BatchDetailsModal({ isOpen, onClose, insumo, filterAlmacenId }: 
         }
     };
 
-    // Helper to calculate days until expiry
     const getExpiryStatus = (dateStr: string | null) => {
-        if (!dateStr) return { color: "text-gray-500", bg: "bg-gray-100", label: "No Vence", days: null };
+        if (!dateStr) return { color: "text-gray-500", bg: "bg-gray-100/50", label: "No Vence", days: null };
 
         const today = new Date();
         const expiry = new Date(dateStr);
         const diffTime = expiry.getTime() - today.getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        if (diffDays < 0) return { color: "text-red-700", bg: "bg-red-100", label: "Vencido", days: diffDays };
-        if (diffDays < 30) return { color: "text-red-600", bg: "bg-red-50", label: "< 1 Mes", days: diffDays };
-        if (diffDays < 90) return { color: "text-amber-600", bg: "bg-amber-50", label: "< 3 Meses", days: diffDays };
-        return { color: "text-green-700", bg: "bg-green-50", label: "OK", days: diffDays };
+        if (diffDays < 0) return { color: "text-rose-700", bg: "bg-rose-500/10", label: "Vencido", days: diffDays };
+        if (diffDays < 30) return { color: "text-rose-600", bg: "bg-rose-500/5", label: "< 1 Mes", days: diffDays };
+        if (diffDays < 90) return { color: "text-amber-600", bg: "bg-amber-500/10", label: "< 3 Meses", days: diffDays };
+        return { color: "text-emerald-700", bg: "bg-emerald-500/10", label: "OK", days: diffDays };
     };
 
     if (!insumo) return null;
 
     return (
-        <Modal
-            isOpen={isOpen}
-            onClose={onClose}
-            title="Detalle de Stock por Lotes"
-        >
-            <div className="space-y-6 max-h-[70vh] overflow-y-auto px-1">
-                {/* Header Info */}
-                <div className="bg-gray-50 dark:bg-zinc-800/50 p-4 rounded-lg flex gap-4 items-start border border-gray-100 dark:border-zinc-700">
-                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-lg">
-                        <Package size={24} />
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">{insumo.nombre}</h3>
-                        <p className="text-sm text-gray-500 font-mono">{insumo.codigo}</p>
+        <AnimatePresence>
+            {isOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={onClose}
+                        className="fixed inset-0 bg-slate-900/30 backdrop-blur-md transition-opacity"
+                    />
 
-                    </div>
-                </div>
-
-                {/* Content */}
-                {isLoading ? (
-                    <div className="flex justify-center py-12 text-gray-400">
-                        <Loader2 className="animate-spin h-8 w-8" />
-                    </div>
-                ) : error ? (
-                    <div className="bg-red-50 text-red-600 p-4 rounded-lg text-sm text-center">
-                        {error}
-                    </div>
-                ) : details.length === 0 ? (
-                    <div className="text-center py-12 text-gray-400">
-                        <AlertCircle className="mx-auto h-8 w-8 mb-2 opacity-50" />
-                        <p>No hay stock disponible en ningún almacén.</p>
-                    </div>
-                ) : (
-                    <div className="space-y-6">
-                        {details.filter(wh => !filterAlmacenId || wh.almacenId === filterAlmacenId).map((wh) => (
-                            <div key={wh.almacenId} className="border border-gray-200 dark:border-zinc-700 rounded-lg overflow-hidden">
-                                <div className="bg-gray-50 dark:bg-zinc-800 px-4 py-3 border-b border-gray-200 dark:border-zinc-700 flex flex-wrap items-center gap-2">
-                                    <MapPin className="h-4 w-4 text-gray-400" />
-                                    <h4 className="font-semibold text-gray-700 dark:text-gray-200 text-sm">
-                                        {wh.almacenNombre}
-                                    </h4>
-
-                                    {/* Min Stock Editor */}
-                                    <div className="ml-auto flex items-center gap-2">
-                                        {editingStoreId === wh.almacenId ? (
-                                            <div className="flex items-center gap-1 bg-white dark:bg-zinc-900 border border-green-500 rounded px-1 py-0.5 shadow-sm">
-                                                <input
-                                                    type="number"
-                                                    value={tempMin}
-                                                    onChange={(e) => setTempMin(e.target.value)}
-                                                    className="w-12 text-xs font-medium text-gray-900 dark:text-white outline-none bg-transparent text-right"
-                                                    disabled={isSaving}
-                                                    autoFocus
-                                                />
-                                                <button onClick={() => handleSaveMin(wh.almacenId)} disabled={isSaving} className="text-green-600 hover:text-green-700 p-0.5">
-                                                    {isSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
-                                                </button>
-                                                <button onClick={handleCancelEdit} disabled={isSaving} className="text-red-500 hover:text-red-600 p-0.5">
-                                                    <X size={12} />
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <button
-                                                onClick={() => handleEditStart(wh)}
-                                                className="group flex items-center gap-1 text-xs font-medium bg-white dark:bg-zinc-900 px-2 py-0.5 rounded border border-gray-200 dark:border-zinc-700 text-gray-500 hover:border-green-400 dark:hover:border-green-500 transition-all cursor-pointer"
-                                                title="Editar Stock Mínimo"
-                                            >
-                                                <span>Mínimo:</span>
-                                                <span className={`${wh.lotes.reduce((sum, l) => sum + l.cantidad, 0) <= wh.stockMinimo ? "text-red-600 font-bold" : "text-gray-700 dark:text-gray-300 group-hover:text-green-600"}`}>
-                                                    {wh.stockMinimo}
-                                                </span>
-                                                <Pencil size={10} className="text-gray-300 group-hover:text-green-500 transition-colors opacity-0 group-hover:opacity-100" />
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    <div className="h-4 w-px bg-gray-300 dark:bg-zinc-600 mx-1"></div>
-
-                                    <span className="text-xs font-medium bg-white dark:bg-zinc-900 px-2 py-0.5 rounded border border-gray-200 dark:border-zinc-700 text-gray-500">
-                                        Total: {wh.lotes.reduce((sum, l) => sum + l.cantidad, 0)}
-                                    </span>
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                        className="relative w-full max-w-4xl bg-white/70 backdrop-blur-2xl backdrop-saturate-[1.2] rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.12)] border border-white/60 flex flex-col max-h-[85vh] overflow-hidden"
+                    >
+                        {/* Header */}
+                        <div className="p-8 border-b border-white/40 flex justify-between items-center shrink-0 bg-white/30 backdrop-blur-md">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-blue-500/10 text-blue-600 rounded-2xl border border-blue-200/50">
+                                    <Package size={24} />
                                 </div>
-
-                                {wh.lotes.length > 0 ? (
-                                    <table className="w-full text-sm">
-                                        <thead className="bg-white dark:bg-zinc-900 text-gray-500 text-xs text-left">
-                                            <tr>
-                                                <th className="px-4 py-2 font-medium">Lote</th>
-                                                <th className="px-4 py-2 font-medium">Fabricación</th>
-                                                <th className="px-4 py-2 font-medium">Vencimiento</th>
-                                                <th className="px-4 py-2 font-medium text-right">Cantidad</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
-                                            {wh.lotes.map((lote) => {
-                                                const status = getExpiryStatus(lote.fechaVencimiento);
-                                                return (
-                                                    <tr key={lote.loteId} className="hover:bg-gray-50 dark:hover:bg-zinc-800/50">
-                                                        <td className="px-4 py-2 font-mono text-gray-700 dark:text-gray-300">
-                                                            {lote.codigo}
-                                                        </td>
-                                                        <td className="px-4 py-2 text-gray-500">
-                                                            {lote.fechaFabricacion ? new Date(lote.fechaFabricacion).toLocaleDateString() : '-'}
-                                                        </td>
-                                                        <td className="px-4 py-2">
-                                                            <div className="flex items-center gap-2">
-                                                                {lote.fechaVencimiento ? new Date(lote.fechaVencimiento).toLocaleDateString() : '-'}
-                                                                {lote.fechaVencimiento && (
-                                                                    <span className={`text-[10px] px-1.5 rounded-full ${status.bg} ${status.color}`}>
-                                                                        {status.label}
-                                                                    </span>
-                                                                )}
-                                                                {!lote.fechaVencimiento && (
-                                                                    <span className="text-[10px] px-1.5 rounded-full bg-gray-100 text-gray-500 dark:bg-zinc-800">
-                                                                        No Vence
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-4 py-2 text-right font-medium">
-                                                            {lote.cantidad}
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
-                                ) : (
-                                    <div className="p-4 text-center text-xs text-gray-400 italic">
-                                        No hay lotes con stock, pero existe el registro del almacén.
-                                    </div>
-                                )}
+                                <div>
+                                    <h2 className="text-xl font-black text-gray-900 tracking-tight">{insumo.nombre}</h2>
+                                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">Código: {insumo.codigo}</p>
+                                </div>
                             </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-        </Modal>
+                            <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-white/50 rounded-full transition-colors">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        {/* Body */}
+                        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-white/20">
+                            {isLoading ? (
+                                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                                    <Loader2 className="animate-spin text-lime-600" size={40} />
+                                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest animate-pulse">Cargando detalles de stock...</p>
+                                </div>
+                            ) : error ? (
+                                <div className="bg-rose-500/10 text-rose-700 border border-rose-200/50 p-6 rounded-3xl text-sm font-bold text-center">
+                                    {error}
+                                </div>
+                            ) : details.length === 0 ? (
+                                <div className="text-center py-20">
+                                    <div className="w-16 h-16 bg-gray-500/10 rounded-full flex items-center justify-center text-gray-400 mx-auto mb-6 border border-gray-200/50 opacity-40">
+                                        <AlertCircle size={32} />
+                                    </div>
+                                    <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">No hay stock disponible en ningún almacén.</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-8">
+                                    {details.filter(wh => !filterAlmacenId || wh.almacenId === filterAlmacenId).map((wh) => (
+                                        <div key={wh.almacenId} className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl overflow-hidden shadow-sm shadow-white/20">
+                                            {/* Warehouse Header */}
+                                            <div className="bg-white/30 px-6 py-4 border-b border-white/40 flex flex-wrap items-center gap-4">
+                                                <div className="flex items-center gap-2">
+                                                    <MapPin className="h-4 w-4 text-gray-400" />
+                                                    <h4 className="font-black text-gray-800 uppercase tracking-tight text-sm">
+                                                        {wh.almacenNombre}
+                                                    </h4>
+                                                </div>
+
+                                                <div className="ml-auto flex items-center gap-4">
+                                                    {/* Min Stock Editor */}
+                                                    {editingStoreId === wh.almacenId ? (
+                                                        <div className="flex items-center gap-1.5 bg-white/60 border border-lime-500/50 rounded-xl px-2 py-1 shadow-inner">
+                                                            <input
+                                                                type="number"
+                                                                value={tempMin}
+                                                                onChange={(e) => setTempMin(e.target.value)}
+                                                                className="w-16 text-xs font-black text-gray-900 outline-none bg-transparent text-right"
+                                                                disabled={isSaving}
+                                                                autoFocus
+                                                            />
+                                                            <div className="flex items-center gap-1">
+                                                                <button onClick={() => handleSaveMin(wh.almacenId)} disabled={isSaving} className="text-lime-600 hover:bg-lime-500/10 p-1 rounded-lg transition-colors">
+                                                                    {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                                                                </button>
+                                                                <button onClick={handleCancelEdit} disabled={isSaving} className="text-rose-500 hover:bg-rose-500/10 p-1 rounded-lg transition-colors">
+                                                                    <X size={14} />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => handleEditStart(wh)}
+                                                            className="group flex items-center gap-2 text-[10px] font-black uppercase tracking-widest bg-white/50 px-3 py-1.5 rounded-full border border-white/80 text-gray-500 hover:border-lime-400 hover:text-lime-700 transition-all cursor-pointer"
+                                                        >
+                                                            <span>Mínimo:</span>
+                                                            <span className={cn(
+                                                                "px-2 rounded-lg",
+                                                                wh.lotes.reduce((sum, l) => sum + l.cantidad, 0) <= wh.stockMinimo 
+                                                                    ? "bg-rose-500/10 text-rose-600" 
+                                                                    : "text-gray-700"
+                                                            )}>
+                                                                {wh.stockMinimo}
+                                                            </span>
+                                                            <Pencil size={12} className="opacity-40 group-hover:opacity-100 transition-opacity" />
+                                                        </button>
+                                                    )}
+
+                                                    <div className="h-6 w-px bg-white/40" />
+
+                                                    <div className="text-[10px] font-black uppercase tracking-widest bg-lime-500/10 text-lime-700 px-3 py-1.5 rounded-full border border-lime-200/50">
+                                                        Total: {wh.lotes.reduce((sum, l) => sum + l.cantidad, 0)}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Lot Table */}
+                                            {wh.lotes.length > 0 ? (
+                                                <div className="overflow-x-auto">
+                                                    <table className="w-full text-left text-sm border-collapse">
+                                                        <thead className="bg-white/20 border-b border-white/40">
+                                                            <tr>
+                                                                <th className="px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Lote</th>
+                                                                <th className="px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Fabricación</th>
+                                                                <th className="px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Vencimiento</th>
+                                                                <th className="px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Cantidad</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-white/20">
+                                                            {wh.lotes.map((lote) => {
+                                                                const status = getExpiryStatus(lote.fechaVencimiento);
+                                                                return (
+                                                                    <tr key={lote.loteId} className="hover:bg-white/60 transition-all group">
+                                                                        <td className="px-6 py-4">
+                                                                            <span className="font-mono text-xs font-bold text-gray-700 bg-white/50 px-2 py-0.5 rounded border border-white/60">
+                                                                                {lote.codigo}
+                                                                            </span>
+                                                                        </td>
+                                                                        <td className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-tight">
+                                                                            {lote.fechaFabricacion ? new Date(lote.fechaFabricacion).toLocaleDateString() : '—'}
+                                                                        </td>
+                                                                        <td className="px-6 py-4">
+                                                                            <div className="flex items-center gap-3">
+                                                                                <span className="text-xs font-bold text-gray-700">
+                                                                                    {lote.fechaVencimiento ? new Date(lote.fechaVencimiento).toLocaleDateString() : '—'}
+                                                                                </span>
+                                                                                <span className={cn(
+                                                                                    "text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border transition-all",
+                                                                                    status.bg,
+                                                                                    status.color,
+                                                                                    "border-current/20"
+                                                                                )}>
+                                                                                    {status.label}
+                                                                                </span>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td className="px-6 py-4 text-right">
+                                                                            <div className="text-lg font-black text-gray-900 group-hover:text-lime-700 transition-colors">
+                                                                                {lote.cantidad}
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                                );
+                                                            })}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            ) : (
+                                                <div className="p-8 text-center">
+                                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest italic">
+                                                        No hay lotes con stock en este almacén.
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="p-8 border-t border-white/40 bg-white/30 backdrop-blur-md shrink-0 flex justify-end">
+                            <button
+                                onClick={onClose}
+                                className="px-10 py-3 bg-white/50 border border-white/60 text-gray-700 rounded-2xl text-sm font-bold transition-all hover:bg-white/80 active:scale-95 shadow-sm"
+                            >
+                                Cerrar Detalle
+                            </button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+        </AnimatePresence>
     );
 }

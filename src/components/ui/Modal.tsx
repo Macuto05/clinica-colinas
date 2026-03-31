@@ -41,24 +41,27 @@ export function Modal({ isOpen, onClose, title, children, className = "max-w-2xl
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm transition-opacity"
+                        className="fixed inset-0 z-[100] bg-slate-900/30 backdrop-blur-md transition-opacity"
                     />
 
                     {/* Modal Content */}
-                    <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 pointer-events-none">
+                    <div className="fixed inset-0 z-[101] flex items-end sm:items-center justify-center p-0 sm:p-4 pointer-events-none">
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             transition={{ duration: 0.2 }}
-                            className={`w-full ${className} bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-gray-200 dark:border-zinc-800 pointer-events-auto flex flex-col max-h-[90vh]`}
+                            className={`w-full ${className} bg-white/70 backdrop-blur-2xl backdrop-saturate-[1.2] 
+                                      rounded-t-[2.5rem] sm:rounded-[2.5rem] 
+                                      shadow-[0_8px_32px_0_rgba(0,0,0,0.12)] 
+                                      border border-white/60 pointer-events-auto flex flex-col max-h-[90vh] overflow-hidden`}
                         >
                             {/* Header */}
-                            <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-zinc-800">
-                                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{title}</h2>
+                            <div className="flex items-center justify-between p-6 border-b border-white/40 shrink-0 bg-white/30 backdrop-blur-md">
+                                <h2 className="text-lg font-black text-gray-900 tracking-tight">{title}</h2>
                                 <button
                                     onClick={onClose}
-                                    className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full transition-colors"
+                                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-white/40 rounded-full transition-colors"
                                 >
                                     <X size={20} />
                                 </button>

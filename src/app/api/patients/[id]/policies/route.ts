@@ -10,6 +10,7 @@ const createPolicySchema = z.object({
     aseguradoraId: z.string().min(1, "Aseguradora es requerida"),
     numeroPoliza: z.string().min(1, "Número de póliza es requerido"),
     tipoCobertura: z.string().optional().nullable(),
+    montoCobertura: z.number().optional().nullable(),
     fechaInicio: z.string().optional().nullable(),
     fechaVence: z.string().optional().nullable(),
     observaciones: z.string().optional().nullable(),
@@ -42,6 +43,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
             aseguradoraActiva: p.aseguradora.activa,
             numeroPoliza: p.numeroPoliza,
             tipoCobertura: p.tipoCobertura,
+            montoCobertura: (p as any).montoCobertura ? Number((p as any).montoCobertura) : null,
             fechaInicio: p.fechaInicio,
             fechaVence: p.fechaVence,
             estado: p.estado,
@@ -77,7 +79,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
             return NextResponse.json({ error: "Datos inválidos", details: result.error.format() }, { status: 400 });
         }
 
-        const { aseguradoraId, numeroPoliza, tipoCobertura, fechaInicio, fechaVence, observaciones } = result.data;
+        const { aseguradoraId, numeroPoliza, tipoCobertura, montoCobertura, fechaInicio, fechaVence, observaciones } = result.data;
 
         const poliza = await prisma.poliza.create({
             data: {
@@ -85,11 +87,12 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
                 aseguradoraId: BigInt(aseguradoraId),
                 numeroPoliza,
                 tipoCobertura: tipoCobertura || null,
+                montoCobertura: montoCobertura ?? null,
                 fechaInicio: fechaInicio ? new Date(fechaInicio) : null,
                 fechaVence: fechaVence ? new Date(fechaVence) : null,
                 observaciones: observaciones || null,
                 estado: 'ACTIVA'
-            }
+            } as any
         });
 
         return NextResponse.json({

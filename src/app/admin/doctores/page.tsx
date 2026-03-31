@@ -79,13 +79,13 @@ export default async function AdminDoctorsPage({
     }));
 
     return (
-        <div>
-            <div className="flex items-center justify-between mb-8">
+        <div className="space-y-6">
+            <div className="flex items-center justify-between bg-white/40 backdrop-blur-md p-8 rounded-[2.5rem] border border-white/50 shadow-sm">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">
                         Gestión de Médicos
                     </h1>
-                    <p className="text-gray-500 dark:text-gray-400">
+                    <p className="text-gray-500 font-medium mt-1">
                         Administra los perfiles médicos y su información.
                     </p>
                 </div>
@@ -94,57 +94,57 @@ export default async function AdminDoctorsPage({
 
             <DoctorFilter specialties={serializedSpecialties} />
 
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900 min-h-[400px]">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-zinc-800">
-                    <thead className="bg-gray-50 dark:bg-zinc-800">
-                        <tr>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <div className="bg-white/40 backdrop-blur-md border border-white/50 rounded-[2.5rem] overflow-hidden shadow-[0_8px_32px_0_rgba(0,0,0,0.04)]">
+                <table className="min-w-full">
+                    <thead>
+                        <tr className="bg-white/30 border-b border-white/40">
+                            <th scope="col" className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-gray-500/80">
                                 ID (Emp)
                             </th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                            <th scope="col" className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-gray-500/80">
                                 Doctor
                             </th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                            <th scope="col" className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-gray-500/80">
                                 Especialidad
                             </th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                            <th scope="col" className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-gray-500/80">
                                 Estado
                             </th>
-                            <th scope="col" className="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                            <th scope="col" className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-gray-500/80">
                                 Acciones
                             </th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200 bg-white dark:divide-zinc-800 dark:bg-zinc-900">
+                    <tbody className="divide-y divide-white/40">
                         {doctors.map((doctor) => {
-                            // Helper to get full name safely
                             const fullName = `${doctor.empleado.nombres} ${doctor.empleado.apellidos}`;
                             const empId = doctor.empleadoId;
 
                             return (
-                                <tr key={Number(doctor.empleadoId)} className="hover:bg-gray-50 dark:hover:bg-zinc-800/50 group">
-                                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                                <tr key={Number(doctor.empleadoId)} className="hover:bg-white/60 transition-colors group">
+                                    <td className="whitespace-nowrap px-6 py-5 text-sm font-bold text-gray-500">
                                         #{Number(empId).toString().padStart(4, '0')}
                                     </td>
-                                    <td className="whitespace-nowrap px-6 py-4">
-                                        <div className="flex items-center">
-
-                                            <div>
-                                                <div className="text-sm font-semibold text-gray-900 dark:text-white">{fullName}</div>
-                                            </div>
-                                        </div>
+                                    <td className="whitespace-nowrap px-6 py-5">
+                                        <div className="text-sm font-black text-gray-900 tracking-tight">{fullName}</div>
                                     </td>
-                                    <td className="whitespace-nowrap px-6 py-4">
-                                        <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10 dark:bg-blue-400/10 dark:text-blue-400 dark:ring-blue-400/30">
+                                    <td className="whitespace-nowrap px-6 py-5">
+                                        <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50/50 px-3 py-1 text-xs font-bold text-blue-700 border border-blue-200/50 shadow-sm">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                                             {doctor.especialidad.nombre}
                                         </span>
                                     </td>
-                                    <td className="whitespace-nowrap px-6 py-4">
-                                        <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${doctor.activo ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 'bg-red-100 text-red-800'}`}>
+                                    <td className="whitespace-nowrap px-6 py-5">
+                                        <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold border shadow-sm ${
+                                            doctor.activo 
+                                                ? 'bg-green-50/50 text-green-700 border-green-200/50' 
+                                                : 'bg-red-50/50 text-red-700 border-red-200/50'
+                                        }`}>
+                                            <span className={`w-1.5 h-1.5 rounded-full ${doctor.activo ? 'bg-green-500' : 'bg-red-500'}`} />
                                             {doctor.activo ? "ACTIVO" : "INACTIVO"}
                                         </span>
                                     </td>
-                                    <td className="relative whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
+                                    <td className="whitespace-nowrap px-6 py-5 text-right">
                                         <DoctorActions doctor={doctor} specialties={serializedSpecialties} />
                                     </td>
                                 </tr>
@@ -152,8 +152,10 @@ export default async function AdminDoctorsPage({
                         })}
                         {doctors.length === 0 && (
                             <tr>
-                                <td colSpan={5} className="py-12 text-center text-gray-500">
-                                    No se encontraron médicos que coincidan con los filtros.
+                                <td colSpan={5} className="py-20 text-center">
+                                    <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">
+                                        No se encontraron médicos que coincidan con los filtros.
+                                    </p>
                                 </td>
                             </tr>
                         )}

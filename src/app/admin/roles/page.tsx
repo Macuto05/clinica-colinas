@@ -21,21 +21,21 @@ export default async function AdminRolesPage() {
     });
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-lime-100 dark:bg-lime-900/30 rounded-lg text-lime-600 dark:text-lime-400">
-                        <Shield size={24} />
+        <div className="space-y-8">
+            <div className="flex justify-between items-center bg-white/40 backdrop-blur-md p-8 rounded-[2.5rem] border border-white/50 shadow-sm">
+                <div className="flex items-center gap-6">
+                    <div className="p-4 bg-lime-500 text-white rounded-3xl shadow-lg shadow-lime-200/50 -rotate-3">
+                        <Shield size={28} strokeWidth={2.5} />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Gestión de Roles</h1>
-                        <p className="text-gray-500 dark:text-gray-400">Administra los roles de usuario.</p>
+                        <h1 className="text-3xl font-black text-gray-900 tracking-tight">Gestión de Roles</h1>
+                        <p className="text-gray-500 font-medium mt-1">Administra los roles y permisos del sistema.</p>
                     </div>
                 </div>
                 <CreateRoleButton />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {roles.map((role) => {
                     const serializedRole = {
                         ...role,
@@ -44,13 +44,11 @@ export default async function AdminRolesPage() {
                             ...u,
                             usuarioId: u.usuarioId.toString(),
                             rolId: u.rolId.toString(),
-                            // Serialize paciente
                             paciente: u.paciente ? {
                                 ...u.paciente,
                                 usuarioId: u.paciente.usuarioId?.toString(),
                                 pacienteId: u.paciente.pacienteId.toString()
                             } : null,
-                            // Serialize empleado and nested medico
                             empleado: u.empleado ? {
                                 ...u.empleado,
                                 usuarioId: u.empleado.usuarioId?.toString(),

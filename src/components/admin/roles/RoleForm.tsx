@@ -6,6 +6,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Save, Edit } from "lucide-react";
 import { FormInput } from "@/components/auth/FormInput";
+import { Button } from "@/components/ui/Button";
 
 // Schema
 const roleSchema = z.object({
@@ -84,63 +85,70 @@ export default function RoleForm({ onSuccess, onCancel, initialData }: RoleFormP
     };
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {serverError && (
-                <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm border border-red-100 flex items-center gap-2">
-                    {serverError}
-                </div>
-            )}
+        <div className="flex flex-col h-full bg-transparent overflow-hidden">
+            <div className="flex-1 overflow-y-auto p-2 sm:p-4">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+                    {serverError && (
+                        <div className="p-4 bg-red-50/50 backdrop-blur-md text-red-700 rounded-2xl text-sm border border-red-200/50 font-bold flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                            {serverError}
+                        </div>
+                    )}
 
-            <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre</label>
-                <input
-                    {...register("nombre")}
-                    placeholder="Ej. ENFERMERIA"
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-lime-500 outline-none transition-all"
-                />
-                {errors.nombre && <p className="text-sm text-red-500 mt-1">{errors.nombre.message}</p>}
+                    <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] space-y-6">
+                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-lime-500" />
+                            Información del Rol
+                        </h3>
+
+                        <FormInput
+                            label="Nombre"
+                            placeholder="Ej. ENFERMERIA"
+                            error={errors.nombre?.message}
+                            {...register("nombre")}
+                        />
+
+                        <FormInput
+                            label="Descripción"
+                            placeholder="Descripción opcional del rol..."
+                            error={errors.descripcion?.message}
+                            {...register("descripcion")}
+                        />
+
+                        <div className="flex items-center justify-between p-4 bg-white/50 backdrop-blur-sm rounded-2xl border border-white/60">
+                            <div className="flex flex-col">
+                                <span className="text-sm font-bold text-gray-700 uppercase tracking-tight">Estado del Rol</span>
+                                <span className="text-xs text-gray-400">{activo ? "El rol está actualmente activo" : "El rol está inactivo"}</span>
+                            </div>
+                            <div
+                                className={`w-12 h-7 rounded-full p-1 cursor-pointer transition-all duration-300 ${activo ? 'bg-lime-500 shadow-[0_0_12px_rgba(132,204,22,0.4)]' : 'bg-gray-200'}`}
+                                onClick={() => setValue("activo", !activo, { shouldDirty: true })}
+                            >
+                                <div className={`w-5 h-5 rounded-full bg-white shadow-lg transform transition-transform duration-300 ${activo ? 'translate-x-5' : 'translate-x-0'}`} />
+                            </div>
+                        </div>
+                    </section>
+                </form>
             </div>
 
-            <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
-                <textarea
-                    {...register("descripcion")}
-                    rows={3}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-lime-500 outline-none transition-all resize-none"
-                    placeholder="Descripción opcional del rol..."
-                />
-                {errors.descripcion && <p className="text-sm text-red-500 mt-1">{errors.descripcion.message}</p>}
-            </div>
-
-            <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-zinc-800/50 rounded-lg border border-gray-100 dark:border-zinc-800">
-                <div
-                    className={`w-10 h-6 rounded-full p-1 cursor-pointer transition-colors ${activo ? 'bg-lime-600' : 'bg-gray-300 dark:bg-zinc-600'}`}
-                    onClick={() => setValue("activo", !activo, { shouldDirty: true })}
-                >
-                    <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform ${activo ? 'translate-x-4' : 'translate-x-0'}`} />
-                </div>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {activo ? "Rol Activo" : "Rol Inactivo (No disponible)"}
-                </span>
-            </div>
-
-            <div className="flex gap-3 pt-2">
-                <button
+            <div className="bg-white/30 backdrop-blur-md px-6 py-6 flex items-center justify-end gap-3 border-t border-white/40 mt-4 rounded-b-[2.5rem]">
+                <Button
                     type="button"
+                    variant="outline"
                     onClick={onCancel}
-                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 font-medium text-sm"
                 >
                     Cancelar
-                </button>
-                <button
+                </Button>
+                <Button
                     type="submit"
+                    isLoading={isLoading}
                     disabled={isLoading}
-                    className="flex-1 px-4 py-2 bg-lime-600 text-white rounded-lg hover:bg-lime-700 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 font-medium text-sm transition-colors"
+                    onClick={handleSubmit(onSubmit)}
+                    leftIcon={isEditing ? <Edit className="w-5 h-5" /> : <Save className="w-5 h-5" />}
                 >
-                    {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-                    Guardar
-                </button>
+                    {isEditing ? "Actualizar Rol" : "Guardar Rol"}
+                </Button>
             </div>
-        </form>
+        </div>
     );
 }

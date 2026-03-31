@@ -1,7 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Shield, Plus, Search, Loader2, Edit2, ToggleLeft, ToggleRight, Phone, Mail, MapPin, Building2, Hash } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Shield, Plus, Search, Loader2, Edit2, ToggleLeft, ToggleRight, Phone, Mail, Building2, Hash, Save, X, Tag, DollarSign } from "lucide-react";
+import { FormInput } from "@/components/auth/FormInput";
+import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
+
+interface PlanCobertura {
+    nombre: string;
+    montoMaximo: number;
+}
 
 interface Aseguradora {
     aseguradoraId: string;
@@ -11,6 +19,7 @@ interface Aseguradora {
     correo: string | null;
     direccion: string | null;
     activa: boolean;
+    planesCobertura: PlanCobertura[];
     totalPolizas: number;
 }
 
@@ -21,9 +30,10 @@ interface FormData {
     correo: string;
     direccion: string;
     activa: boolean;
+    planesCobertura: PlanCobertura[];
 }
 
-const emptyForm: FormData = { nombre: "", rifNif: "", telefono: "", correo: "", direccion: "", activa: true };
+const emptyForm: FormData = { nombre: "", rifNif: "", telefono: "", correo: "", direccion: "", activa: true, planesCobertura: [] };
 
 export default function AseguradorasPage() {
     const [aseguradoras, setAseguradoras] = useState<Aseguradora[]>([]);
@@ -36,6 +46,27 @@ export default function AseguradorasPage() {
     const [form, setForm] = useState<FormData>(emptyForm);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Plan input
+    const [planNombreInput, setPlanNombreInput] = useState("");
+    const [planMontoInput, setPlanMontoInput] = useState("");
+
+    const addPlan = () => {
+        const nombre = planNombreInput.trim();
+        const monto = parseFloat(planMontoInput);
+        if (!nombre) return;
+        if (isNaN(monto) || monto < 0) return;
+        if (form.planesCobertura.some(p => p.nombre === nombre)) {
+            setPlanNombreInput(""); setPlanMontoInput(""); return;
+        }
+        setForm(prev => ({ ...prev, planesCobertura: [...prev.planesCobertura, { nombre, montoMaximo: monto }] }));
+        setPlanNombreInput("");
+        setPlanMontoInput("");
+    };
+
+    const removePlan = (nombre: string) => {
+        setForm(prev => ({ ...prev, planesCobertura: prev.planesCobertura.filter(p => p.nombre !== nombre) }));
+    };
 
     const fetchData = async () => {
         try {
@@ -55,6 +86,8 @@ export default function AseguradorasPage() {
     const openCreate = () => {
         setEditingId(null);
         setForm(emptyForm);
+        setPlanNombreInput("");
+        setPlanMontoInput("");
         setError(null);
         setIsModalOpen(true);
     };
@@ -67,8 +100,11 @@ export default function AseguradorasPage() {
             telefono: a.telefono || "",
             correo: a.correo || "",
             direccion: a.direccion || "",
-            activa: a.activa
+            activa: a.activa,
+            planesCobertura: Array.isArray(a.planesCobertura) ? a.planesCobertura : [],
         });
+        setPlanNombreInput("");
+        setPlanMontoInput("");
         setError(null);
         setIsModalOpen(true);
     };
@@ -91,6 +127,7 @@ export default function AseguradorasPage() {
                     telefono: form.telefono || null,
                     correo: form.correo || null,
                     direccion: form.direccion || null,
+                    planesCobertura: form.planesCobertura,
                 })
             });
 
@@ -235,93 +272,178 @@ export default function AseguradorasPage() {
             </div>
 
             {/* Create/Edit Modal */}
-            {isModalOpen && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-                    <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-xl w-full max-w-lg border border-gray-200 dark:border-zinc-800">
-                        <div className="p-6 border-b border-gray-200 dark:border-zinc-800 flex justify-between items-center">
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                                {editingId ? "Editar Aseguradora" : "Nueva Aseguradora"}
-                            </h3>
-                            <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">✕</button>
-                        </div>
-                        <div className="p-6 space-y-4">
+            <Modal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                title={editingId ? "Editar Aseguradora" : "Nueva Aseguradora"}
+                className="max-w-3xl"
+            >
+                <div className="flex flex-col h-full bg-transparent overflow-hidden">
+                    <div className="flex-1 overflow-y-auto p-2 sm:p-4">
+                        <div className="space-y-8">
                             {error && (
-                                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg text-sm">
+                                <div className="p-4 bg-red-50/50 backdrop-blur-md border border-red-200/50 text-red-700 rounded-2xl text-sm font-bold flex items-center gap-2 animate-pulse">
+                                    <span className="w-2 h-2 rounded-full bg-red-500" />
                                     {error}
                                 </div>
                             )}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre *</label>
-                                <input
-                                    type="text"
+
+                            <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] space-y-6">
+                                <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-lime-500" />
+                                    Datos Principales
+                                </h3>
+                                
+                                <FormInput
+                                    label="Nombre de la Aseguradora"
                                     value={form.nombre}
                                     onChange={e => setForm({ ...form, nombre: e.target.value })}
-                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-lime-500 outline-none"
                                     placeholder="Ej: Mercantil Seguros"
+                                    required
                                 />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">RIF/NIF</label>
-                                    <input
-                                        type="text"
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <FormInput
+                                        label="RIF / NIF"
                                         value={form.rifNif}
                                         onChange={e => setForm({ ...form, rifNif: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-lime-500 outline-none"
                                         placeholder="J-12345678-9"
                                     />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono</label>
-                                    <input
-                                        type="text"
+                                    <FormInput
+                                        label="Teléfono"
                                         value={form.telefono}
                                         onChange={e => setForm({ ...form, telefono: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-lime-500 outline-none"
                                         placeholder="0212-1234567"
                                     />
                                 </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Correo</label>
-                                <input
-                                    type="email"
-                                    value={form.correo}
-                                    onChange={e => setForm({ ...form, correo: e.target.value })}
-                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-lime-500 outline-none"
-                                    placeholder="contacto@aseguradora.com"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dirección</label>
-                                <input
-                                    type="text"
-                                    value={form.direccion}
-                                    onChange={e => setForm({ ...form, direccion: e.target.value })}
-                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-lime-500 outline-none"
-                                    placeholder="Av. Principal, Caracas"
-                                />
-                            </div>
-                        </div>
-                        <div className="p-6 border-t border-gray-200 dark:border-zinc-800 flex justify-end gap-3">
-                            <button
-                                onClick={() => setIsModalOpen(false)}
-                                className="px-4 py-2 text-gray-600 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                onClick={handleSave}
-                                disabled={isSaving}
-                                className="px-4 py-2 bg-lime-600 text-white rounded-lg hover:bg-lime-700 disabled:opacity-50 transition-colors flex items-center gap-2"
-                            >
-                                {isSaving && <Loader2 size={16} className="animate-spin" />}
-                                {editingId ? "Guardar Cambios" : "Crear Aseguradora"}
-                            </button>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <FormInput
+                                        label="Correo Electrónico"
+                                        type="email"
+                                        value={form.correo}
+                                        onChange={e => setForm({ ...form, correo: e.target.value })}
+                                        placeholder="contacto@aseguradora.com"
+                                    />
+                                    <FormInput
+                                        label="Dirección Fiscal"
+                                        value={form.direccion}
+                                        onChange={e => setForm({ ...form, direccion: e.target.value })}
+                                        placeholder="Av. Principal, Caracas"
+                                    />
+                                </div>
+
+                                <div className="flex items-center justify-between p-4 bg-white/50 backdrop-blur-sm rounded-2xl border border-white/60 mt-4">
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-bold text-gray-700 uppercase tracking-tight">Estado Operativo</span>
+                                        <span className="text-xs text-gray-400">{form.activa ? "La aseguradora está activa" : "La aseguradora está inactiva"}</span>
+                                    </div>
+                                    <div
+                                        className={`w-12 h-7 rounded-full p-1 cursor-pointer transition-all duration-300 ${form.activa ? 'bg-lime-500 shadow-[0_0_12px_rgba(132,204,22,0.4)]' : 'bg-gray-200'}`}
+                                        onClick={() => setForm({ ...form, activa: !form.activa })}
+                                    >
+                                        <div className={`w-5 h-5 rounded-full bg-white shadow-lg transform transition-transform duration-300 ${form.activa ? 'translate-x-5' : 'translate-x-0'}`} />
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Planes de Cobertura */}
+                            <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] space-y-4">
+                                <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-lime-500" />
+                                    Planes de Cobertura
+                                </h3>
+                                <p className="text-xs text-gray-400 -mt-2">
+                                    Define los planes disponibles. Cada plan tiene un nombre y una <strong>suma asegurada máxima</strong> en USD.
+                                </p>
+
+                                {/* Plans list */}
+                                {form.planesCobertura.length > 0 && (
+                                    <div className="space-y-2">
+                                        {form.planesCobertura.map(plan => (
+                                            <div
+                                                key={plan.nombre}
+                                                className="flex items-center justify-between bg-lime-50/60 border border-lime-300/40 rounded-2xl px-4 py-3"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <Tag size={14} className="text-lime-600" />
+                                                    <span className="font-bold text-gray-800 text-sm">{plan.nombre}</span>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="flex items-center gap-1 text-sm font-black text-lime-700 bg-lime-100/60 border border-lime-300/40 rounded-full px-3 py-0.5">
+                                                        <DollarSign size={12} />
+                                                        {Number(plan.montoMaximo).toLocaleString("es-VE")}
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removePlan(plan.nombre)}
+                                                        className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all"
+                                                        title="Eliminar plan"
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Add plan inputs */}
+                                <div className="flex gap-2 flex-col sm:flex-row">
+                                    <input
+                                        type="text"
+                                        value={planNombreInput}
+                                        onChange={e => setPlanNombreInput(e.target.value)}
+                                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPlan(); } }}
+                                        placeholder="Nombre del plan (ej: Global Benefits Classic)"
+                                        className="flex-[2] px-4 py-2.5 rounded-2xl border border-white/60 bg-white/50 backdrop-blur-sm text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lime-400/50 transition-all"
+                                    />
+                                    <div className="relative flex-1">
+                                        <DollarSign size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="1000"
+                                            value={planMontoInput}
+                                            onChange={e => setPlanMontoInput(e.target.value)}
+                                            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPlan(); } }}
+                                            placeholder="Monto máx. USD"
+                                            className="w-full pl-8 pr-4 py-2.5 rounded-2xl border border-white/60 bg-white/50 backdrop-blur-sm text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lime-400/50 transition-all"
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={addPlan}
+                                        className="px-4 py-2.5 bg-lime-500 hover:bg-lime-600 text-white text-sm font-bold rounded-2xl transition-all flex items-center gap-1.5 shadow-sm shrink-0"
+                                    >
+                                        <Plus size={14} /> Agregar
+                                    </button>
+                                </div>
+                                {form.planesCobertura.length === 0 && (
+                                    <p className="text-xs text-gray-300 italic">Aún no hay planes definidos.</p>
+                                )}
+                            </section>
                         </div>
                     </div>
+
+                    {/* Modal Footer */}
+                    <div className="bg-white/30 backdrop-blur-md px-6 py-6 flex items-center justify-end gap-3 border-t border-white/40 mt-4 rounded-b-[2.5rem]">
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsModalOpen(false)}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            onClick={handleSave}
+                            isLoading={isSaving}
+                            disabled={isSaving}
+                            leftIcon={<Save className="w-5 h-5" />}
+                        >
+                            {editingId ? "Guardar Cambios" : "Crear Aseguradora"}
+                        </Button>
+                    </div>
                 </div>
-            )}
-        </div>
+            </Modal>        </div>
     );
 }

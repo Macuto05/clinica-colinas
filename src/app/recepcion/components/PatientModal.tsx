@@ -5,8 +5,9 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { createPortal } from "react-dom";
-import { X, Save, Loader2, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { X, Save, Loader2, AlertCircle, Eye, EyeOff, UserCog, Shield } from "lucide-react";
 import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
+import PatientInsuranceSection from "@/components/insurance/PatientInsuranceSection";
 
 // Robust Schema matching RegisterInput
 const receptionPatientSchema = z.object({
@@ -105,6 +106,7 @@ export function PatientModal({ isOpen, onClose, patient, onSuccess }: PatientMod
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [activeTab, setActiveTab] = useState<"datos" | "seguro">("datos");
 
     const {
         register,
@@ -129,6 +131,7 @@ export function PatientModal({ isOpen, onClose, patient, onSuccess }: PatientMod
             setError(null);
             setShowPassword(false);
             setShowConfirmPassword(false);
+            setActiveTab("datos");
 
             if (patient) {
                 // Parse Split Fields
@@ -257,8 +260,43 @@ export function PatientModal({ isOpen, onClose, patient, onSuccess }: PatientMod
                     </button>
                 </div>
 
-                {/* Form */}
-                <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-8 flex-1 overflow-y-auto">
+                {/* Tabs — only when editing */}
+                {patient && (
+                    <div className="flex gap-1 px-6 pt-4 shrink-0">
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab("datos")}
+                            className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold transition-all ${
+                                activeTab === "datos"
+                                    ? "bg-lime-500 text-white shadow-sm"
+                                    : "bg-white/40 text-gray-600 hover:bg-white/60"
+                            }`}
+                        >
+                            <UserCog size={15} /> Datos del Paciente
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab("seguro")}
+                            className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold transition-all ${
+                                activeTab === "seguro"
+                                    ? "bg-lime-500 text-white shadow-sm"
+                                    : "bg-white/40 text-gray-600 hover:bg-white/60"
+                            }`}
+                        >
+                            <Shield size={15} /> Seguro Médico
+                        </button>
+                    </div>
+                )}
+
+                {/* Insurance Tab */}
+                {activeTab === "seguro" && patient && (
+                    <div className="flex-1 overflow-y-auto p-6">
+                        <PatientInsuranceSection pacienteId={patient.id} />
+                    </div>
+                )}
+
+                {/* Form (hidden when insurance tab active) */}
+                <form onSubmit={handleSubmit(onSubmit)} className={`p-6 space-y-8 flex-1 overflow-y-auto ${activeTab === "seguro" ? "hidden" : ""}`}>
                     {error && (
                         <div className="p-4 bg-red-50/70 border border-red-200/50 text-red-600 rounded-2xl text-sm flex items-center gap-2 backdrop-blur-sm shadow-sm font-bold">
                             <AlertCircle size={16} /> {error}

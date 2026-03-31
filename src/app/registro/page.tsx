@@ -293,6 +293,17 @@ function RegistroContent() {
                                 </div>
                             </div>
 
+                            {/* Insurance Note */}
+                            <div className="flex items-start gap-3 p-4 bg-lime-50/70 border border-lime-200/60 rounded-xl">
+                                <span className="text-xl mt-0.5">🛡️</span>
+                                <div>
+                                    <p className="text-sm font-semibold text-lime-800">¿Tienes seguro médico?</p>
+                                    <p className="text-xs text-lime-700 mt-0.5">
+                                        Puedes registrar tu póliza de seguro una vez creada tu cuenta, desde tu <strong>perfil</strong> en la sección &quot;Seguro Médico&quot;, o acercarte a la clínica y el personal de recepción te ayudará a configurarlo.
+                                    </p>
+                                </div>
+                            </div>
+
                             <div className="flex items-center justify-between pt-6 border-t">
                                 <Link
                                     href={redirect ? `/login?redirect=${redirect}` : "/login"}

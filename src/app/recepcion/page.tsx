@@ -62,6 +62,14 @@ export default function ReceptionAgendaPage() {
 
     useEffect(() => {
         fetchEmergenciesCount();
+        
+        // Handle return routing
+        if (typeof window !== "undefined") {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get("tab") === "EMERGENCIAS") {
+                setActiveTab("EMERGENCIAS");
+            }
+        }
     }, []);
 
     const fetchAppointments = async () => {

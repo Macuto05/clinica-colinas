@@ -33,10 +33,10 @@ export default async function AdminLayout({
     }
 
     return (
-        <div className="flex min-h-screen bg-gray-50 dark:bg-zinc-950">
+        <div className="min-h-screen bg-gradient-to-br from-slate-100 via-green-50/30 to-lime-50/30 flex transition-colors duration-300">
             {/* Admin Sidebar */}
-            <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg dark:bg-zinc-900 border-r border-gray-200 dark:border-zinc-800 hidden lg:block">
-                <div className="flex h-16 items-center px-6 border-b border-gray-200 dark:border-zinc-800">
+            <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-white/60 backdrop-blur-xl border-r border-white/50 shadow-[2px_0_16px_0_rgba(0,0,0,0.06)] hidden lg:flex overflow-hidden flex flex-col">
+                <div className="flex h-16 items-center px-6 border-b border-white/40 shrink-0 bg-white/30 backdrop-blur-sm">
                     <img
                         src="/logo-clinicas-colina.jpg"
                         alt="Clinica Colinas Logo"
@@ -44,53 +44,45 @@ export default async function AdminLayout({
                     />
                 </div>
 
-                <div className="p-4 space-y-1 overflow-y-auto max-h-[calc(100vh-4rem)]">
-                    <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-2">
+                <div className="flex-1 p-3 space-y-0 overflow-y-auto custom-scrollbar scroll-smooth">
+                    <p className="px-4 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1.5 mt-2">
                         General
                     </p>
-                    <NavItem href="/admin" icon={<LayoutDashboard size={20} />} label="Resumen" />
+                    <NavItem href="/admin" icon={<LayoutDashboard size={16} />} label="Resumen" />
 
-                    <div className="my-4 border-t border-gray-200 dark:border-zinc-800" />
+                    <div className="my-2.5 border-t border-white/40 mx-2" />
 
-                    <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                    <p className="px-4 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1.5">
                         Gestión de Usuarios
                     </p>
-                    <NavItem href="/admin/doctores" icon={<Award size={20} />} label="Médicos" />
-                    <NavItem href="/admin/pacientes" icon={<Users size={20} />} label="Pacientes" />
-                    <NavItem href="/admin/personal" icon={<Briefcase size={20} />} label="Personal / Staff" />
-                    <NavItem href="/admin/roles" icon={<Shield size={20} />} label="Roles" />
+                    <NavItem href="/admin/doctores" icon={<Award size={16} />} label="Médicos" />
+                    <NavItem href="/admin/pacientes" icon={<Users size={16} />} label="Pacientes" />
+                    <NavItem href="/admin/personal" icon={<Briefcase size={16} />} label="Personal / Staff" />
+                    <NavItem href="/admin/roles" icon={<Shield size={16} />} label="Roles" />
 
-                    <div className="my-4 border-t border-gray-200 dark:border-zinc-800" />
+                    <div className="my-2.5 border-t border-white/40 mx-2" />
 
-                    <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                    <p className="px-4 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1.5">
                         Clínica
                     </p>
-                    <NavItem href="/admin/citas" icon={<Calendar size={20} />} label="Citas Médicas" />
-                    <NavItem href="/admin/especialidades" icon={<Activity size={20} />} label="Especialidades" />
-                    <NavItem href="/admin/aseguradoras" icon={<Shield size={20} />} label="Aseguradoras" />
-                    <NavItem href="/emergencias" icon={<Siren size={20} />} label="Emergencias" />
+                    <NavItem href="/admin/citas" icon={<Calendar size={16} />} label="Citas Médicas" />
+                    <NavItem href="/admin/especialidades" icon={<Activity size={16} />} label="Especialidades" />
+                    <NavItem href="/admin/aseguradoras" icon={<Shield size={16} />} label="Aseguradoras" />
+                    <NavItem href="/emergencias" icon={<Siren size={16} />} label="Emergencias" />
 
+                    <div className="my-2.5 border-t border-white/40 mx-2" />
 
-
-                    <div className="my-4 border-t border-gray-200 dark:border-zinc-800" />
-
-                    <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                    <p className="px-4 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1.5">
                         Control y Métricas
                     </p>
-                    <NavItem href="/admin/auditoria" icon={<LayoutDashboard size={20} />} label="Auditoría / Logs" />
-                    <NavItem href="/admin/metricas" icon={<LayoutDashboard size={20} />} label="Métricas Bi" />
+                    <NavItem href="/admin/auditoria" icon={<LayoutDashboard size={16} />} label="Auditoría / Logs" />
+                    <NavItem href="/admin/metricas" icon={<LayoutDashboard size={16} />} label="Métricas Bi" />
 
-                    <div className="my-4 border-t border-gray-200 dark:border-zinc-800" />
-
-                    <div className="my-4 border-t border-gray-200 dark:border-zinc-800" />
-
-                    <NavItem href="/admin/configuracion" icon={<Settings size={20} />} label="Ajustes" />
-
-                    <div className="my-2" />
-                    <NavItem href="/" icon={<LogOut className="rotate-180" size={20} />} label="Volver al Inicio" />
                 </div>
 
-                <AdminProfile user={{ name: user.name }} />
+                <div className="shrink-0 p-4 border-t border-white/40">
+                    <AdminProfile user={{ name: user.name }} />
+                </div>
             </aside>
 
             {/* Content Area */}
@@ -104,8 +96,8 @@ export default async function AdminLayout({
                 </header>
 
                 {/* Mobile Header */}
-                <header className="flex lg:hidden items-center justify-between sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-200 dark:border-zinc-800 dark:bg-zinc-900/80 p-4">
-                    <span className="text-lg font-bold text-gray-900 dark:text-white">Admin Panel</span>
+                <header className="flex lg:hidden items-center justify-between sticky top-0 z-40 bg-white/30 backdrop-blur-md border-b border-white/40 p-4">
+                    <span className="text-lg font-black text-gray-900 tracking-tight">Admin Panel</span>
                     <ExchangeRateWidget />
                 </header>
 
@@ -121,10 +113,12 @@ function NavItem({ href, icon, label }: { href: string; icon: React.ReactNode; l
     return (
         <Link
             href={href}
-            className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-700 hover:bg-lime-50 hover:text-lime-700 dark:text-gray-300 dark:hover:bg-lime-900/20 dark:hover:text-lime-400 transition-colors"
+            className="flex items-center gap-3 px-4 py-1.5 rounded-lg text-gray-600 hover:bg-white/60 hover:text-[#a1db4b] hover:shadow-sm transition-all duration-300 group"
         >
-            {icon}
-            <span className="font-medium">{label}</span>
+            <div className="transition-transform group-hover:scale-110 group-hover:rotate-3 shrink-0">
+                {icon}
+            </div>
+            <span className="font-bold text-sm tracking-tight truncate">{label}</span>
         </Link>
     );
 }

@@ -161,11 +161,15 @@ export default async function AlmacenDashboard() {
 
     return (
         <div className="space-y-6">
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 dark:bg-zinc-900 dark:border-zinc-800">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    Bienvenido, {displayName}
+            <div className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-8 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] relative overflow-hidden group">
+                {/* Decorative background element */}
+                <div className="absolute -right-20 -top-20 w-64 h-64 bg-lime-500/10 rounded-full blur-3xl transition-all duration-700 group-hover:bg-lime-500/20" />
+                
+                <h1 className="text-3xl font-black text-gray-900 tracking-tight">
+                    Bienvenido, <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600">{displayName}</span>
                 </h1>
-                <p className="text-gray-500 mt-1">
+                <p className="text-gray-500 font-medium mt-2 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-lime-500 animate-pulse" />
                     Panel de resumen y gestión general del inventario.
                 </p>
             </div>

@@ -14,16 +14,16 @@ export default function AdminProfile({ user, role = "Administrador" }: { user: {
     };
 
     return (
-        <div className="absolute bottom-0 w-full p-4 border-t border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-            <div className="flex items-center gap-3 px-4 py-2 mb-2">
-                <div className="h-8 w-8 rounded-full bg-lime-100 dark:bg-lime-900/30 flex items-center justify-center text-lime-700 dark:text-lime-300 font-bold">
+        <div className="w-full">
+            <div className="flex items-center gap-3 px-4 py-3 mb-2 rounded-2xl bg-white/30 backdrop-blur-sm border border-white/40 shadow-sm">
+                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-lime-400 to-lime-600 flex items-center justify-center text-white font-black shadow-md shadow-lime-500/20 border border-white/60">
                     {user.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                    <p className="text-sm font-black text-gray-900 truncate tracking-tight">
                         {user.name}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    <p className="text-[10px] font-bold text-gray-500/80 uppercase tracking-widest truncate">
                         {role}
                     </p>
                 </div>
@@ -32,9 +32,9 @@ export default function AdminProfile({ user, role = "Administrador" }: { user: {
             <button
                 suppressHydrationWarning
                 onClick={handleLogout}
-                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 rounded-2xl transition-all duration-300 cursor-pointer group"
             >
-                <LogOut size={16} />
+                <LogOut size={16} className="transition-transform group-hover:-translate-x-1" />
                 <span>Cerrar Sesión</span>
             </button>
         </div>

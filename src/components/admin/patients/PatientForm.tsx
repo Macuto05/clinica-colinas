@@ -181,59 +181,49 @@ export default function PatientForm({ initialData, onClose, onSuccess }: Patient
     };
 
     return (
-        <div className="flex flex-col h-full bg-white dark:bg-zinc-900 rounded-lg shadow-xl overflow-hidden">
-            {/* Header */}
-
+        <div className="flex flex-col h-full bg-transparent overflow-hidden">
+            {/* Header - Usually provided by Modal but kept as spacing here if needed */}
 
             {/* Form Content */}
-            <div className="flex-1 overflow-y-auto p-6">
-                <form id="patient-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <div className="flex-1 overflow-y-auto p-2 sm:p-4">
+                <form id="patient-form" onSubmit={handleSubmit(onSubmit)} className="space-y-8">
                     {error && (
-                        <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm border border-red-100">
+                        <div className="p-4 bg-red-50/50 backdrop-blur-md text-red-700 rounded-2xl text-sm border border-red-200/50 font-bold flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
                             {error}
                         </div>
                     )}
 
                     {/* Personal Information */}
-                    <div className="space-y-4">
-                        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
+                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-lime-500" />
                             Información Personal
                         </h3>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Nombres */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Nombres
-                                </label>
-                                <input
-                                    {...register("nombres")}
-                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                    placeholder="Ej: Juan Carlos"
-                                />
-                                {errors.nombres && <p className="text-red-500 text-xs mt-1">{errors.nombres.message}</p>}
-                            </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FormInput
+                                label="Nombres"
+                                placeholder="Ej: Juan Carlos"
+                                error={errors.nombres?.message}
+                                {...register("nombres")}
+                            />
+                            <FormInput
+                                label="Apellidos"
+                                placeholder="Ej: Pérez Rodríguez"
+                                error={errors.apellidos?.message}
+                                {...register("apellidos")}
+                            />
+                        </div>
 
-                            {/* Apellidos */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Apellidos
-                                </label>
-                                <input
-                                    {...register("apellidos")}
-                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                    placeholder="Ej: Pérez Rodríguez"
-                                />
-                                {errors.apellidos && <p className="text-red-500 text-xs mt-1">{errors.apellidos.message}</p>}
-                            </div>
-
-                            {/* Documento */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                            {/* Documento Identification Split */}
+                            <div className="space-y-2">
+                                <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider ml-1">
                                     Documento de Identidad
                                 </label>
-                                <div className="flex gap-2">
-                                    <div className="w-24">
+                                <div className="flex gap-3">
+                                    <div className="w-28">
                                         <Select
                                             options={[
                                                 { value: "V-", label: "V-" },
@@ -245,63 +235,52 @@ export default function PatientForm({ initialData, onClose, onSuccess }: Patient
                                         />
                                     </div>
                                     <div className="flex-1">
-                                        <input
+                                        <FormInput
                                             {...register("idNumber")}
-                                            className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                             placeholder="12345678"
+                                            error={errors.idNumber?.message}
                                         />
                                     </div>
                                 </div>
-                                {errors.idNumber && <p className="text-red-500 text-xs mt-1">{errors.idNumber.message}</p>}
                             </div>
 
-                            {/* Fecha Nacimiento */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Fecha de Nacimiento
-                                </label>
-                                <input
-                                    type="date"
-                                    {...register("fechaNacimiento")}
-                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                />
-                            </div>
-
-                            {/* Sexo */}
-                            <div className="md:col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Sexo
-                                </label>
-                                <Select
-                                    options={[
-                                        { value: "MASCULINO", label: "Masculino" },
-                                        { value: "FEMENINO", label: "Femenino" },
-                                        { value: "OTRO", label: "Otro" }
-                                    ]}
-                                    placeholder="Seleccionar..."
-                                    error={errors.sexo?.message}
-                                    {...register("sexo")}
-                                />
-                            </div>
+                            <FormInput
+                                label="Fecha de Nacimiento"
+                                type="date"
+                                error={errors.fechaNacimiento?.message}
+                                {...register("fechaNacimiento")}
+                            />
                         </div>
-                    </div>
 
-                    <div className="border-t border-gray-200 dark:border-zinc-700 my-4"></div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                            <Select
+                                label="Sexo"
+                                options={[
+                                    { value: "MASCULINO", label: "Masculino" },
+                                    { value: "FEMENINO", label: "Femenino" },
+                                    { value: "OTRO", label: "Otro" }
+                                ]}
+                                placeholder="Seleccionar..."
+                                error={errors.sexo?.message}
+                                {...register("sexo")}
+                            />
+                        </div>
+                    </section>
 
                     {/* Contact Information */}
-                    <div className="space-y-4">
-                        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
+                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-lime-500" />
                             Información de Contacto
                         </h3>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Telefono */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider ml-1">
                                     Teléfono
                                 </label>
-                                <div className="flex gap-2">
-                                    <div className="w-28">
+                                <div className="flex gap-3">
+                                    <div className="w-32">
                                         <Select
                                             options={[
                                                 { value: "0412-", label: "0412" },
@@ -316,121 +295,95 @@ export default function PatientForm({ initialData, onClose, onSuccess }: Patient
                                         />
                                     </div>
                                     <div className="flex-1">
-                                        <input
+                                        <FormInput
                                             {...register("phoneNumber")}
-                                            className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                             placeholder="1234567"
+                                            error={errors.phoneNumber?.message}
                                         />
                                     </div>
                                 </div>
-                                {errors.phoneNumber && <p className="text-red-500 text-xs mt-1">{errors.phoneNumber.message}</p>}
                             </div>
 
-                            {/* Correo Contacto */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Correo de Contacto
-                                </label>
-                                <input
-                                    {...register("correo")}
-                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                    placeholder="contacto@ejemplo.com"
-                                />
-                                {errors.correo && <p className="text-red-500 text-xs mt-1">{errors.correo.message}</p>}
-                            </div>
-
-                            {/* Direccion */}
-                            <div className="md:col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Dirección
-                                </label>
-                                <textarea
-                                    {...register("direccion")}
-                                    rows={2}
-                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none"
-                                    placeholder="Tu dirección completa"
-                                />
-                            </div>
+                            <FormInput
+                                label="Correo de Contacto"
+                                type="email"
+                                placeholder="contacto@ejemplo.com"
+                                error={errors.correo?.message}
+                                {...register("correo")}
+                            />
                         </div>
-                    </div>
 
-                    <div className="border-t border-gray-200 dark:border-zinc-700 my-4"></div>
+                        <div className="mt-6">
+                            <FormInput
+                                label="Dirección"
+                                placeholder="Tu dirección completa..."
+                                error={errors.direccion?.message}
+                                {...register("direccion")}
+                            />
+                        </div>
+                    </section>
 
                     {/* Account & Status Information */}
-                    <div className="space-y-4">
-                        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
+                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-lime-500" />
                             Cuenta y Estado
                         </h3>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Email Usuario */}
-                            <div>
-                                <FormInput
-                                    label="Correo de Acceso (Usuario)"
-                                    placeholder="usuario@login.com"
-                                    error={errors.email?.message}
-                                    {...register("email")}
-                                />
-                            </div>
-
-                            {/* Password */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FormInput
+                                label="Correo de Acceso (Usuario)"
+                                type="email"
+                                placeholder="usuario@login.com"
+                                error={errors.email?.message}
+                                {...register("email")}
+                            />
                             <div className="space-y-2">
                                 <FormInput
                                     label="Contraseña"
                                     type="password"
-                                    placeholder={isEditing ? "••••••••" : "Contraseña"}
+                                    placeholder={isEditing ? "Dejar en blanco para mantener" : "••••••••"}
                                     error={errors.password?.message}
                                     {...register("password")}
                                 />
                                 {password && <PasswordStrengthIndicator password={password} />}
                             </div>
-
-                            {/* Selects de Estado */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Estado del Paciente
-                                </label>
-                                <Select
-                                    {...register("estado")}
-                                    options={[
-                                        { value: "ACTIVO", label: "ACTIVO" },
-                                        { value: "INACTIVO", label: "INACTIVO" },
-                                        { value: "BLOQUEADO", label: "BLOQUEADO" },
-                                        { value: "FALLECIDO", label: "FALLECIDO" }
-                                    ]}
-                                    error={errors.estado?.message}
-                                />
-                            </div>
-
-                            {/* Estado Usuario */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Estado de Usuario (Acceso)
-                                </label>
-                                <Select
-                                    {...register("usuarioEstado")}
-                                    options={[
-                                        { value: "ACTIVO", label: "ACTIVO" },
-                                        { value: "INACTIVO", label: "INACTIVO" },
-                                        { value: "BLOQUEADO", label: "BLOQUEADO" }
-                                    ]}
-                                    error={errors.usuarioEstado?.message}
-                                />
-                            </div>
-
                         </div>
-                    </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                            <Select
+                                label="Estado del Paciente"
+                                options={[
+                                    { value: "ACTIVO", label: "ACTIVO" },
+                                    { value: "INACTIVO", label: "INACTIVO" },
+                                    { value: "BLOQUEADO", label: "BLOQUEADO" },
+                                    { value: "FALLECIDO", label: "FALLECIDO" }
+                                ]}
+                                error={errors.estado?.message}
+                                {...register("estado")}
+                            />
+                            <Select
+                                label="Estado de Usuario (Acceso)"
+                                options={[
+                                    { value: "ACTIVO", label: "ACTIVO" },
+                                    { value: "INACTIVO", label: "INACTIVO" },
+                                    { value: "BLOQUEADO", label: "BLOQUEADO" }
+                                ]}
+                                error={errors.usuarioEstado?.message}
+                                {...register("usuarioEstado")}
+                            />
+                        </div>
+                    </section>
                 </form>
             </div>
 
             {/* Footer */}
-            <div className="bg-gray-50 dark:bg-zinc-800/50 px-6 py-4 flex items-center justify-end gap-3 border-t border-gray-200 dark:border-zinc-800">
+            <div className="bg-white/30 backdrop-blur-md px-6 py-6 flex items-center justify-end gap-3 border-t border-white/40 mt-4 rounded-b-[2.5rem]">
                 <Button
                     type="button"
                     variant="outline"
                     onClick={onClose}
                     disabled={isSubmitting}
-                    className="dark:border-zinc-700 dark:text-gray-300 dark:hover:bg-zinc-700"
                 >
                     Cancelar
                 </Button>
@@ -439,7 +392,7 @@ export default function PatientForm({ initialData, onClose, onSuccess }: Patient
                     form="patient-form"
                     isLoading={isSubmitting}
                     disabled={isSubmitting}
-                    leftIcon={isEditing ? <Edit className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                    leftIcon={isEditing ? <Edit className="w-5 h-5" /> : <Save className="w-5 h-5" />}
                 >
                     {isEditing ? "Guardar Cambios" : "Guardar Paciente"}
                 </Button>

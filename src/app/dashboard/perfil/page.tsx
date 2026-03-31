@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { User, Mail, Phone, MapPin, Calendar, CreditCard, Edit2, Lock, Save, X, FileDown, Loader2, Clock, AlertCircle } from "lucide-react";
+import { User, Mail, Phone, MapPin, Calendar, CreditCard, Edit2, Lock, Save, X, FileDown, Loader2, Clock, AlertCircle, Shield } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -9,6 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { FormInput } from "@/components/auth/FormInput";
 import { generateClinicalHistoryPDF } from "@/lib/generate-history-pdf";
 import { toast } from "sonner";
+import PatientInsuranceSection from "@/components/insurance/PatientInsuranceSection";
 
 const editProfileSchema = z.object({
     contactEmail: z.string().email("Email inválido").optional().or(z.literal('')),
@@ -250,7 +251,26 @@ export default function ProfilePage() {
                 </div>
             </div>
 
-            {/* Edit Modal */}
+            {/* Seguros Médicos */}
+            {user.patientId && (
+                <div className="bg-white/40 backdrop-blur-md rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.06)] border border-white/50 overflow-hidden">
+                    <div className="px-8 sm:px-10 py-6 border-b border-white/40 bg-white/20 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-lime-500/10 border border-lime-400/20 flex items-center justify-center">
+                                <Shield size={18} className="text-lime-600" />
+                            </div>
+                            <div>
+                                <h2 className="text-base font-bold text-gray-900">Seguro Médico</h2>
+                                <p className="text-xs text-gray-500">Pólizas vinculadas a tu cuenta</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="px-8 sm:px-10 py-6">
+                        <PatientInsuranceSection pacienteId={user.patientId.toString()} />
+                    </div>
+                </div>
+            )}
+
             {isEditing && (
                 <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6 md:p-8 animate-in fade-in duration-200">
                     <div className="bg-white/70 backdrop-blur-2xl rounded-[2.5rem] w-full max-w-2xl max-h-full flex flex-col shadow-[0_8px_32px_0_rgba(0,0,0,0.12)] border border-white/60 overflow-hidden">

@@ -48,50 +48,60 @@ export default function StaffFilter({ roles }: StaffFilterProps) {
     };
 
     return (
-        <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="bg-white/40 backdrop-blur-md p-6 rounded-[2rem] border border-white/50 shadow-sm mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
                 {/* ID Filter */}
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder="ID..."
-                        defaultValue={searchParams.get("id")?.toString()}
-                        onChange={(e) => handleSearch(e.target.value, "id")}
-                        className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 focus:ring-2 focus:ring-lime-500 outline-none"
-                    />
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">ID (EMP)</label>
+                    <div className="relative">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Ej: 0001"
+                            defaultValue={searchParams.get("id")?.toString()}
+                            onChange={(e) => handleSearch(e.target.value, "id")}
+                            className="w-full pl-11 pr-4 py-3 text-sm font-medium rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-4 focus:ring-lime-500/10 outline-none transition-all placeholder:text-gray-400/60 shadow-inner"
+                        />
+                    </div>
                 </div>
 
                 {/* Name Filter */}
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder="Nombre..."
-                        defaultValue={searchParams.get("search")?.toString()}
-                        onChange={(e) => handleSearch(e.target.value, "search")}
-                        className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 focus:ring-2 focus:ring-lime-500 outline-none"
-                    />
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nombre</label>
+                    <div className="relative">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Buscar..."
+                            defaultValue={searchParams.get("search")?.toString()}
+                            onChange={(e) => handleSearch(e.target.value, "search")}
+                            className="w-full pl-11 pr-4 py-3 text-sm font-medium rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-4 focus:ring-lime-500/10 outline-none transition-all placeholder:text-gray-400/60 shadow-inner"
+                        />
+                    </div>
                 </div>
 
                 {/* Document Filter */}
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder="Documento..."
-                        defaultValue={searchParams.get("document")?.toString()}
-                        onChange={(e) => handleSearch(e.target.value, "document")}
-                        className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 focus:ring-2 focus:ring-lime-500 outline-none"
-                    />
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Documento</label>
+                    <div className="relative">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Cédula..."
+                            defaultValue={searchParams.get("document")?.toString()}
+                            onChange={(e) => handleSearch(e.target.value, "document")}
+                            className="w-full pl-11 pr-4 py-3 text-sm font-medium rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-4 focus:ring-lime-500/10 outline-none transition-all placeholder:text-gray-400/60 shadow-inner"
+                        />
+                    </div>
                 </div>
 
                 {/* Role Filter */}
-                <div>
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Rol</label>
                     <select
                         onChange={(e) => handleFilterChange(e.target.value, "role")}
                         defaultValue={searchParams.get("role")?.toString() || "ALL"}
-                        className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 focus:ring-2 focus:ring-lime-500 outline-none"
+                        className="w-full px-4 py-3 text-sm font-bold rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-4 focus:ring-lime-500/10 outline-none transition-all appearance-none cursor-pointer shadow-inner"
                     >
                         <option value="ALL">Todos los roles</option>
                         {roles.map((rol) => (
@@ -103,13 +113,14 @@ export default function StaffFilter({ roles }: StaffFilterProps) {
                 </div>
 
                 {/* Status Filter */}
-                <div>
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Estado</label>
                     <select
                         onChange={(e) => handleFilterChange(e.target.value, "status")}
                         defaultValue={searchParams.get("status")?.toString() || "ALL"}
-                        className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 focus:ring-2 focus:ring-lime-500 outline-none"
+                        className="w-full px-4 py-3 text-sm font-bold rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-4 focus:ring-lime-500/10 outline-none transition-all appearance-none cursor-pointer shadow-inner"
                     >
-                        <option value="ALL">Estado Laboral</option>
+                        <option value="ALL">Cualquier estado</option>
                         <option value="ACTIVO">ACTIVO</option>
                         <option value="VACACIONES">VACACIONES</option>
                         <option value="LICENCIA">LICENCIA</option>

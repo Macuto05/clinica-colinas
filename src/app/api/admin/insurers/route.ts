@@ -6,6 +6,11 @@ import { JWTService } from "@/infrastructure/services/JWTService";
 // @ts-ignore
 BigInt.prototype.toJSON = function () { return this.toString() };
 
+const planCoberturaSchema = z.object({
+    nombre: z.string().min(1, "El nombre del plan es requerido"),
+    montoMaximo: z.number().min(0, "El monto debe ser positivo"),
+});
+
 const insurerSchema = z.object({
     nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
     rifNif: z.string().optional().nullable(),
@@ -13,6 +18,7 @@ const insurerSchema = z.object({
     correo: z.string().email("Correo inválido").optional().nullable(),
     direccion: z.string().optional().nullable(),
     activa: z.boolean().optional().default(true),
+    planesCobertura: z.array(planCoberturaSchema).optional().default([]),
 });
 
 // GET — List all insurers
@@ -33,6 +39,7 @@ export async function GET() {
             correo: a.correo,
             direccion: a.direccion,
             activa: a.activa,
+            planesCobertura: (a as any).planesCobertura ?? [],
             totalPolizas: a._count.polizas
         }));
 
@@ -63,10 +70,10 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const { nombre, rifNif, telefono, correo, direccion, activa } = result.data;
+        const { nombre, rifNif, telefono, correo, direccion, activa, planesCobertura } = result.data;
 
         const newInsurer = await prisma.aseguradora.create({
-            data: { nombre, rifNif, telefono, correo, direccion, activa }
+            data: { nombre, rifNif, telefono, correo, direccion, activa, planesCobertura: planesCobertura ?? [] } as any
         });
 
         return NextResponse.json({

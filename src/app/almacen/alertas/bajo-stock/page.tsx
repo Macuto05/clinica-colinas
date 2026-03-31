@@ -1,16 +1,12 @@
 import { prisma } from "@/infrastructure/database/prisma/client";
-import { LowStockClientTable } from "@/components/inventory/LowStockClientTable"; // We will create this
-import { ArrowLeft } from "lucide-react";
+import { LowStockClientTable } from "@/components/inventory/LowStockClientTable";
+import { ArrowLeft, AlertCircle } from "lucide-react";
 import Link from "next/link";
 
 export const dynamic = 'force-dynamic';
 
 export default async function LowStockPage() {
-    // Fetch all stocks that have a configured minimum (> 0)
-    // We filter "Low Stock" in memory to reliably compare fields (Prisma limitations)
     const allConfiguredStocks = await prisma.stock.findMany({
-        // Remove 'where' constraint on stockMinimo to avoid "Unknown argument" error if client is stale
-        // We will filter everything in memory.
         include: {
             insumo: {
                 select: {
@@ -34,7 +30,6 @@ export default async function LowStockPage() {
         }
     });
 
-    // Filter: Current Quantity <= Minimum Stock
     const lowStocks = allConfiguredStocks.filter(s =>
         Number(s.cantidadActual) <= Number(s.stockMinimo)
     );
@@ -52,23 +47,26 @@ export default async function LowStockPage() {
     }));
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center gap-4">
+        <div className="space-y-8 pb-20">
+            <div className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-8 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] flex flex-col md:flex-row items-center gap-6">
                 <Link
                     href="/almacen"
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500 hover:text-gray-900 dark:hover:bg-zinc-800 dark:hover:text-white"
+                    className="p-4 bg-white/50 hover:bg-white rounded-2xl border border-white transition-all shadow-sm active:scale-90 group"
                 >
-                    <ArrowLeft size={20} />
+                    <ArrowLeft size={20} className="text-gray-400 group-hover:text-gray-900" />
                 </Link>
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Alerta de Stock Bajo</h1>
-                    <p className="text-gray-500">
-                        Insumos que han alcanzado su nivel mínimo por almacén.
-                    </p>
+                    <h1 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
+                        <div className="p-2 bg-rose-500/10 rounded-xl">
+                            <AlertCircle className="text-rose-600" size={24} />
+                        </div>
+                        Alerta de Stock Bajo
+                    </h1>
+                    <p className="text-gray-500 text-sm font-medium mt-1 italic leading-relaxed">Insumos que han alcanzado su nivel crítico de existencia por almacén.</p>
                 </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 dark:bg-zinc-900 dark:border-zinc-800 overflow-hidden">
+            <div className="bg-white/40 backdrop-blur-md rounded-[2.5rem] border border-white/50 overflow-hidden shadow-[0_8px_32px_0_rgba(0,0,0,0.03)] min-h-[400px]">
                 <LowStockClientTable initialData={formattedStocks} />
             </div>
         </div>

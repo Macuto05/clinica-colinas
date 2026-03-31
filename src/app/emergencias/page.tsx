@@ -7,6 +7,7 @@ import {
     FileText, User, ArrowUpRight, XCircle, CheckCircle
 } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 /* ─── Types ─────────────────────────────────────────── */
 interface Emergencia {
@@ -59,62 +60,61 @@ function timeSince(dateStr: string) {
 
 /* ─── Emergency Card ─────────────────────────────────── */
 function EmergencyCard({ e }: { e: Emergencia }) {
+    const pathname = usePathname();
     const urg = URGENCY[e.nivelUrgencia] ?? URGENCY.MODERADO;
     const st  = STATUS[e.estadoEmergencia] ?? STATUS.TRIAJE;
     const pay = PAY_LABEL[e.verificacionPago] ?? PAY_LABEL.PENDIENTE;
     const StIcon = st.Icon;
 
     return (
-        <div className={`rounded-2xl border bg-white shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col ${
-            e.nivelUrgencia === "CRITICO" ? "border-red-200" : "border-gray-200"
-        }`}>
-            {/* Urgency bar */}
-            <div className={`h-1.5 w-full ${urg.bar}`} />
+        <div className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl shadow-[0_4px_16px_0_rgba(0,0,0,0.04)] hover:bg-white/60 hover:shadow-[0_8px_24px_0_rgba(0,0,0,0.08)] transition-all overflow-hidden flex flex-col">
+            {/* Urgency accent bar */}
+            <div className={`h-1 w-full ${urg.bar} opacity-90`} />
 
-            <div className="p-4 flex flex-col gap-3 flex-1">
+            <div className="p-5 flex flex-col gap-3.5 flex-1">
                 {/* Row 1 — Patient + urgency pill + time */}
                 <div className="flex justify-between items-start gap-2">
                     <div className="min-w-0">
-                        <p className="font-bold text-gray-900 leading-tight truncate">{e.paciente}</p>
-                        <p className="text-xs text-gray-400 font-mono mt-0.5">{e.documento}</p>
+                        <p className="font-black text-gray-900 leading-tight truncate tracking-tight">{e.paciente}</p>
+                        <p className="text-xs text-gray-400/80 font-mono mt-0.5">{e.documento}</p>
                     </div>
-                    <div className="flex flex-col items-end gap-1 shrink-0">
-                        <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-black ${urg.pill}`}>
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                        <span className={`rounded-full px-3 py-0.5 text-[11px] font-black shadow-sm ${urg.pill}`}>
                             {urg.label}
                         </span>
-                        <span className="flex items-center gap-1 text-[11px] text-gray-400">
+                        <span className="flex items-center gap-1 text-[11px] text-gray-400/70">
                             <Clock size={10} /> {timeSince(e.fechaIngreso)}
                         </span>
                     </div>
                 </div>
 
                 {/* Row 2 — Motivo */}
-                <p className="text-sm text-gray-600 line-clamp-2">{e.motivoIngreso}</p>
+                <p className="text-sm text-gray-600 line-clamp-2 font-medium">{e.motivoIngreso}</p>
 
                 {/* Row 3 — Status + Insurance */}
                 <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${st.color}`}>
-                        <StIcon size={12} /> {st.label}
+                    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold border border-white/60 shadow-sm ${st.color}`}>
+                        <StIcon size={11} /> {st.label}
                     </span>
                     {e.tieneSeguro && (
-                        <span className="inline-flex items-center gap-1 text-xs text-blue-600 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full font-medium">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-bold bg-blue-100/70 text-blue-800 border border-blue-200/60 rounded-full px-2.5 py-1 shadow-sm">
                             <Shield size={10} /> {e.aseguradora}
                         </span>
                     )}
                 </div>
 
                 {/* Row 4 — Phone + Payment */}
-                <div className="flex justify-between items-center pt-1 border-t border-gray-100">
-                    <span className="flex items-center gap-1 text-xs text-gray-400">
+                <div className="flex justify-between items-center pt-2 border-t border-white/50">
+                    <span className="flex items-center gap-1.5 text-xs text-gray-400/80 font-medium">
                         <Phone size={10} /> {e.telefono || "—"}
                     </span>
-                    <span className={`text-xs font-semibold ${pay.color}`}>{pay.label}</span>
+                    <span className={`text-xs font-bold ${pay.color}`}>{pay.label}</span>
                 </div>
 
                 {/* View Detail */}
                 <Link
-                    href={`/emergencias/${e.emergenciaId}`}
-                    className="w-full flex items-center justify-center gap-1 text-sm font-semibold text-red-600 hover:text-red-700 py-2 rounded-xl hover:bg-red-50 transition-colors border border-transparent hover:border-red-100"
+                    href={`/emergencias/${e.emergenciaId}?returnTo=${encodeURIComponent(pathname?.includes('/recepcion') ? '/recepcion?tab=EMERGENCIAS' : '/emergencias')}`}
+                    className="w-full flex items-center justify-center gap-1.5 text-sm font-bold text-red-600 hover:text-red-700 py-2.5 rounded-2xl hover:bg-red-50/60 transition-all border border-transparent hover:border-red-200/50"
                 >
                     Ver Detalle <ArrowUpRight size={14} />
                 </Link>
@@ -504,34 +504,42 @@ export default function EmergenciasPage() {
     const critical = active.filter(e => e.nivelUrgencia === "CRITICO").length;
 
     return (
-        <div className="space-y-5">
+        <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl px-6 py-5 shadow-[0_4px_16px_0_rgba(0,0,0,0.03)]">
                 <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${active.length > 0 ? "bg-red-100" : "bg-gray-100"}`}>
+                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shadow-inner border ${
+                        active.length > 0
+                            ? "bg-red-500/10 border-red-400/20"
+                            : "bg-white/60 border-white/60"
+                    }`}>
                         <Siren size={20} className={active.length > 0 ? "text-red-600" : "text-gray-400"} />
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold text-gray-900">Emergencias</h2>
-                        <p className="text-sm text-gray-400">
+                        <h2 className="text-xl font-black text-gray-900 tracking-tight">Emergencias</h2>
+                        <p className="text-sm text-gray-400/80 font-medium">
                             {active.length > 0
                                 ? `${active.length} caso${active.length !== 1 ? "s" : ""} activo${active.length !== 1 ? "s" : ""}${critical > 0 ? ` · ${critical} crítico${critical !== 1 ? "s" : ""}` : ""}`
                                 : "Sin emergencias activas"}
                         </p>
                     </div>
                 </div>
-                <button onClick={() => setShowModal(true)}
-                    className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm shadow-red-200">
+                <button
+                    onClick={() => setShowModal(true)}
+                    className="flex items-center gap-2 bg-red-500/95 hover:bg-red-500 text-white px-5 py-2.5 rounded-2xl text-sm font-bold transition-all shadow-[0_8px_20px_rgba(239,68,68,0.25)] border border-red-400/50"
+                >
                     <Plus size={16} /> Nuevo Ingreso
                 </button>
             </div>
 
             {/* Filter Tabs */}
-            <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+            <div className="flex gap-1 bg-white/40 backdrop-blur-md border border-white/50 p-1 rounded-2xl w-fit shadow-sm">
                 {([{ k: "active", l: "Activos" }, { k: "all", l: "Todos" }, { k: "closed", l: "Altas" }] as const).map(t => (
                     <button key={t.k} onClick={() => setFilter(t.k)}
-                        className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${
-                            filter === t.k ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                        className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                            filter === t.k
+                                ? "bg-white/80 text-gray-900 shadow-sm border border-white/70"
+                                : "text-gray-500 hover:text-gray-700 hover:bg-white/40"
                         }`}>
                         {t.l}
                     </button>
@@ -540,11 +548,13 @@ export default function EmergenciasPage() {
 
             {/* Cards Grid */}
             {loading ? (
-                <div className="flex justify-center py-16"><Loader2 className="animate-spin text-red-400" size={28} /></div>
+                <div className="flex justify-center py-20">
+                    <Loader2 className="animate-spin text-red-400" size={30} />
+                </div>
             ) : emergencias.length === 0 ? (
-                <div className="border-2 border-dashed border-gray-200 rounded-2xl p-14 text-center">
+                <div className="bg-white/40 backdrop-blur-md border-2 border-dashed border-white/60 rounded-3xl p-16 text-center">
                     <Siren size={40} className="mx-auto mb-3 text-gray-300" />
-                    <p className="text-gray-400 font-medium">
+                    <p className="text-gray-400 font-bold">
                         {filter === "active" ? "No hay emergencias activas" : filter === "closed" ? "No hay altas registradas" : "Sin registros"}
                     </p>
                 </div>

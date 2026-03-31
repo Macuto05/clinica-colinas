@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { BatchDetailsModal } from "./BatchDetailsModal";
-import { AlertCircle, Eye } from "lucide-react";
+import { AlertCircle, Eye, CheckCircle, Package, ArrowRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface LowStockItem {
     stockId: string;
@@ -25,8 +26,6 @@ export function LowStockClientTable({ initialData }: Props) {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const handleViewDetails = (item: LowStockItem) => {
-        // Construct the object expected by BatchDetailsModal
-        // It primarily needs insumoId and basic display info
         setSelectedInsumo({
             insumoId: item.insumoId,
             nombre: item.insumoNombre,
@@ -38,59 +37,64 @@ export function LowStockClientTable({ initialData }: Props) {
 
     if (initialData.length === 0) {
         return (
-            <div className="p-12 text-center text-gray-500 flex flex-col items-center">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-4">
-                    <CheckCircle size={24} />
+            <div className="p-20 text-center flex flex-col items-center">
+                <div className="w-16 h-16 bg-lime-500/10 rounded-full flex items-center justify-center text-lime-600 mb-6 border border-lime-200/50 shadow-sm">
+                    <CheckCircle size={32} />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Todo en orden</h3>
-                <p>No hay insumos por debajo del stock mínimo.</p>
+                <h3 className="text-xl font-black text-gray-900 tracking-tight uppercase tracking-widest">Sin Pendientes</h3>
+                <p className="text-gray-400 font-medium text-sm mt-1 italic">Todos los insumos se encuentran por encima de su stock mínimo.</p>
             </div>
         );
     }
 
     return (
-        <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-                <thead className="bg-gray-50 dark:bg-zinc-800 text-xs uppercase text-gray-500 font-medium">
-                    <tr>
-                        <th className="px-6 py-3">Insumo</th>
-                        <th className="px-6 py-3">Ubicación</th>
-                        <th className="px-6 py-3 text-right">Cantidad</th>
-                        <th className="px-6 py-3 text-right">Mínimo</th>
-                        <th className="px-6 py-3 text-center">Estado</th>
-                        <th className="px-6 py-3 text-center">Acción</th>
+        <div className="overflow-x-auto custom-scrollbar">
+            <table className="w-full text-left border-collapse">
+                <thead>
+                    <tr className="bg-white/20 backdrop-blur-sm border-b border-white/40">
+                        <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Insumo</th>
+                        <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Ubicación</th>
+                        <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] text-right">Existencia</th>
+                        <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] text-right">Mínimo</th>
+                        <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] text-center">Estado</th>
+                        <th className="px-8 py-5 text-right"></th>
                     </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
+                <tbody className="divide-y divide-white/20">
                     {initialData.map((item) => (
-                        <tr key={item.stockId} className="hover:bg-gray-50 dark:hover:bg-zinc-800/50">
-                            <td className="px-6 py-4">
+                        <tr key={item.stockId} className="hover:bg-white/60 transition-all group">
+                            <td className="px-8 py-6">
                                 <div>
-                                    <div className="font-medium text-gray-900 dark:text-gray-100">{item.insumoNombre}</div>
-                                    <div className="text-xs text-gray-500 font-mono">{item.insumoCodigo}</div>
+                                    <div className="text-sm font-black text-gray-900 uppercase tracking-tight">{item.insumoNombre}</div>
+                                    <div className="text-[10px] font-mono text-gray-400 uppercase">{item.insumoCodigo}</div>
                                 </div>
                             </td>
-                            <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
-                                {item.almacenNombre}
-                            </td>
-                            <td className="px-6 py-4 text-right font-medium text-red-600">
-                                {item.cantidadActual} {item.unidad}
-                            </td>
-                            <td className="px-6 py-4 text-right text-gray-500 font-mono">
-                                {item.stockMinimo}
-                            </td>
-                            <td className="px-6 py-4 text-center">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
-                                    <AlertCircle size={12} className="mr-1" />
-                                    Bajo Stock
+                            <td className="px-8 py-6">
+                                <span className="text-xs font-bold text-gray-600 bg-white/50 px-3 py-1 rounded-xl border border-white shadow-sm italic">
+                                    {item.almacenNombre}
                                 </span>
                             </td>
-                            <td className="px-6 py-4 text-center">
+                            <td className="px-8 py-6 text-right">
+                                <div className="text-sm font-black text-rose-600">
+                                    {item.cantidadActual} <span className="text-[10px] uppercase opacity-60 tracking-tighter">{item.unidad}</span>
+                                </div>
+                            </td>
+                            <td className="px-8 py-6 text-right text-sm font-black text-gray-400 font-mono">
+                                {item.stockMinimo}
+                            </td>
+                            <td className="px-8 py-6 text-center">
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black bg-rose-500/10 text-rose-600 border border-rose-200/50 uppercase tracking-widest">
+                                    <AlertCircle size={10} strokeWidth={3} />
+                                    CRÍTICO
+                                </span>
+                            </td>
+                            <td className="px-8 py-6 text-right">
                                 <button
                                     onClick={() => handleViewDetails(item)}
-                                    className="text-blue-600 hover:text-blue-700 font-medium text-xs py-1 px-3 border border-blue-200 rounded hover:bg-blue-50 transition-colors dark:border-blue-800 dark:hover:bg-blue-900/20"
+                                    className="p-3 text-gray-400 hover:text-lime-600 bg-white/50 hover:bg-white rounded-2xl border border-white transition-all shadow-sm active:scale-90"
+                                    title="Ver Detalles de Lotes"
                                 >
-                                    Ver Detalle
+                                    <ArrowRight size={18} />
                                 </button>
                             </td>
                         </tr>
@@ -108,25 +112,4 @@ export function LowStockClientTable({ initialData }: Props) {
             )}
         </div>
     );
-}
-
-function CheckCircle({ size, className }: { size?: number, className?: string }) {
-    // Simple inline icon component to avoid importing another one if not needed
-    return (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width={size}
-            height={size}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={className}
-        >
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-            <polyline points="22 4 12 14.01 9 11.01" />
-        </svg>
-    )
 }

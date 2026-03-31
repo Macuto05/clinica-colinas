@@ -1,10 +1,10 @@
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { AdminRedirect } from "@/components/AdminRedirect";
+import { RoleRedirect } from "@/components/RoleRedirect";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
     return (
         <>
-            <AdminRedirect />
+            <RoleRedirect />
             <DashboardLayout>{children}</DashboardLayout>
         </>
     );

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ClipboardList, Search, ArrowRight, ArrowLeft, ArrowUpRight, ArrowDownLeft, RefreshCw, Calendar, Filter, Loader2, FileText, XCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { cn } from "@/lib/utils";
 
 interface Movimiento {
     movimientoId: string;
@@ -100,11 +101,11 @@ export default function MovimientosPage() {
 
     const getBadgeStyle = (tipo: string) => {
         switch (tipo) {
-            case "ENTRADA": return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300";
-            case "SALIDA": return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300";
-            case "AJUSTE": return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300";
-            case "TRASLADO": return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300";
-            default: return "bg-gray-100 text-gray-800";
+            case "ENTRADA": return "bg-emerald-500/10 text-emerald-700 border-emerald-200/50 shadow-sm shadow-emerald-100";
+            case "SALIDA": return "bg-rose-500/10 text-rose-700 border-rose-200/50 shadow-sm shadow-rose-100";
+            case "AJUSTE": return "bg-blue-500/10 text-blue-700 border-blue-200/50 shadow-sm shadow-blue-100";
+            case "TRASLADO": return "bg-orange-500/10 text-orange-700 border-orange-200/50 shadow-sm shadow-orange-100";
+            default: return "bg-gray-500/10 text-gray-700 border-gray-200/50 shadow-sm";
         }
     };
 
@@ -118,31 +119,33 @@ export default function MovimientosPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] flex justify-between items-center">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <ClipboardList className="text-lime-600" />
+                    <h1 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
+                        <div className="p-2 bg-lime-500/10 rounded-xl">
+                            <ClipboardList className="text-lime-600" size={24} />
+                        </div>
                         Historial de Movimientos
                     </h1>
-                    <p className="text-gray-500 text-sm">Registro detallado de entradas, salidas y ajustes de inventario.</p>
+                    <p className="text-gray-500 text-sm font-medium mt-1">Registro detallado de entradas, salidas y ajustes de inventario.</p>
                 </div>
             </div>
 
             {/* Filters Bar */}
-            <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input
                         type="text"
                         placeholder="Buscar insumo o referencia..."
-                        className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 focus:ring-2 focus:ring-lime-500 outline-none"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-white/60 bg-white/50 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium transition-all shadow-inner"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
 
                 <select
-                    className="px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 focus:ring-2 focus:ring-lime-500 outline-none"
+                    className="px-4 py-2.5 rounded-2xl border border-white/60 bg-white/50 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium appearance-none cursor-pointer shadow-inner"
                     value={selectedAlmacen}
                     onChange={(e) => setSelectedAlmacen(e.target.value)}
                 >
@@ -153,7 +156,7 @@ export default function MovimientosPage() {
                 </select>
 
                 <select
-                    className="px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 focus:ring-2 focus:ring-lime-500 outline-none"
+                    className="px-4 py-2.5 rounded-2xl border border-white/60 bg-white/50 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium appearance-none cursor-pointer shadow-inner"
                     value={selectedTipo}
                     onChange={(e) => setSelectedTipo(e.target.value)}
                 >
@@ -167,7 +170,7 @@ export default function MovimientosPage() {
                 <div className="flex gap-2">
                     <input
                         type="date"
-                        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 focus:ring-2 focus:ring-lime-500 outline-none text-sm"
+                        className="w-full px-4 py-2.5 rounded-2xl border border-white/60 bg-white/50 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
                     />
@@ -175,114 +178,125 @@ export default function MovimientosPage() {
             </div>
 
             {/* Table */}
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900 min-h-[400px]">
+            <div className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl overflow-hidden shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] min-h-[400px]">
                 {isLoading ? (
-                    <div className="p-12 flex justify-center items-center h-[400px]">
-                        <Loader2 className="animate-spin text-lime-600" size={32} />
+                    <div className="p-20 flex flex-col items-center justify-center gap-4">
+                        <Loader2 className="animate-spin text-lime-600" size={40} />
+                        <p className="text-sm font-bold text-gray-500 uppercase tracking-widest animate-pulse">Cargando movimientos...</p>
                     </div>
                 ) : filteredMovimientos.length === 0 ? (
-                    <div className="p-12 text-center text-gray-500">
-                        No se encontraron movimientos registrados.
+                    <div className="p-20 text-center">
+                        <ClipboardList className="mx-auto text-gray-300 mb-4" size={48} />
+                        <p className="text-gray-500 font-medium">No se encontraron movimientos registrados.</p>
                     </div>
                 ) : (
-                    <table className="w-full text-left text-sm text-gray-500 dark:text-gray-400">
-                        <thead className="bg-gray-50 text-xs uppercase text-gray-700 dark:bg-zinc-800 dark:text-gray-300">
-                            <tr>
-                                <th className="px-6 py-3 font-semibold">Fecha</th>
-                                <th className="px-6 py-3 font-semibold">Referencia</th>
-                                <th className="px-6 py-3 font-semibold">Tipo</th>
-                                <th className="px-6 py-3 font-semibold">Almacén</th>
-                                <th className="px-6 py-3 font-semibold">Detalles</th>
-                                <th className="px-6 py-3 font-semibold">Empleado</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200 dark:divide-zinc-800 border-t border-gray-200 dark:border-zinc-800">
-                            {filteredMovimientos.map((mov) => {
-                                // Format Name: First Name + First Last Name
-                                let displayName = mov.usuario.email;
-                                let empId = "";
+                    <div className="overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-left text-sm border-collapse">
+                            <thead>
+                                <tr className="bg-white/30 border-b border-white/40">
+                                    <th className="px-6 py-4 text-[10px] font-black text-gray-500/80 uppercase tracking-widest">Fecha / Hora</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-gray-500/80 uppercase tracking-widest">Referencia</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-gray-500/80 uppercase tracking-widest">Tipo de Movimiento</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-gray-500/80 uppercase tracking-widest">Almacén</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-gray-500/80 uppercase tracking-widest text-center">Detalles</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-gray-500/80 uppercase tracking-widest">Responsable</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/30">
+                                {filteredMovimientos.map((mov) => {
+                                    let displayName = mov.usuario.email;
+                                    let empId = "";
 
-                                if (mov.usuario.empleado) {
-                                    const first = mov.usuario.empleado.nombres.split(' ')[0];
-                                    const last = mov.usuario.empleado.apellidos.split(' ')[0];
-                                    displayName = `${first} ${last}`;
-                                    empId = `(#${mov.usuario.empleado.empleadoId})`;
-                                }
+                                    if (mov.usuario.empleado) {
+                                        const first = mov.usuario.empleado.nombres.split(' ')[0];
+                                        const last = mov.usuario.empleado.apellidos.split(' ')[0];
+                                        displayName = `${first} ${last}`;
+                                        empId = `(#${mov.usuario.empleado.empleadoId})`;
+                                    }
 
-                                return (
-                                    <tr key={mov.movimientoId} className="hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <div className="font-medium text-gray-900 dark:text-white">
-                                                {new Date(mov.fechaMovimiento).toLocaleDateString()}
-                                            </div>
-                                            <div className="text-xs text-gray-400">
-                                                {new Date(mov.fechaMovimiento).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400">
-                                            {mov.referencia || "-"}
-                                            {mov.observaciones && <div className="text-[10px] text-gray-400 mt-1 max-w-[150px] truncate" title={mov.observaciones}>{mov.observaciones}</div>}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold leading-5 ${getBadgeStyle(mov.tipoMovimiento)}`}>
-                                                {getIcon(mov.tipoMovimiento)}
-                                                {mov.tipoMovimiento}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            {mov.almacen.nombre}
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <button
-                                                onClick={() => setViewingDetails(mov)}
-                                                className="p-2 text-gray-500 hover:text-lime-600 hover:bg-lime-50 rounded-full transition-colors"
-                                                title="Ver detalles"
-                                            >
-                                                <FileText size={18} />
-                                            </button>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                                {displayName} <span className="text-xs opacity-70">{empId}</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )
-                            })}
-                        </tbody>
-                    </table>
+                                    return (
+                                        <tr key={mov.movimientoId} className="hover:bg-white/60 transition-all duration-200 group">
+                                            <td className="px-6 py-4">
+                                                <div className="font-bold text-gray-900 group-hover:text-lime-700 transition-colors">
+                                                    {new Date(mov.fechaMovimiento).toLocaleDateString()}
+                                                </div>
+                                                <div className="text-[10px] text-gray-400 font-medium mt-0.5">
+                                                    {new Date(mov.fechaMovimiento).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 font-mono text-xs text-gray-600">
+                                                <span className="bg-white/50 px-2 py-0.5 rounded border border-white/60">
+                                                    {mov.referencia || "-"}
+                                                </span>
+                                                {mov.observaciones && <div className="text-[10px] text-gray-400 mt-1 max-w-[150px] truncate italic" title={mov.observaciones}>{mov.observaciones}</div>}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className={cn(
+                                                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all",
+                                                    getBadgeStyle(mov.tipoMovimiento)
+                                                )}>
+                                                    {getIcon(mov.tipoMovimiento)}
+                                                    {mov.tipoMovimiento}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 font-bold text-gray-700">
+                                                {mov.almacen.nombre}
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <button
+                                                    onClick={() => setViewingDetails(mov)}
+                                                    className="p-2 text-gray-400 hover:text-lime-600 hover:bg-white/80 rounded-xl transition-all border border-transparent hover:border-white/60 shadow-none hover:shadow-sm active:scale-95"
+                                                    title="Ver detalles"
+                                                >
+                                                    <FileText size={18} />
+                                                </button>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="text-xs font-bold text-gray-900">
+                                                    {displayName}
+                                                </div>
+                                                <div className="text-[10px] text-gray-400 font-medium">{empId}</div>
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </div>
             {/* View Details Modal */}
             {viewingDetails && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-                    <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-xl w-full max-w-lg border border-gray-200 dark:border-zinc-800 flex flex-col max-h-[80vh]">
-                        <div className="p-5 border-b border-gray-200 dark:border-zinc-800 flex justify-between items-center">
+                <div className="fixed inset-0 bg-slate-900/30 z-50 flex items-center justify-center p-4 backdrop-blur-md transition-all animate-in fade-in duration-300">
+                    <div className="bg-white/70 backdrop-blur-2xl backdrop-saturate-[1.2] w-full max-w-lg rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.12)] border border-white/60 flex flex-col max-h-[85vh] animate-in zoom-in duration-300">
+                        <div className="p-8 border-b border-white/40 flex justify-between items-center bg-white/30 backdrop-blur-md shrink-0">
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                    <FileText className="text-lime-600" size={20} />
+                                <h3 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+                                    <div className="p-2 bg-lime-500/10 rounded-xl">
+                                        <FileText className="text-lime-600" size={20} />
+                                    </div>
                                     Detalle del Movimiento
                                 </h3>
-                                <p className="text-sm text-gray-500">
-                                    {new Date(viewingDetails.fechaMovimiento).toLocaleDateString()} - {viewingDetails.tipoMovimiento}
+                                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">
+                                    {new Date(viewingDetails.fechaMovimiento).toLocaleDateString()} — {viewingDetails.tipoMovimiento}
                                 </p>
                             </div>
-                            <button onClick={() => setViewingDetails(null)} className="text-gray-400 hover:text-gray-600">✕</button>
+                            <button onClick={() => setViewingDetails(null)} className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-white/50 transition-colors">✕</button>
                         </div>
-                        <div className="p-5 overflow-y-auto">
-                            <div className="space-y-3">
+                        <div className="p-8 overflow-y-auto custom-scrollbar bg-white/20">
+                            <div className="space-y-4">
                                 {viewingDetails.detalles.map((d, idx) => (
-                                    <div key={idx} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-zinc-800/50 rounded-lg border border-gray-100 dark:border-zinc-700">
+                                    <div key={idx} className="flex justify-between items-center p-5 bg-white/40 backdrop-blur-sm border border-white/50 rounded-2xl shadow-sm group hover:bg-white/60 transition-all">
                                         <div>
-                                            <p className="font-semibold text-gray-900 dark:text-white">{d.insumo.nombre}</p>
-                                            <p className="text-xs text-gray-500">{d.insumo.codigo}</p>
+                                            <p className="font-black text-gray-900 group-hover:text-lime-700 transition-colors">{d.insumo.nombre}</p>
+                                            <p className="text-[10px] font-mono text-gray-400 mt-0.5">{d.insumo.codigo}</p>
                                             {d.lote && (
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    <span className="text-[10px] font-mono bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300 px-1.5 py-0.5 rounded border border-blue-100 dark:border-blue-800">
-                                                        Lote: {d.lote.codigo}
+                                                <div className="flex items-center gap-2 mt-2">
+                                                    <span className="text-[9px] font-black uppercase tracking-tighter bg-blue-500/10 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200/50">
+                                                        LOTE: {d.lote.codigo}
                                                     </span>
                                                     {d.lote.fechaVencimiento && (
-                                                        <span className="text-[10px] text-gray-400">
+                                                        <span className="text-[10px] text-gray-400 font-medium">
                                                             Vence: {new Date(d.lote.fechaVencimiento).toLocaleDateString()}
                                                         </span>
                                                     )}
@@ -290,29 +304,35 @@ export default function MovimientosPage() {
                                             )}
                                         </div>
                                         <div className="text-right">
-                                            <span className={`block font-bold ${(viewingDetails.tipoMovimiento === 'SALIDA' || viewingDetails.tipoMovimiento === 'TRASLADO' || viewingDetails.tipoMovimiento === 'AJUSTE') ? 'text-red-600' : 'text-green-600'}`}>
+                                            <div className={cn(
+                                                "text-lg font-black",
+                                                (viewingDetails.tipoMovimiento === 'SALIDA' || viewingDetails.tipoMovimiento === 'TRASLADO' || viewingDetails.tipoMovimiento === 'AJUSTE') ? 'text-rose-600' : 'text-emerald-600'
+                                            )}>
                                                 {(viewingDetails.tipoMovimiento === 'SALIDA' || viewingDetails.tipoMovimiento === 'TRASLADO' || viewingDetails.tipoMovimiento === 'AJUSTE') ? '-' : '+'}{d.cantidad}
-                                            </span>
-                                            <span className="text-xs text-gray-400">{d.insumo.unidadMedida}</span>
+                                            </div>
+                                            <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{d.insumo.unidadMedida}</div>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                             {viewingDetails.observaciones && (
-                                <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-100 dark:border-yellow-900/30 rounded-lg">
-                                    <p className="text-xs font-bold text-yellow-700 dark:text-yellow-500 mb-1">Observaciones:</p>
-                                    <p className="text-sm text-yellow-800 dark:text-yellow-400 italic">"{viewingDetails.observaciones}"</p>
+                                <div className="mt-6 p-5 bg-amber-500/5 border border-amber-200/50 rounded-2xl">
+                                    <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest mb-1 shadow-none">Observaciones:</p>
+                                    <p className="text-sm text-gray-700 font-medium italic">"{viewingDetails.observaciones}"</p>
                                 </div>
                             )}
                             {viewingDetails.referencia && (
-                                <div className="mt-2 text-xs text-gray-400 text-right">
-                                    Ref: {viewingDetails.referencia}
+                                <div className="mt-4 text-[10px] font-black text-gray-400 text-right uppercase tracking-widest px-1">
+                                    REF: {viewingDetails.referencia}
                                 </div>
                             )}
                         </div>
-                        <div className="p-5 border-t border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/20 text-right">
-                            <button onClick={() => setViewingDetails(null)} className="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-gray-800 dark:text-white rounded-lg text-sm font-medium transition-colors">
-                                Cerrar
+                        <div className="p-8 border-t border-white/40 bg-white/30 backdrop-blur-md shrink-0 text-right">
+                            <button
+                                onClick={() => setViewingDetails(null)}
+                                className="px-8 py-3 bg-white/50 border border-white/60 text-gray-700 rounded-2xl text-sm font-bold transition-all hover:bg-white/80 active:scale-95 shadow-sm"
+                            >
+                                Cerrar Detalle
                             </button>
                         </div>
                     </div>

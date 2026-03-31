@@ -683,14 +683,15 @@ model HistoriaClinica {
 // ========== SEGUROS MÉDICOS ==========
 
 model Aseguradora {
-  aseguradoraId BigInt   @id @default(autoincrement()) @map("aseguradora_id")
-  nombre        String   @unique @db.VarChar(160)
-  rifNif        String?  @unique @map("rif_nif") @db.VarChar(40)
-  telefono      String?  @db.VarChar(40)
-  correo        String?  @db.VarChar(255)
-  direccion     String?
-  activa        Boolean  @default(true)
-  polizas       Poliza[]
+  aseguradoraId   BigInt   @id @default(autoincrement()) @map("aseguradora_id")
+  nombre          String   @unique @db.VarChar(160)
+  rifNif          String?  @unique @map("rif_nif") @db.VarChar(40)
+  telefono        String?  @db.VarChar(40)
+  correo          String?  @db.VarChar(255)
+  direccion       String?
+  activa          Boolean  @default(true)
+  planesCobertura Json     @default("[]") @map("planes_cobertura")
+  polizas         Poliza[]
 
   @@map("aseguradora")
 }
@@ -701,6 +702,7 @@ model Poliza {
   aseguradoraId BigInt       @map("aseguradora_id")
   numeroPoliza  String       @map("numero_poliza") @db.VarChar(60)
   tipoCobertura String?      @map("tipo_cobertura") @db.VarChar(80)
+  montoCobertura Decimal?    @map("monto_cobertura") @db.Decimal(12, 2)
   fechaInicio   DateTime?    @map("fecha_inicio") @db.Date
   fechaVence    DateTime?    @map("fecha_vence") @db.Date
   estado        PolizaEstado @default(ACTIVA)

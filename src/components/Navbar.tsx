@@ -58,10 +58,11 @@ export default function Navbar() {
                             <Link
                                 href={
                                     user.role === 'ADMIN' ? '/admin' :
-                                        user.role === 'DOCTOR' ? '/dashboard/doctor' :
+                                        ['DOCTOR', 'MEDICO'].includes(user.role?.toUpperCase() || "") ? '/medico' :
                                             user.role === 'ALMACEN' ? '/almacen' :
                                                 ['CAJA', 'CAJA Y FACTURACION', 'CAJA Y FACTURACIÓN', 'CAJA/FACTURACION', 'CAJA/FACTURACIÓN'].includes(user.role?.toUpperCase() || "") ? '/caja' :
-                                                    '/dashboard/perfil'
+                                                    user.role === 'RECEPCION' ? '/recepcion' :
+                                                        '/dashboard/perfil'
                                 }
                                 className="flex items-center gap-2 text-gray-600 transition-all hover:text-[#a1db4b] hover:scale-105 dark:text-gray-400"
                             >
@@ -112,8 +113,11 @@ export default function Navbar() {
 
                     {/* Reserve Button */}
                     <Link
-                        href="/dashboard/citas"
-                        className="hidden lg:inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#a1db4b] to-teal-500 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-lime-500/30 transition-all hover:shadow-lime-500/50 hover:scale-105 hover:-translate-y-0.5 active:scale-95"
+                        href={['DOCTOR', 'MEDICO', 'ADMIN', 'RECEPCION', 'ALMACEN', 'CAJA'].includes(user?.role?.toUpperCase() || "") ? "#" : "/dashboard/citas"}
+                        className={cn(
+                            "hidden lg:inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#a1db4b] to-teal-500 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-lime-500/30 transition-all hover:shadow-lime-500/50 hover:scale-105 hover:-translate-y-0.5 active:scale-95",
+                            ['DOCTOR', 'MEDICO', 'ADMIN', 'RECEPCION', 'ALMACEN', 'CAJA'].includes(user?.role?.toUpperCase() || "") && "opacity-50 cursor-not-allowed pointer-events-none"
+                        )}
                     >
                         <Calendar className="h-4 w-4" />
                         Reservar hora
@@ -154,9 +158,12 @@ export default function Navbar() {
 
                             <div className="pt-4">
                                 <Link
-                                    href="/dashboard/citas"
+                                    href={['DOCTOR', 'MEDICO', 'ADMIN', 'RECEPCION', 'ALMACEN', 'CAJA'].includes(user?.role?.toUpperCase() || "") ? "#" : "/dashboard/citas"}
                                     onClick={() => setIsOpen(false)}
-                                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#a1db4b] to-teal-500 px-5 py-3 text-base font-bold text-white shadow-lg"
+                                    className={cn(
+                                        "flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#a1db4b] to-teal-500 px-5 py-3 text-base font-bold text-white shadow-lg",
+                                        ['DOCTOR', 'MEDICO', 'ADMIN', 'RECEPCION', 'ALMACEN', 'CAJA'].includes(user?.role?.toUpperCase() || "") && "opacity-50 cursor-not-allowed pointer-events-none"
+                                    )}
                                 >
                                     <Calendar className="h-5 w-5" />
                                     Reservar hora

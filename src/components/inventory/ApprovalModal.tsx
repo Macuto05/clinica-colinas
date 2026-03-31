@@ -1,7 +1,9 @@
+"use client";
+
 import { useState, useEffect } from "react";
-import { Modal } from "@/components/ui/Modal";
-import { Button } from "@/components/ui/Button";
-import { AlertCircle, Check } from "lucide-react";
+import { AlertCircle, Check, X, Plus, UserPlus, ArrowRight, Loader2, Factory, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Supplier {
     proveedorId: string;
@@ -103,136 +105,196 @@ export function ApprovalModal({ pedido, isOpen, onClose, onConfirm, isProcessing
     if (!pedido) return null;
 
     return (
-        <Modal
-            isOpen={isOpen}
-            onClose={onClose}
-            title={`Aprobar Pedido #${pedido.pedidoId}`}
-        >
-            <div className="space-y-6 max-h-[70vh] overflow-y-auto px-1">
-                <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg flex gap-3 text-sm text-yellow-800">
-                    <AlertCircle className="shrink-0 h-5 w-5" />
-                    <div>
-                        <p className="font-semibold">Asignación de Proveedores Requerida</p>
-                        <p>Para aprobar este pedido, debes indicar qué proveedor suministrará cada ítem.</p>
-                    </div>
-                </div>
+        <AnimatePresence>
+            {isOpen && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={onClose}
+                        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                    />
 
-                {/* New Supplier Toggle */}
-                <div className="flex justify-end mb-2">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setIsCreatingProvider(!isCreatingProvider)}
-                        className="text-blue-600 hover:text-blue-700"
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                        className="relative w-full max-w-2xl bg-white/70 backdrop-blur-2xl backdrop-saturate-[1.2] rounded-[3rem] border border-white/60 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] flex flex-col max-h-[90vh] overflow-hidden"
                     >
-                        {isCreatingProvider ? "Cancelar Crear Proveedor" : "+ Crear Nuevo Proveedor"}
-                    </Button>
-                </div>
-
-                {isCreatingProvider && (
-                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg mb-4 border border-blue-100 dark:border-blue-800">
-                        <h4 className="font-semibold text-sm mb-3 text-blue-900 dark:text-blue-100">Nuevo Proveedor</h4>
-                        <div className="grid gap-3 grid-cols-1 md:grid-cols-2">
-                            <div>
-                                <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Nombre *</label>
-                                <input
-                                    className="w-full text-sm p-2 rounded border border-gray-300 dark:bg-zinc-900 dark:border-zinc-700 mt-1"
-                                    placeholder="Ej: Droguería Americana"
-                                    value={newProvider.nombre}
-                                    onChange={e => setNewProvider({ ...newProvider, nombre: e.target.value })}
-                                />
+                        <div className="p-10 border-b border-white/60 flex justify-between items-center bg-white/50">
+                            <div className="flex items-center gap-5">
+                                <div className="p-4 bg-lime-500/10 rounded-[1.5rem] text-lime-600 border border-lime-200/50 shadow-sm">
+                                    <Check size={28} strokeWidth={3} />
+                                </div>
+                                <div>
+                                    <h3 className="text-2xl font-black text-gray-900 tracking-tight uppercase tracking-widest leading-none">
+                                        Aprobar Orden
+                                    </h3>
+                                    <p className="text-[10px] font-mono text-gray-400 font-black uppercase tracking-widest mt-1">PEDIDO #{pedido.pedidoId}</p>
+                                </div>
                             </div>
-                            <div>
-                                <label className="text-xs font-medium text-gray-700 dark:text-gray-300">RIF/Documento</label>
-                                <input
-                                    className="w-full text-sm p-2 rounded border border-gray-300 dark:bg-zinc-900 dark:border-zinc-700 mt-1"
-                                    placeholder="J-12345678-9"
-                                    value={newProvider.rifNif}
-                                    onChange={e => setNewProvider({ ...newProvider, rifNif: e.target.value })}
-                                />
-                            </div>
-                            <div className="col-span-1 md:col-span-2 flex justify-end mt-2">
-                                <Button
-                                    size="sm"
-                                    variant="primary"
-                                    disabled={!newProvider.nombre || isCreating}
-                                    onClick={createProvider}
-                                    isLoading={isCreating}
-                                >
-                                    Guardar Proveedor
-                                </Button>
-                            </div>
+                            <button onClick={onClose} className="p-3 hover:bg-rose-500/10 rounded-full transition-colors group active:scale-90">
+                                <X size={24} className="text-gray-400 group-hover:text-rose-600" />
+                            </button>
                         </div>
-                    </div>
-                )}
 
-                <div className="flex items-end gap-2 p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg border border-gray-100 dark:border-zinc-700">
-                    <div className="flex-1">
-                        <label className="text-xs font-medium text-gray-500 mb-1 block">Asignación Masiva</label>
-                        <select
-                            className="w-full text-sm p-2 rounded border border-gray-300 dark:border-zinc-600 dark:bg-zinc-900"
-                            value={bulkSupplier}
-                            onChange={(e) => setBulkSupplier(e.target.value)}
-                        >
-                            <option value="">-- Seleccionar Proveedor para todos --</option>
-                            {suppliers.map(s => (
-                                <option key={s.proveedorId} value={s.proveedorId}>{s.nombre}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <Button size="sm" variant="secondary" onClick={applyBulk} disabled={!bulkSupplier}>
-                        Aplicar a Todo
-                    </Button>
-                </div>
+                        <div className="flex-1 overflow-y-auto p-10 space-y-8 custom-scrollbar">
+                            <div className="bg-amber-500/10 border border-amber-200/50 p-6 rounded-[2rem] flex gap-5 items-start">
+                                <AlertCircle className="text-amber-600 shrink-0 mt-1" size={24} />
+                                <div>
+                                    <p className="text-sm font-black text-amber-900 uppercase tracking-tight">Asignación de Proveedores Requerida</p>
+                                    <p className="text-[11px] font-bold text-amber-700/80 mt-1 italic leading-relaxed">Para formalizar la aprobación, debe indicar qué proveedor suministrará cada insumo solicitado.</p>
+                                </div>
+                            </div>
 
-                <table className="w-full text-sm">
-                    <thead className="text-left text-gray-500 border-b">
-                        <tr>
-                            <th className="pb-2">Insumo</th>
-                            <th className="pb-2">Cantidad</th>
-                            <th className="pb-2 w-1/3">Proveedor Asignado</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                        {pedido.detalles.map((d: any) => (
-                            <tr key={d.detalleId}>
-                                <td className="py-3 pr-2">
-                                    <div className="font-medium">{d.insumo.nombre}</div>
-                                    <div className="text-xs text-gray-400">{d.insumo.codigo}</div>
-                                </td>
-                                <td className="py-3">
-                                    {d.cantidad} {d.insumo.unidadMedida}
-                                </td>
-                                <td className="py-3">
+                            {/* Provider Creation Toggle */}
+                            <div className="flex justify-end">
+                                <button
+                                    onClick={() => setIsCreatingProvider(!isCreatingProvider)}
+                                    className={cn(
+                                        "flex items-center gap-2 px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all shadow-sm active:scale-95",
+                                        isCreatingProvider ? "bg-rose-500/10 text-rose-600 border border-rose-200/50" : "bg-blue-500/10 text-blue-600 border border-blue-200/50"
+                                    )}
+                                >
+                                    {isCreatingProvider ? <X size={14} /> : <UserPlus size={14} />}
+                                    {isCreatingProvider ? "Cancelar Registro" : "Nuevo Proveedor"}
+                                </button>
+                            </div>
+
+                            {isCreatingProvider && (
+                                <motion.div 
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    className="bg-blue-500/5 border border-white shadow-inner p-8 rounded-[2rem] space-y-6"
+                                >
+                                    <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Nombre Comercial</label>
+                                            <input
+                                                className="w-full px-6 py-4 rounded-2xl border border-white/80 bg-white/50 focus:bg-white focus:ring-4 focus:ring-blue-500/10 outline-none font-bold text-gray-800 shadow-inner transition-all sm:text-sm"
+                                                placeholder="Ej: Droguería Americana"
+                                                value={newProvider.nombre}
+                                                onChange={e => setNewProvider({ ...newProvider, nombre: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">RIF / NIF</label>
+                                            <input
+                                                className="w-full px-6 py-4 rounded-2xl border border-white/80 bg-white/50 focus:bg-white focus:ring-4 focus:ring-blue-500/10 outline-none font-bold text-gray-800 shadow-inner transition-all sm:text-sm"
+                                                placeholder="J-12345678-9"
+                                                value={newProvider.rifNif}
+                                                onChange={e => setNewProvider({ ...newProvider, rifNif: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            disabled={!newProvider.nombre || isCreating}
+                                            onClick={createProvider}
+                                            className="px-8 py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 font-black uppercase tracking-widest text-[10px] shadow-lg shadow-blue-500/20 active:scale-95 disabled:opacity-40 transition-all flex items-center gap-3"
+                                        >
+                                            {isCreating ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} strokeWidth={3} />}
+                                            Guardar Proveedor
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {/* Bulk Selection */}
+                            <div className="bg-white/40 p-6 rounded-[2rem] border border-white shadow-sm flex flex-col md:flex-row items-center gap-6">
+                                <div className="flex-1 w-full space-y-2">
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 italic leading-relaxed">Asignación Masiva</label>
                                     <select
-                                        className={`w-full p-2 rounded border ${!assignments[d.detalleId] ? 'border-red-300 bg-red-50' : 'border-gray-300 dark:border-zinc-600 dark:bg-zinc-900'}`}
-                                        value={assignments[d.detalleId] || ""}
-                                        onChange={(e) => handleAssign(d.detalleId, e.target.value)}
+                                        className="w-full px-6 py-4 rounded-2xl border border-white/80 bg-white/50 focus:ring-4 focus:ring-lime-500/10 outline-none font-black text-gray-800 shadow-inner transition-all appearance-none cursor-pointer text-sm"
+                                        value={bulkSupplier}
+                                        onChange={(e) => setBulkSupplier(e.target.value)}
                                     >
-                                        <option value="">Seleccionar...</option>
+                                        <option value="">Seleccionar proveedor global...</option>
                                         {suppliers.map(s => (
                                             <option key={s.proveedorId} value={s.proveedorId}>{s.nombre}</option>
                                         ))}
                                     </select>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                                </div>
+                                <button
+                                    onClick={applyBulk}
+                                    disabled={!bulkSupplier}
+                                    className="px-8 py-4 bg-gray-900 text-white rounded-2xl hover:bg-gray-800 font-black uppercase tracking-widest text-[10px] shadow-lg shadow-gray-900/10 active:scale-95 disabled:opacity-40 transition-all flex items-center gap-3 whitespace-nowrap"
+                                >
+                                    Aplicar a Todo
+                                </button>
+                            </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-zinc-800">
-                    <Button variant="ghost" onClick={onClose} disabled={isProcessing}>Cancelar</Button>
-                    <Button
-                        variant="primary"
-                        onClick={handleConfirm}
-                        disabled={!isComplete || isProcessing}
-                        isLoading={isProcessing}
-                        leftIcon={<Check size={16} />}
-                    >
-                        Confirmar y Aprobar
-                    </Button>
+                            <div className="space-y-4">
+                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Detalles del Pedido</h4>
+                                <div className="overflow-x-auto rounded-[2rem] border border-white/50">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead className="bg-white/30 backdrop-blur-md">
+                                            <tr>
+                                                <th className="px-8 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">Insumo</th>
+                                                <th className="px-8 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">Cantidad</th>
+                                                <th className="px-8 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">Proveedor</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-white/20 bg-white/10">
+                                            {pedido.detalles.map((d: any) => (
+                                                <tr key={d.detalleId} className="hover:bg-white/40 transition-all">
+                                                    <td className="px-8 py-5">
+                                                        <div className="text-xs font-black text-gray-900 uppercase tracking-tight leading-tight">{d.insumo.nombre}</div>
+                                                        <div className="text-[10px] font-mono text-gray-400">{d.insumo.codigo}</div>
+                                                    </td>
+                                                    <td className="px-8 py-5 text-sm font-black text-gray-600">
+                                                        {d.cantidad} <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">{d.insumo.unidadMedida}</span>
+                                                    </td>
+                                                    <td className="px-8 py-5">
+                                                        <select
+                                                            className={cn(
+                                                                "w-full px-4 py-2 rounded-xl border outline-none font-black text-[10px] transition-all shadow-inner uppercase tracking-tight",
+                                                                !assignments[d.detalleId] 
+                                                                    ? 'border-rose-300 bg-rose-50/50 text-rose-700' 
+                                                                    : 'border-white/80 bg-white/60 text-lime-700'
+                                                            )}
+                                                            value={assignments[d.detalleId] || ""}
+                                                            onChange={(e) => handleAssign(d.detalleId, e.target.value)}
+                                                        >
+                                                            <option value="">Pendiente...</option>
+                                                            {suppliers.map(s => (
+                                                                <option key={s.proveedorId} value={s.proveedorId}>{s.nombre}</option>
+                                                            ))}
+                                                        </select>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-10 border-t border-white/60 bg-white/50 backdrop-blur-md flex justify-end gap-5">
+                            <button
+                                onClick={onClose}
+                                disabled={isProcessing}
+                                className="px-10 py-5 rounded-[1.5rem] font-bold text-gray-500 hover:bg-gray-200/50 transition-all uppercase tracking-widest text-[10px]"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleConfirm}
+                                disabled={!isComplete || isProcessing}
+                                className="px-12 py-5 bg-[#a1db4b] text-white rounded-[1.5rem] hover:bg-[#8cc63f] font-black uppercase tracking-widest text-[10px] shadow-lg shadow-lime-500/20 active:scale-95 disabled:opacity-40 transition-all flex items-center gap-4"
+                            >
+                                {isProcessing ? (
+                                    <Loader2 size={18} className="animate-spin" />
+                                ) : (
+                                    <Check size={18} strokeWidth={3} />
+                                )}
+                                Aprobar y Procesar
+                            </button>
+                        </div>
+                    </motion.div>
                 </div>
-            </div>
-        </Modal>
+            )}
+        </AnimatePresence>
     );
 }

@@ -44,52 +44,62 @@ export default function PatientFilter() {
     };
 
     return (
-        <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm mb-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="bg-white/40 backdrop-blur-md p-6 rounded-[2rem] border border-white/50 shadow-sm mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
                 {/* ID Filter */}
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder="ID..."
-                        defaultValue={searchParams.get("id")?.toString()}
-                        onChange={(e) => handleSearch(e.target.value, "id")}
-                        className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                    />
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">ID</label>
+                    <div className="relative">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="ID..."
+                            defaultValue={searchParams.get("id")?.toString()}
+                            onChange={(e) => handleSearch(e.target.value, "id")}
+                            className="w-full pl-11 pr-4 py-3 text-sm font-medium rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-gray-400/60 shadow-inner"
+                        />
+                    </div>
                 </div>
 
                 {/* Name Filter */}
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder="Nombre..."
-                        defaultValue={searchParams.get("search")?.toString()}
-                        onChange={(e) => handleSearch(e.target.value, "search")}
-                        className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                    />
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nombre</label>
+                    <div className="relative">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Buscar..."
+                            defaultValue={searchParams.get("search")?.toString()}
+                            onChange={(e) => handleSearch(e.target.value, "search")}
+                            className="w-full pl-11 pr-4 py-3 text-sm font-medium rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-gray-400/60 shadow-inner"
+                        />
+                    </div>
                 </div>
 
                 {/* Document Filter */}
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder="Documento..."
-                        defaultValue={searchParams.get("doc")?.toString()}
-                        onChange={(e) => handleSearch(e.target.value, "doc")}
-                        className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                    />
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Documento</label>
+                    <div className="relative">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Documento..."
+                            defaultValue={searchParams.get("doc")?.toString()}
+                            onChange={(e) => handleSearch(e.target.value, "doc")}
+                            className="w-full pl-11 pr-4 py-3 text-sm font-medium rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-gray-400/60 shadow-inner"
+                        />
+                    </div>
                 </div>
 
                 {/* Patient Status Filter */}
-                <div>
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Estado Paciente</label>
                     <select
                         onChange={(e) => handleFilterChange(e.target.value, "status")}
                         defaultValue={searchParams.get("status")?.toString() || "ALL"}
-                        className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                        className="w-full px-4 py-3 text-sm font-bold rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all appearance-none cursor-pointer shadow-inner"
                     >
-                        <option value="ALL">Estado Paciente</option>
+                        <option value="ALL">Todos</option>
                         <option value="ACTIVO">Activo</option>
                         <option value="INACTIVO">Inactivo</option>
                         <option value="BLOQUEADO">Bloqueado</option>
@@ -98,13 +108,14 @@ export default function PatientFilter() {
                 </div>
 
                 {/* User Status Filter */}
-                <div>
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Estado Usuario</label>
                     <select
                         onChange={(e) => handleFilterChange(e.target.value, "userStatus")}
                         defaultValue={searchParams.get("userStatus")?.toString() || "ALL"}
-                        className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                        className="w-full px-4 py-3 text-sm font-bold rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all appearance-none cursor-pointer shadow-inner"
                     >
-                        <option value="ALL">Estado Usuario</option>
+                        <option value="ALL">Todos</option>
                         <option value="ACTIVO">Activo</option>
                         <option value="INACTIVO">Inactivo</option>
                         <option value="BLOQUEADO">Bloqueado</option>

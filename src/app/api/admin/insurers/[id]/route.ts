@@ -6,6 +6,11 @@ import { JWTService } from "@/infrastructure/services/JWTService";
 // @ts-ignore
 BigInt.prototype.toJSON = function () { return this.toString() };
 
+const planCoberturaSchema = z.object({
+    nombre: z.string().min(1),
+    montoMaximo: z.number().min(0),
+});
+
 const updateInsurerSchema = z.object({
     nombre: z.string().min(2).optional(),
     rifNif: z.string().optional().nullable(),
@@ -13,6 +18,7 @@ const updateInsurerSchema = z.object({
     correo: z.string().email("Correo inválido").optional().nullable(),
     direccion: z.string().optional().nullable(),
     activa: z.boolean().optional(),
+    planesCobertura: z.array(planCoberturaSchema).optional(),
 });
 
 // GET — Get insurer by ID
@@ -39,6 +45,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
         return NextResponse.json({
             ...aseguradora,
             aseguradoraId: aseguradora.aseguradoraId.toString(),
+            planesCobertura: (aseguradora as any).planesCobertura ?? [],
             polizas: aseguradora.polizas.map(p => ({
                 ...p,
                 polizaId: p.polizaId.toString(),
