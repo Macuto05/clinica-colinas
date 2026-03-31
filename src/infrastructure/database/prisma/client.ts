@@ -1,34 +1,42 @@
 /**
- * Prisma Client Configuration for Prisma 7
+ * Prisma Client Configuration
  * 
- * Prisma 7 requires using a database adapter.
- * We use @prisma/adapter-pg with node-postgres (pg) for PostgreSQL.
+ * Uses @prisma/adapter-pg with transaction mode pooler (port 6543).
+ * Transaction mode is REQUIRED for serverless / Next.js API routes because:
+ * - Session mode (port 5432) gives each client a dedicated connection and
+ *   quickly hits the pool_size limit when many API routes run concurrently.
+ * - Transaction mode multiplexes many API calls over a small set of real DB
+ *   connections, which is exactly what serverless needs.
  */
 
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 
-const globalForPrisma = global as unknown as { prisma: PrismaClient };
-
-// Create PostgreSQL connection pool
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-});
-
-// Create Prisma adapter
-const adapter = new PrismaPg(pool);
-
-// Initialize Prisma Client with adapter
-export const prisma = globalForPrisma.prisma || new PrismaClient({
-    adapter,
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-});
-
-// Force reload comment for Next.js HMR
-if (process.env.NODE_ENV !== 'production') {
-    globalForPrisma.prisma = prisma;
+declare global {
+    // eslint-disable-next-line no-var
+    var __prisma: PrismaClient | undefined;
+    // eslint-disable-next-line no-var
+    var __pgPool: Pool | undefined;
 }
 
-// Forced reload for Prisma Client update (Retry)
+// Reuse the Pool across HMR reloads in development to avoid exhausting connections
+if (!global.__pgPool) {
+    global.__pgPool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        max: 5, // keep a small pool; Supabase transaction mode handles the rest
+    });
+}
+
+const adapter = new PrismaPg(global.__pgPool);
+
+export const prisma = global.__prisma ?? new PrismaClient({
+    adapter,
+    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+});
+
+if (process.env.NODE_ENV !== 'production') {
+    global.__prisma = prisma;
+}
+
 export default prisma;
