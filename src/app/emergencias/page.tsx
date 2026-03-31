@@ -17,13 +17,14 @@ interface Emergencia {
     telefono: string;
     motivoIngreso: string;
     nivelUrgencia: "CRITICO" | "URGENTE" | "MODERADO" | "LEVE";
-    estadoEmergencia: "TRIAJE" | "EN_ATENCION" | "HOSPITALIZADO" | "CIRUGIA_URGENTE" | "REFERIDO" | "ALTA";
+    estadoEmergencia: "EN_ATENCION" | "HOSPITALIZADO" | "CIRUGIA_URGENTE" | "REFERIDO" | "ALTA" | "ATENDIDO";
     verificacionPago: "PENDIENTE" | "CONFIRMADO" | "SIN_COBERTURA";
     tipoPago: "PARTICULAR" | "ASEGURADO" | "PENDIENTE";
     fechaIngreso: string;
     fechaAlta: string | null;
     tieneSeguro: boolean;
     aseguradora: string | null;
+    medico: { medicoId: string; nombre: string; especialidad: string } | null;
 }
 
 /* ─── Config maps ────────────────────────────────────── */
@@ -35,12 +36,12 @@ const URGENCY: Record<string, { bar: string; pill: string; label: string }> = {
 };
 
 const STATUS: Record<string, { label: string; color: string; Icon: any }> = {
-    TRIAJE:         { label: "Triaje",          color: "bg-purple-100 text-purple-700", Icon: Activity },
-    EN_ATENCION:    { label: "En Atención",     color: "bg-blue-100 text-blue-700",    Icon: Heart },
-    HOSPITALIZADO:  { label: "Hospitalizado",   color: "bg-amber-100 text-amber-700",  Icon: Clock },
-    CIRUGIA_URGENTE:{ label: "Cirugía Urgente", color: "bg-red-100 text-red-700",      Icon: Siren },
-    REFERIDO:       { label: "Referido",        color: "bg-gray-100 text-gray-600",    Icon: XCircle },
-    ALTA:           { label: "Alta",            color: "bg-green-100 text-green-700",  Icon: UserCheck },
+    EN_ATENCION:    { label: "En Atención",    color: "bg-blue-100 text-blue-700",    Icon: Heart },
+    HOSPITALIZADO:  { label: "Hospitalizado",  color: "bg-amber-100 text-amber-700",  Icon: Clock },
+    CIRUGIA_URGENTE:{ label: "Cirugía Urgente",color: "bg-red-100 text-red-700",      Icon: Siren },
+    REFERIDO:       { label: "Referido",       color: "bg-gray-100 text-gray-600",    Icon: Ambulance },
+    ALTA:           { label: "Alta Médica",    color: "bg-green-100 text-green-700",  Icon: UserCheck },
+    ATENDIDO:       { label: "Atendido",       color: "bg-emerald-100 text-emerald-700", Icon: CheckCircle },
 };
 
 const PAY_LABEL: Record<string, { label: string; color: string }> = {
@@ -62,7 +63,7 @@ function timeSince(dateStr: string) {
 function EmergencyCard({ e }: { e: Emergencia }) {
     const pathname = usePathname();
     const urg = URGENCY[e.nivelUrgencia] ?? URGENCY.MODERADO;
-    const st  = STATUS[e.estadoEmergencia] ?? STATUS.TRIAJE;
+    const st  = STATUS[e.estadoEmergencia] ?? STATUS.EN_ATENCION;
     const pay = PAY_LABEL[e.verificacionPago] ?? PAY_LABEL.PENDIENTE;
     const StIcon = st.Icon;
 
@@ -492,7 +493,7 @@ export default function EmergenciasPage() {
     const fetchEmergencies = async () => {
         setLoading(true);
         try {
-            const q = filter === "active" ? "?active=true" : filter === "closed" ? "?status=ALTA" : "";
+            const q = filter === "active" ? "?active=true" : filter === "closed" ? "?status=ALTA&status2=ATENDIDO" : "";
             const res = await fetch(`/api/emergency${q}`);
             if (res.ok) setEmergencias(await res.json());
         } catch { } finally { setLoading(false); }
@@ -500,7 +501,7 @@ export default function EmergenciasPage() {
 
     useEffect(() => { fetchEmergencies(); }, [filter]);
 
-    const active   = emergencias.filter(e => !["ALTA", "REFERIDO"].includes(e.estadoEmergencia));
+    const active   = emergencias.filter(e => !["ALTA", "ATENDIDO"].includes(e.estadoEmergencia));
     const critical = active.filter(e => e.nivelUrgencia === "CRITICO").length;
 
     return (

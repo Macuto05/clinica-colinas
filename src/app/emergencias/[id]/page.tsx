@@ -6,16 +6,16 @@ import { useParams, useRouter } from "next/navigation";
 import {
     Loader2, ArrowLeft, Siren, Activity, Heart, Clock, UserCheck, Ban, Shield,
     FileText, Phone, AlertTriangle, Plus, CheckCircle, XCircle, Save, X,
-    Hash, Calendar, DollarSign, Tag, Building2
+    Hash, Calendar, DollarSign, Tag, Building2, Stethoscope
 } from "lucide-react";
 
 /* ─── Status helpers ───────────────────────────────────── */
 const statusSteps = [
-    { key: "TRIAJE",          label: "Triaje",          Icon: Activity  },
-    { key: "EN_ATENCION",     label: "En Atención",     Icon: Heart     },
-    { key: "HOSPITALIZADO",   label: "Hospitalizado",   Icon: Clock     },
-    { key: "CIRUGIA_URGENTE", label: "Cirugía Urgente", Icon: Siren     },
-    { key: "ALTA",            label: "Alta Médica",     Icon: UserCheck },
+    { key: "EN_ATENCION",     label: "En Atención",    Icon: Heart      },
+    { key: "HOSPITALIZADO",   label: "Hospitalizado",  Icon: Clock      },
+    { key: "CIRUGIA_URGENTE", label: "Cirugía Urgente",Icon: Siren      },
+    { key: "ALTA",            label: "Alta Médica",    Icon: UserCheck  },
+    { key: "ATENDIDO",        label: "Atendido",       Icon: CheckCircle},
 ];
 
 const urgencyBadge: Record<string, string> = {
@@ -53,9 +53,13 @@ export default function EmergenciaDetallePage() {
     // Carta Aval
     const [showCartaModal, setShowCartaModal] = useState(false);
     const [cartaForm, setCartaForm] = useState({
-        polizaId: "", codigoAval: "", montoAprobado: "", estado: "SOLICITADA", observaciones: ""
+        polizaId: "", codigoAval: "", estado: "SOLICITADA", observaciones: ""
     });
     const [isSavingCarta, setIsSavingCarta] = useState(false);
+
+    // Doctor assignment
+    const [allDoctors, setAllDoctors] = useState<any[]>([]);
+    const [isAssigningDoctor, setIsAssigningDoctor] = useState(false);
     
     // Back navigation context
     const [returnTo, setReturnTo] = useState("/emergencias");
@@ -78,6 +82,27 @@ export default function EmergenciaDetallePage() {
 
     useEffect(() => { fetchData(); }, [params.id]);
 
+    // Load all active doctors for assignment dropdown
+    useEffect(() => {
+        fetch("/api/emergency/doctors")
+            .then(r => r.ok ? r.json() : [])
+            .then(data => setAllDoctors(Array.isArray(data) ? data : []))
+            .catch(() => {});
+    }, []);
+
+    const assignDoctor = async (medicoId: string) => {
+        setIsAssigningDoctor(true);
+        try {
+            await fetch(`/api/emergency/${params.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ medicoId: medicoId || null })
+            });
+            fetchData();
+        } catch (e) { console.error(e); }
+        finally { setIsAssigningDoctor(false); }
+    };
+
     const updateStatus = async (field: string, value: string) => {
         setIsUpdating(true);
         try {
@@ -99,14 +124,14 @@ export default function EmergenciaDetallePage() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    ...cartaForm,
-                    montoAprobado: cartaForm.montoAprobado ? parseFloat(cartaForm.montoAprobado) : null,
+                    polizaId: cartaForm.polizaId,
                     codigoAval: cartaForm.codigoAval || null,
+                    estado: cartaForm.estado,
                     observaciones: cartaForm.observaciones || null,
                 })
             });
             setShowCartaModal(false);
-            setCartaForm({ polizaId: "", codigoAval: "", montoAprobado: "", estado: "SOLICITADA", observaciones: "" });
+            setCartaForm({ polizaId: "", codigoAval: "", estado: "SOLICITADA", observaciones: "" });
             fetchData();
         } catch (e) { console.error(e); }
         finally { setIsSavingCarta(false); }
@@ -171,6 +196,38 @@ export default function EmergenciaDetallePage() {
                 <div className="mt-4 bg-white/50 border border-white/60 rounded-2xl px-5 py-4">
                     <p className="text-xs font-bold text-gray-400/80 uppercase tracking-wider mb-1">Motivo de ingreso</p>
                     <p className="text-sm font-medium text-gray-700">{emergencia.motivoIngreso}</p>
+                </div>
+
+                {/* Doctor Asignado */}
+                <div className="mt-4 bg-white/50 border border-white/60 rounded-2xl px-5 py-4">
+                    <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                            <p className="text-xs font-bold text-gray-400/80 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                                <Stethoscope size={11} /> Médico Asignado
+                            </p>
+                            {emergencia.medico ? (
+                                <p className="text-sm font-bold text-gray-800">
+                                    {emergencia.medico.nombres} {emergencia.medico.apellidos}
+                                    <span className="ml-2 text-xs font-medium text-gray-500">· {emergencia.medico.especialidad?.nombre || "—"}</span>
+                                </p>
+                            ) : (
+                                <p className="text-sm text-gray-400 italic">Sin médico asignado</p>
+                            )}
+                        </div>
+                        <select
+                            onChange={e => assignDoctor(e.target.value)}
+                            value={emergencia.medico?.empleadoId?.toString() || emergencia.medicoId?.toString() || ""}
+                            disabled={isAssigningDoctor}
+                            className="shrink-0 px-3 py-2 rounded-xl bg-white/70 border border-white/70 text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-400/50 transition-all shadow-sm disabled:opacity-50"
+                        >
+                            <option value="">Sin asignar</option>
+                            {allDoctors.map((d: any) => (
+                                <option key={d.empleadoId || d.id} value={d.empleadoId || d.id}>
+                                    {d.nombre || `${d.nombres} ${d.apellidos}`} {d.especialidad ? `— ${d.especialidad}` : ""}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
             </section>
 
@@ -328,11 +385,6 @@ export default function EmergenciaDetallePage() {
                                         <p className="font-bold text-sm truncate">
                                             {c.aseguradora} {c.codigoAval ? `— ${c.codigoAval}` : ""}
                                         </p>
-                                        {c.montoAprobado && (
-                                            <p className="text-xs font-medium mt-0.5 flex items-center gap-1">
-                                                <DollarSign size={10} /> ${Number(c.montoAprobado).toFixed(2)} aprobados
-                                            </p>
-                                        )}
                                     </div>
                                     <span className="inline-flex items-center gap-1.5 text-xs font-black rounded-full px-3 py-1 bg-white/50 border border-white/60 shrink-0">
                                         <EstIcon size={11} /> {c.estado}
@@ -383,26 +435,13 @@ export default function EmergenciaDetallePage() {
 
                             {/* Código */}
                             <div className="space-y-1.5">
-                                <label className="text-xs font-black text-gray-500/80 uppercase tracking-wider">Código Aval / Clave</label>
+                                <label className="text-xs font-black text-gray-500/80 uppercase tracking-wider">Código Aval / Clave (recibida por teléfono)</label>
                                 <input
                                     type="text"
                                     value={cartaForm.codigoAval}
                                     onChange={e => setCartaForm(f => ({ ...f, codigoAval: e.target.value }))}
                                     placeholder="CLV-0001234"
                                     className="w-full px-4 py-3 rounded-2xl bg-white/50 border border-white/60 text-sm font-medium text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400/50 transition-all font-mono"
-                                />
-                            </div>
-
-                            {/* Monto */}
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-black text-gray-500/80 uppercase tracking-wider">Monto Aprobado ($)</label>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    value={cartaForm.montoAprobado}
-                                    onChange={e => setCartaForm(f => ({ ...f, montoAprobado: e.target.value }))}
-                                    placeholder="0.00"
-                                    className="w-full px-4 py-3 rounded-2xl bg-white/50 border border-white/60 text-sm font-medium text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400/50 transition-all"
                                 />
                             </div>
 

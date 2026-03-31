@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
             where.estadoEmergencia = status;
         } else if (active === 'true') {
             where.estadoEmergencia = {
-                in: ['TRIAJE', 'EN_ATENCION', 'HOSPITALIZADO', 'CIRUGIA_URGENTE']
+                in: ['EN_ATENCION', 'HOSPITALIZADO', 'CIRUGIA_URGENTE']
             };
         }
 
@@ -46,6 +46,12 @@ export async function GET(req: NextRequest) {
                             },
                             take: 1
                         }
+                    }
+                },
+                medico: {
+                    include: {
+                        empleado: { select: { nombres: true, apellidos: true } },
+                        especialidad: { select: { nombre: true } }
                     }
                 },
                 cartasAval: {
@@ -79,10 +85,14 @@ export async function GET(req: NextRequest) {
                 observaciones: e.observaciones,
                 tieneSeguro: !!polizaActiva,
                 aseguradora: polizaActiva?.aseguradora?.nombre || null,
+                medico: e.medico ? {
+                    medicoId: e.medico.empleadoId.toString(),
+                    nombre: `${e.medico.empleado.nombres} ${e.medico.empleado.apellidos}`,
+                    especialidad: e.medico.especialidad?.nombre || "—"
+                } : null,
                 cartasAval: e.cartasAval.map((c: any) => ({
                     cartaAvalId: c.cartaAvalId.toString(),
                     codigoAval: c.codigoAval,
-                    montoAprobado: c.montoAprobado ? Number(c.montoAprobado) : null,
                     estado: c.estado,
                     aseguradora: c.poliza?.aseguradora?.nombre || "—",
                     fechaSolicitud: c.fechaSolicitud,
@@ -132,7 +142,7 @@ export async function POST(req: NextRequest) {
                 pacienteId: pacIdBigInt,
                 motivoIngreso,
                 nivelUrgencia: nivelUrgencia || 'MODERADO',
-                estadoEmergencia: 'TRIAJE',
+                estadoEmergencia: 'EN_ATENCION',
                 verificacionPago: 'PENDIENTE',
                 tipoPago: tieneSeguro ? 'ASEGURADO' : 'PENDIENTE',
                 observaciones: observaciones || null,

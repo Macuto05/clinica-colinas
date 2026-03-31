@@ -9,7 +9,6 @@ BigInt.prototype.toJSON = function () { return this.toString() };
 const cartaAvalSchema = z.object({
     polizaId: z.string().min(1, "Póliza es requerida"),
     codigoAval: z.string().optional().nullable(),
-    montoAprobado: z.number().optional().nullable(),
     estado: z.enum(["SOLICITADA", "APROBADA", "RECHAZADA", "PENDIENTE_PAGO"]).optional(),
     observaciones: z.string().optional().nullable(),
 });
@@ -37,14 +36,13 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
             return NextResponse.json({ error: "Datos inválidos", details: result.error.format() }, { status: 400 });
         }
 
-        const { polizaId, codigoAval, montoAprobado, estado, observaciones } = result.data;
+        const { polizaId, codigoAval, estado, observaciones } = result.data;
 
         const cartaAval = await (prisma as any).cartaAval.create({
             data: {
                 polizaId: BigInt(polizaId),
                 emergenciaId,
                 codigoAval: codigoAval || null,
-                montoAprobado: montoAprobado || null,
                 estado: estado || 'SOLICITADA',
                 observaciones: observaciones || null,
                 fechaRespuesta: (estado === 'APROBADA' || estado === 'RECHAZADA') ? new Date() : null,

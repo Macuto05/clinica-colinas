@@ -81,6 +81,7 @@ model Medico {
   empleado            Empleado       @relation(fields: [empleadoId], references: [empleadoId], onDelete: Cascade)
   especialidad        Especialidad   @relation(fields: [especialidadId], references: [especialidadId])
   horario             MedicoHorario?
+  emergencias         Emergencia[]
 
   @@map("medico")
 }
@@ -721,7 +722,6 @@ model CartaAval {
   citaId         BigInt?         @map("cita_id")
   emergenciaId   BigInt?         @map("emergencia_id")
   codigoAval     String?         @map("codigo_aval") @db.VarChar(80)
-  montoAprobado  Decimal?        @map("monto_aprobado") @db.Decimal(12, 2)
   estado         CartaAvalEstado @default(SOLICITADA)
   fechaSolicitud DateTime        @default(now()) @map("fecha_solicitud") @db.Timestamptz(6)
   fechaRespuesta DateTime?       @map("fecha_respuesta") @db.Timestamptz(6)
@@ -739,9 +739,10 @@ model Emergencia {
   emergenciaId     BigInt             @id @default(autoincrement()) @map("emergencia_id")
   pacienteId       BigInt             @map("paciente_id")
   citaId           BigInt?            @unique @map("cita_id")
+  medicoId         BigInt?            @map("medico_id")
   motivoIngreso    String             @map("motivo_ingreso")
   nivelUrgencia    NivelUrgencia      @default(MODERADO) @map("nivel_urgencia")
-  estadoEmergencia EmergenciaEstado   @default(TRIAJE) @map("estado_emergencia")
+  estadoEmergencia EmergenciaEstado   @default(EN_ATENCION) @map("estado_emergencia")
   verificacionPago VerificacionPago   @default(PENDIENTE) @map("verificacion_pago")
   tipoPago         TipoPagoEmergencia @default(PENDIENTE) @map("tipo_pago")
   fechaIngreso     DateTime           @default(now()) @map("fecha_ingreso") @db.Timestamptz(6)
@@ -749,6 +750,7 @@ model Emergencia {
   observaciones    String?
   paciente         Paciente           @relation(fields: [pacienteId], references: [pacienteId])
   cita             CitaMedica?        @relation(fields: [citaId], references: [citaId])
+  medico           Medico?            @relation(fields: [medicoId], references: [empleadoId])
   cartasAval       CartaAval[]
 
   @@map("emergencia")
@@ -775,12 +777,12 @@ enum NivelUrgencia {
 }
 
 enum EmergenciaEstado {
-  TRIAJE
   EN_ATENCION
   HOSPITALIZADO
   CIRUGIA_URGENTE
   REFERIDO
   ALTA
+  ATENDIDO
 }
 
 enum VerificacionPago {

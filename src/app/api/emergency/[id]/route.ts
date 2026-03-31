@@ -7,11 +7,12 @@ import { JWTService } from "@/infrastructure/services/JWTService";
 BigInt.prototype.toJSON = function () { return this.toString() };
 
 const updateSchema = z.object({
-    estadoEmergencia: z.enum(["TRIAJE", "EN_ATENCION", "HOSPITALIZADO", "CIRUGIA_URGENTE", "REFERIDO", "ALTA"]).optional(),
+    estadoEmergencia: z.enum(["EN_ATENCION", "HOSPITALIZADO", "CIRUGIA_URGENTE", "REFERIDO", "ALTA", "ATENDIDO"]).optional(),
     verificacionPago: z.enum(["PENDIENTE", "CONFIRMADO", "SIN_COBERTURA"]).optional(),
     tipoPago: z.enum(["PARTICULAR", "ASEGURADO", "PENDIENTE"]).optional(),
     observaciones: z.string().optional().nullable(),
     nivelUrgencia: z.enum(["CRITICO", "URGENTE", "MODERADO", "LEVE"]).optional(),
+    medicoId: z.string().optional().nullable(),
 });
 
 // GET — Get emergency detail
@@ -28,6 +29,12 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
                             where: { estado: 'ACTIVA' },
                             include: { aseguradora: true }
                         }
+                    }
+                },
+                medico: {
+                    include: {
+                        empleado: { select: { nombres: true, apellidos: true } },
+                        especialidad: { select: { nombre: true } }
                     }
                 },
                 cartasAval: {
@@ -77,8 +84,13 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 
         const data: any = { ...result.data };
 
-        // Auto-set fechaAlta when status is ALTA or REFERIDO
-        if (data.estadoEmergencia === 'ALTA' || data.estadoEmergencia === 'REFERIDO') {
+        // Convert medicoId string to BigInt if provided
+        if (data.medicoId !== undefined) {
+            data.medicoId = data.medicoId ? BigInt(data.medicoId) : null;
+        }
+
+        // Auto-set fechaAlta when status is ALTA, ATENDIDO or REFERIDO
+        if (data.estadoEmergencia === 'ALTA' || data.estadoEmergencia === 'REFERIDO' || data.estadoEmergencia === 'ATENDIDO') {
             data.fechaAlta = new Date();
         }
 
