@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { JWTService } from "@/infrastructure/services/JWTService";
 import { PrismaUserRepository } from "@/infrastructure/database/prisma/repositories/PrismaUserRepository";
-import { LayoutDashboard, Users, CalendarPlus, LogOut, Settings } from "lucide-react";
+import { LayoutDashboard, Users, CalendarPlus, LogOut, Settings, Siren, Heart } from "lucide-react";
 import AdminProfile from "@/app/admin/components/AdminProfile"; // Reusing profile component
 import ExchangeRateWidget from "@/components/admin/ExchangeRateWidget";
 
@@ -58,6 +58,12 @@ export default async function RecepcionLayout({
                     <NavItem href="/recepcion/citas/nueva" icon={<CalendarPlus size={20} />} label="Nueva Cita" />
 
                     <div className="my-4 border-t border-white/40" />
+
+                    <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                        Módulos Clínicos
+                    </p>
+                    <NavItem href="/emergencias" icon={<Siren size={20} />} label="Emergencias" />
+                    <NavItem href="/enfermeria" icon={<Heart size={20} />} label="Enfermería" />
 
                     <div className="flex-1" /> {/* Spacer */}
 
