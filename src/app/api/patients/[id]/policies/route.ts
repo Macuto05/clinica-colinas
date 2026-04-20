@@ -3,9 +3,6 @@ import { z } from "zod";
 import { prisma } from "@/infrastructure/database/prisma/client";
 import { JWTService } from "@/infrastructure/services/JWTService";
 
-// @ts-ignore
-BigInt.prototype.toJSON = function () { return this.toString() };
-
 const createPolicySchema = z.object({
     aseguradoraId: z.string().min(1, "Aseguradora es requerida"),
     numeroPoliza: z.string().min(1, "Número de póliza es requerido"),
@@ -19,8 +16,20 @@ const createPolicySchema = z.object({
 // GET — List policies for a patient
 export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
     try {
+        const token = req.cookies.get("auth-token")?.value;
+        if (!token) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+        const payload = await JWTService.verifyToken(token);
+        if (!payload) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
         const { id } = await context.params;
         const pacienteId = BigInt(id);
+
+        // Patients can only view their own policies
+        if (payload.role === 'PACIENTE') {
+            if (!payload.patientId || BigInt(payload.patientId) !== pacienteId) {
+                return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+            }
+        }
 
         const polizas = await prisma.poliza.findMany({
             where: { pacienteId },
@@ -97,7 +106,12 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
 
         return NextResponse.json({
             success: true,
-            poliza: { ...poliza, polizaId: poliza.polizaId.toString(), pacienteId: poliza.pacienteId.toString(), aseguradoraId: poliza.aseguradoraId.toString() }
+            poliza: {
+                ...poliza,
+                polizaId: poliza.polizaId.toString(),
+                pacienteId: poliza.pacienteId.toString(),
+                aseguradoraId: poliza.aseguradoraId.toString()
+            }
         }, { status: 201 });
 
     } catch (error: any) {

@@ -51,7 +51,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
             success: true,
             user: userJson,
-            token, // Also send in response for client storage if needed
         });
 
     } catch (error) {

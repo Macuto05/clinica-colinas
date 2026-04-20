@@ -21,7 +21,8 @@ export default async function CajaLayout({
 
     const payload = await JWTService.verifyToken(token);
     // Allow CAJA/FACTURACION and ADMIN roles
-    if (!payload || ((payload as any).role !== "CAJA/FACTURACION" && (payload as any).role !== "ADMIN")) {
+    const allowedRoles = ["CAJA", "CAJA Y FACTURACION", "CAJA Y FACTURACIÓN", "CAJA/FACTURACION", "CAJA/FACTURACIÓN", "ADMIN"];
+    if (!payload || !allowedRoles.includes((payload as any).role)) {
         redirect("/login");
     }
 

@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(find /c/Users/Marcu/clinica-colinas/src/app/api -type f -name \"*.ts\" -exec grep -l \"FCT\\\\|numeroFactura.*create\" {} \\\\;)",
+      "Bash(xargs grep:*)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git add *)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\Marcu\\clinica-colinas\\src\\app\\api\\billing\\invoices\\[id]",
+      "c:\\Users\\Marcu\\clinica-colinas\\src\\app\\api\\patient\\emergency\\[id]"
+    ]
+  }
+}

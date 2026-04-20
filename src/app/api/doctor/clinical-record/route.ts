@@ -1,28 +1,35 @@
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/infrastructure/database/prisma/client";
+import { JWTService } from "@/infrastructure/services/JWTService";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
     try {
-        console.log("--- API START: /api/doctor/clinical-record ---");
-        const body = await req.json();
-        console.log("Request Body:", JSON.stringify(body, null, 2));
+        // SEC-09: Extract userId from JWT token, not from body
+        const token = req.cookies.get("auth-token")?.value;
+        if (!token) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+        const payload = await JWTService.verifyToken(token);
+        if (!payload) return NextResponse.json({ error: "Token inválido" }, { status: 401 });
 
+        const rawUserId = payload.userId ?? payload.sub;
+        if (!rawUserId) return NextResponse.json({ error: "Token inválido: sin userId" }, { status: 401 });
+        const usuarioId = BigInt(rawUserId);
+
+        const body = await req.json();
         const {
             citaId,
-            usuarioId, // Doctor's User ID
             diagnostico, // { descripcion, notas }
             receta, // { detalles: [{ medicamento, dosis, frecuencia, duracion, instrucciones }] }
             ordenes // [{ estudio, tipo }]
         } = body;
 
-        if (!citaId || !usuarioId || !diagnostico) {
+        if (!citaId || !diagnostico) {
             return NextResponse.json({ error: "Datos incompletos" }, { status: 400 });
         }
 
         // Verify Ownership
         const doctor = await prisma.medico.findFirst({
-            where: { empleado: { usuarioId: BigInt(usuarioId) } }
+            where: { empleado: { usuarioId } }
         });
 
         if (!doctor) {
@@ -37,7 +44,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Cita no encontrada o no asignada" }, { status: 404 });
         }
 
-        // Transaction: Save Diagnosis + Prescription + Update Status
+        // Transaction: Save Diagnosis + Prescription + Orders + Update Status
         const result = await prisma.$transaction(async (tx) => {
             // 1. Create Diagnosis
             const newDiagnosis = await tx.diagnostico.create({
@@ -45,7 +52,7 @@ export async function POST(req: Request) {
                     citaId: BigInt(citaId),
                     descripcion: diagnostico.descripcion,
                     notas: diagnostico.notas,
-                    usuarioId: BigInt(usuarioId)
+                    usuarioId
                 }
             });
 
@@ -68,35 +75,63 @@ export async function POST(req: Request) {
                 });
             }
 
-            // 3. Update Appointment Status
+            // 3. Create Orders (Laboratory / Radiology)
+            if (ordenes && ordenes.length > 0) {
+                for (const order of ordenes) {
+                    const tipoNormalizado = order.tipo?.toLowerCase() || "";
+                    if (tipoNormalizado.includes("lab")) {
+                        // Find or Create Exam record
+                        let examen = await tx.examenLaboratorio.findFirst({
+                            where: { nombre: { equals: order.estudio, mode: 'insensitive' } }
+                        });
+                        if (!examen) {
+                            examen = await tx.examenLaboratorio.create({ data: { nombre: order.estudio, precio: 0 } });
+                        }
+                        // Create Request
+                        await tx.solicitudLaboratorio.create({
+                            data: {
+                                citaId: BigInt(citaId),
+                                usuarioSolicita: usuarioId,
+                                detalles: {
+                                    create: { examenId: examen.examenId }
+                                }
+                            }
+                        });
+                    } else if (tipoNormalizado.includes("img") || tipoNormalizado.includes("rayo") || tipoNormalizado.includes("eco")) {
+                        // Find or Create Exam record
+                        let examen = await tx.examenImagenologia.findFirst({
+                            where: { nombre: { equals: order.estudio, mode: 'insensitive' } }
+                        });
+                        if (!examen) {
+                            examen = await tx.examenImagenologia.create({ data: { nombre: order.estudio, precio: 0 } });
+                        }
+                        // Create Request
+                        await tx.solicitudImagenologia.create({
+                            data: {
+                                citaId: BigInt(citaId),
+                                usuarioSolicita: usuarioId,
+                                detalles: {
+                                    create: { examenId: examen.examenId }
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+
+            // 4. Update Appointment Status
             await tx.citaMedica.update({
                 where: { citaId: BigInt(citaId) },
                 data: { estadoCita: 'ATENDIDA' }
             });
-
-            // 4. Create Medical Orders (if provided)
-            let newOrders = null;
-            if (ordenes && ordenes.length > 0) {
-                // @ts-ignore
-                newOrders = await tx.ordenMedica.createMany({
-                    data: ordenes.map((o: any) => ({
-                        citaId: BigInt(citaId),
-                        tipo: o.tipo || "Examen",
-                        estudio: o.estudio,
-                        fechaCreacion: new Date()
-                    }))
-                });
-            }
-
-            return { newDiagnosis, newPrescription, newOrders };
-
-
+            return { newDiagnosis, newPrescription };
         });
 
         return NextResponse.json({ success: true });
 
     } catch (error) {
         console.error("Error saving clinical record:", error);
-        return NextResponse.json({ success: false, error: `Error interno: ${(error as any).message}` }, { status: 200 });
+        // SEC-06: Return proper 500 status, don't expose internal error details
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }

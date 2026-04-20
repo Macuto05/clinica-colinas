@@ -3,9 +3,6 @@ import { z } from "zod";
 import { prisma } from "@/infrastructure/database/prisma/client";
 import { JWTService } from "@/infrastructure/services/JWTService";
 
-// @ts-ignore
-BigInt.prototype.toJSON = function () { return this.toString() };
-
 const updatePolicySchema = z.object({
     aseguradoraId: z.string().optional(),
     numeroPoliza: z.string().optional(),

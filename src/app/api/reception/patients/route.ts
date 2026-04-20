@@ -102,7 +102,7 @@ export async function POST(req: Request) {
             }
 
             // Hash Password
-            const bcrypt = require('bcryptjs'); // Dynamically import to avoid top-level issues if types missing
+            const bcrypt = await import('bcryptjs');
             const hashedPassword = await bcrypt.hash(password, 10);
 
             // Get 'PACIENTE' Role ID

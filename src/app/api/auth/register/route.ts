@@ -31,12 +31,13 @@ export async function POST(request: NextRequest) {
         // We need to ensure the User entity and Repository support these fields.
         // Based on previous context, User entity has phone, address, etc.
 
+        // SEC-05: Force PACIENTE role — only admins can assign other roles via admin panel
         const user = await registerUseCase.execute({
             email: data.email,
             password: data.password,
             firstName: data.firstName,
             lastName: data.lastName,
-            role: data.role || 'PACIENTE',
+            role: 'PACIENTE',
             phone: data.phone,
             address: data.address,
             idCard: data.idCard,
@@ -46,14 +47,6 @@ export async function POST(request: NextRequest) {
             specialty: data.specialty,
             collegiateNumber: data.collegiateNumber
         });
-
-        // Wait, the RegisterUser use case I saw earlier only mapped name, email, password, role.
-        // I need to update the RegisterUser use case to handle the extra fields (phone, address, etc)
-        // OR I will update the use case in a separate step. 
-        // For now, let's write this route assuming the use case will handle it or we'll fix it.
-        // Actually, I should probably update the use case FIRST to be safe.
-        // But the user wants me to "continue with implementation".
-        // I will write this route, and then I will update the RegisterUser use case to support the new fields.
 
         // Generate JWT token
         const token = await JWTService.generateToken({
@@ -78,7 +71,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
             success: true,
             user: userWithoutPassword,
-            token,
         });
 
     } catch (error) {

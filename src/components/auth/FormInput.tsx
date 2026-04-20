@@ -23,6 +23,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
                 <div className="relative">
                     <input
                         ref={ref}
+                        suppressHydrationWarning
                         type={isPassword ? (showPassword ? "text" : "password") : type}
                         className={`
                             w-full px-5 py-3 rounded-2xl border bg-white/50 backdrop-blur-md transition-all duration-300
@@ -48,6 +49,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
                     {isPassword && (
                         <button
                             type="button"
+                            suppressHydrationWarning
                             onClick={() => setShowPassword(!showPassword)}
                             className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none z-10 transition-colors"
                         >

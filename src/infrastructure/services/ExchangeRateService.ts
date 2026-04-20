@@ -1,4 +1,4 @@
-import { prisma } from "@/infrastructure/database/prisma/client";
+﻿import { prisma } from "@/infrastructure/database/prisma/client";
 
 interface ExchangeRateData {
     price: number;
@@ -13,31 +13,11 @@ export class ExchangeRateService {
      * Fetches the current rate from the DB or updates it if stale (>24h).
      */
     async getCurrentRate() {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        // 1. Try to get today's rate from DB
-        const currentRate = await prisma.tasaDeCambio.findFirst({
+        // Always return the latest rate from DB â€” no auto-sync.
+        // The rate is updated exclusively via the caja config panel.
+        return await prisma.tasaDeCambio.findFirst({
             orderBy: { fecha: 'desc' }
         });
-
-        // 2. If we have a rate from today, return it
-        if (currentRate && currentRate.fecha >= today) {
-            return currentRate;
-        }
-
-        // 3. If outdated or non-existent, try to fetch new rate
-        if (currentRate?.esAutomatica !== false) { // Only auto-update if not disabled
-            try {
-                return await this.fetchAndStoreRate();
-            } catch (error) {
-                console.error("Failed to fetch external rate:", error);
-                // Return old rate if fetch fails, better than nothing
-                return currentRate;
-            }
-        }
-
-        return currentRate;
     }
 
     /**

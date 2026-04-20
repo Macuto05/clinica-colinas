@@ -19,21 +19,45 @@ export async function PUT(
 
         const pedidoId = BigInt(id);
 
-        // Transaction to ensure atomicity
+        // Fetch margin config BEFORE the transaction
+        const margenConfig = await prisma.configuracion.findUnique({
+            where: { clave: "MARGEN_INSUMOS" }
+        });
+        const margen = margenConfig ? parseFloat(margenConfig.valor) : 0;
+
         await prisma.$transaction(async (tx) => {
-            // 1. Update Details with Provider
             for (const detalle of detalles) {
                 if (!detalle.detalleId || !detalle.proveedorId) {
                     throw new Error("Cada detalle debe tener detalleId y proveedorId");
                 }
 
-                await tx.pedidoCompraDetalle.update({
+                const costoUnitario = detalle.costoUnitario != null
+                    ? parseFloat(detalle.costoUnitario)
+                    : null;
+
+                // 1. Update detail: provider + cost
+                const updatedDetalle = await tx.pedidoCompraDetalle.update({
                     where: { detalleId: BigInt(detalle.detalleId) },
-                    data: { proveedorId: BigInt(detalle.proveedorId) }
+                    data: {
+                        proveedorId: BigInt(detalle.proveedorId),
+                        ...(costoUnitario !== null && { costoUnitario: costoUnitario })
+                    },
+                    select: { insumoId: true }
                 });
+
+                // 2. If cost provided, recalculate and update precioVenta on the Insumo
+                if (costoUnitario !== null && costoUnitario > 0) {
+                    const precioVenta = parseFloat(
+                        (costoUnitario * (1 + margen / 100)).toFixed(4)
+                    );
+                    await tx.insumo.update({
+                        where: { insumoId: updatedDetalle.insumoId },
+                        data: { precioVenta: precioVenta }
+                    });
+                }
             }
 
-            // 2. Update Header Status
+            // 3. Update order header to APROBADO
             await tx.pedidoCompra.update({
                 where: { pedidoId: pedidoId },
                 data: {
@@ -44,7 +68,10 @@ export async function PUT(
             });
         });
 
-        return NextResponse.json({ success: true, message: "Pedido aprobado y proveedores asignados." });
+        return NextResponse.json({
+            success: true,
+            message: "Pedido aprobado, proveedores y precios actualizados."
+        });
 
     } catch (error: any) {
         console.error("Error approving order:", error);

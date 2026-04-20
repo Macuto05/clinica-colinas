@@ -17,6 +17,7 @@ export enum AppointmentType {
     CONSULTATION = 'CONSULTA',
     CONTROL = 'CONTROL',
     SPECIALTY = 'ESPECIALIDAD',
+    EMERGENCY = 'EMERGENCIA',
     OTHER = 'OTRA',
 }
 

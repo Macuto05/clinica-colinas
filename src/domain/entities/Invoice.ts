@@ -23,7 +23,9 @@ export interface InvoiceItemProps {
 
 export interface InvoiceProps {
     id: number;
-    appointmentId: number;
+    patientId: number;
+    appointmentId?: number;
+    emergencyId?: number;
     invoiceNumber?: string;
     issueDate: Date;
     status: InvoiceStatus;
@@ -45,7 +47,9 @@ export class Invoice {
     }
 
     get id(): number { return this.props.id; }
-    get appointmentId(): number { return this.props.appointmentId; }
+    get patientId(): number { return this.props.patientId; }
+    get appointmentId(): number | undefined { return this.props.appointmentId; }
+    get emergencyId(): number | undefined { return this.props.emergencyId; }
     get invoiceNumber(): string | undefined { return this.props.invoiceNumber; }
     get issueDate(): Date { return this.props.issueDate; }
     get subtotal(): number { return this.props.subtotal; }

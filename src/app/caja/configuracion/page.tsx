@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Save, Plus, Trash2, Building, CreditCard, Banknote, Pencil, X } from "lucide-react";
+import { Save, Plus, Trash2, Building, CreditCard, Banknote, Pencil, X, TrendingUp, DollarSign, RefreshCw, Globe } from "lucide-react";
 import { Toaster, toast } from "sonner";
 
 interface BankAccount {
@@ -29,6 +29,10 @@ export default function CajaConfigPage() {
             </div>
 
             <ConsultationPriceCard />
+            <div className="flex flex-col gap-8">
+                <SupplyMarginCard />
+                <ExchangeRateCard />
+            </div>
             <BankAccountsCard />
             <Toaster position="top-right" richColors />
         </div>
@@ -101,6 +105,246 @@ function ConsultationPriceCard() {
                 </button>
             </div>
             <p className="mt-3 text-sm font-medium text-gray-500 bg-lime-50/60 border border-lime-200/40 p-3 rounded-2xl inline-block">Este valor se usará para generar la deuda inicial de todas las nuevas citas registradas.</p>
+        </div>
+    );
+}
+
+function SupplyMarginCard() {
+    const [margin, setMargin] = useState<string>("0");
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+
+    const previewCosto = 10;
+    const previewVenta = previewCosto * (1 + (parseFloat(margin) || 0) / 100);
+
+    useEffect(() => {
+        fetch("/api/billing/config")
+            .then(res => res.json())
+            .then(data => {
+                if (data.margenInsumos !== undefined) setMargin(data.margenInsumos.toString());
+            })
+            .catch(err => console.error(err))
+            .finally(() => setLoading(false));
+    }, []);
+
+    const handleSave = async () => {
+        const val = parseFloat(margin);
+        if (isNaN(val) || val < 0) {
+            toast.error("Ingresa un porcentaje válido.");
+            return;
+        }
+        setSaving(true);
+        try {
+            const res = await fetch("/api/billing/config", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ margenInsumos: val })
+            });
+            if (res.ok) {
+                toast.success("Margen de ganancia actualizado");
+            } else {
+                toast.error("Error al guardar margen");
+            }
+        } catch (error) {
+            toast.error("Error de conexión");
+        }
+        setSaving(false);
+    };
+
+    return (
+        <div className="bg-white/50 backdrop-blur-xl rounded-3xl shadow-[0_4px_16px_0_rgba(0,0,0,0.04)] border border-white/60 p-6 sm:p-8">
+            <div className="flex items-center gap-3 mb-6">
+                <div className="p-2.5 bg-emerald-100/80 rounded-2xl border border-emerald-200/50 shadow-sm">
+                    <TrendingUp className="w-6 h-6 text-emerald-600" />
+                </div>
+                <div>
+                    <h2 className="text-xl font-bold text-gray-900 tracking-tight">Margen de Ganancia — Insumos</h2>
+                    <p className="text-xs text-gray-400 font-medium mt-0.5">Se aplica automáticamente al costo de compra para calcular el precio al paciente.</p>
+                </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-4 flex-wrap">
+                <div className="w-full sm:w-48 shrink-0">
+                    <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider pl-1 mb-1.5">
+                        Porcentaje (%)
+                    </label>
+                    <div className="relative">
+                        <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={margin}
+                            onChange={(e) => setMargin(e.target.value)}
+                            className="w-full px-5 pr-12 py-3.5 bg-white/50 border border-white/60 rounded-2xl focus:bg-white/80 focus:ring-2 focus:ring-emerald-500/50 outline-none transition-all font-mono text-xl font-bold shadow-inner placeholder:text-gray-400"
+                            placeholder="0.00"
+                        />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xl font-black text-emerald-600">%</span>
+                    </div>
+                </div>
+
+                {/* Live price preview */}
+                <div className="flex items-center justify-center gap-3 bg-emerald-50/60 border border-emerald-200/40 rounded-2xl px-5 py-3.5 text-sm font-bold text-emerald-800 flex-1 md:flex-none">
+                    <DollarSign size={16} className="text-emerald-500" />
+                    <span className="text-gray-500 font-medium">Costo</span>
+                    <span className="font-mono font-black">${previewCosto.toFixed(2)}</span>
+                    <span className="text-gray-400">→</span>
+                    <span className="text-gray-500 font-medium">Venta</span>
+                    <span className="font-mono font-black text-emerald-700">${previewVenta.toFixed(2)}</span>
+                </div>
+
+                <button
+                    onClick={handleSave}
+                    disabled={saving || loading}
+                    className="flex justify-center items-center gap-2 px-8 py-3.5 bg-emerald-50 text-emerald-700 rounded-2xl font-bold transition-all shadow-[0_4px_12px_rgba(16,185,129,0.2)] border border-emerald-500/80 ring-2 ring-emerald-400/20 disabled:opacity-50 hover:scale-[1.02] focus:scale-[1.02] disabled:scale-100 outline-none sm:ml-auto"
+                >
+                    <Save size={20} />
+                    {saving ? "Guardando..." : "Guardar"}
+                </button>
+            </div>
+
+            <p className="mt-4 text-sm font-medium text-gray-500 bg-emerald-50/60 border border-emerald-200/40 p-3 rounded-2xl inline-block">
+                Ejemplo: costo de compra <strong>$10.00</strong> con margen de <strong>{margin || "0"}%</strong> → precio al paciente <strong>${previewVenta.toFixed(2)}</strong>.
+            </p>
+        </div>
+    );
+}
+
+function ExchangeRateCard() {
+    const [rate, setRate] = useState<string | null>(null);
+    const [lastUpdate, setLastUpdate] = useState<string>("Buscando...");
+    const [source, setSource] = useState<string>("—");
+    const [loading, setLoading] = useState(true);
+    const [syncing, setSyncing] = useState(false);
+    const [manualValue, setManualValue] = useState("");
+    const [savingManual, setSavingManual] = useState(false);
+
+    const loadRate = () => {
+        setLoading(true);
+        fetch("/api/billing/config/bcv")
+            .then(res => res.json())
+            .then(data => {
+                if (data.tasa) {
+                    setRate(data.tasa.toString());
+                    setLastUpdate(new Date(data.fechaActualizacion).toLocaleString('es-VE'));
+                    setSource(data.fuente || "BCV");
+                } else {
+                    setLastUpdate("No registrada");
+                }
+            })
+            .catch(err => console.error(err))
+            .finally(() => setLoading(false));
+    };
+
+    useEffect(() => { loadRate(); }, []);
+
+    const handleSync = async () => {
+        setSyncing(true);
+        try {
+            const res = await fetch("/api/billing/config/bcv", { method: "POST" });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                toast.success("Tasa BCV sincronizada correctamente");
+                setRate(data.tasa.toString());
+                setLastUpdate(new Date(data.fechaActualizacion).toLocaleString('es-VE'));
+                setSource(data.fuente);
+                window.dispatchEvent(new Event("bcv-update"));
+            } else {
+                toast.error(data.error || "Error al sincronizar BCV");
+            }
+        } catch (error) {
+            toast.error("Error de red intentando conectar con DolarAPI");
+        }
+        setSyncing(false);
+    };
+
+    const handleSaveManual = async () => {
+        const num = parseFloat(manualValue);
+        if (!manualValue || isNaN(num) || num <= 0) {
+            toast.error("Ingresa un valor válido mayor a 0");
+            return;
+        }
+        setSavingManual(true);
+        try {
+            const res = await fetch("/api/billing/config/bcv", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ valor: num })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                toast.success(`Tasa manual guardada: Bs ${data.tasa}`);
+                setRate(data.tasa.toString());
+                setLastUpdate(new Date(data.fechaActualizacion).toLocaleString('es-VE'));
+                setSource(data.fuente);
+                setManualValue("");
+                window.dispatchEvent(new Event("bcv-update"));
+            } else {
+                toast.error(data.error || "Error al guardar tasa");
+            }
+        } catch {
+            toast.error("Error de red");
+        }
+        setSavingManual(false);
+    };
+
+    return (
+        <div className="bg-white/50 backdrop-blur-xl rounded-3xl shadow-[0_4px_16px_0_rgba(0,0,0,0.04)] border border-white/60 p-6 sm:p-8 flex flex-col gap-6">
+            <div>
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2.5 bg-blue-100/80 rounded-2xl border border-blue-200/50 shadow-sm">
+                        <Globe className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-gray-900 tracking-tight">Tasa de Cambio</h2>
+                        <p className="text-xs text-gray-400 font-medium mt-0.5">Sincronización automática o entrada manual</p>
+                    </div>
+                </div>
+
+                <div className="bg-blue-50/60 border border-blue-200/40 p-5 rounded-3xl">
+                    <div className="flex items-end gap-2 mb-2">
+                        <span className="text-4xl font-black font-mono text-gray-900 tracking-tight">
+                            {loading ? "..." : rate ? `Bs ${parseFloat(rate).toLocaleString('es-VE', { minimumFractionDigits: 2 })}` : "0.00"}
+                        </span>
+                        <span className="text-gray-500 font-bold mb-1 pb-1">/ 1 USD</span>
+                    </div>
+                    <div className="text-xs font-medium text-gray-500/80 space-y-1">
+                        <p><strong className="text-gray-700">Fuente:</strong> {source}</p>
+                        <p><strong className="text-gray-700">Últ. Actualización:</strong> {lastUpdate}</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Manual rate input */}
+            <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Ingresar tasa manual (Bs / $)</label>
+                <div className="flex gap-2">
+                    <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={manualValue}
+                        onChange={e => setManualValue(e.target.value)}
+                        placeholder="ej. 400.00"
+                        className="flex-1 px-4 py-2.5 rounded-2xl border border-white/60 bg-white/70 text-sm font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-300 shadow-sm"
+                    />
+                    <button
+                        onClick={handleSaveManual}
+                        disabled={savingManual || !manualValue}
+                        className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-2xl transition-all disabled:opacity-50 shadow-sm"
+                    >
+                        {savingManual ? "..." : "Guardar"}
+                    </button>
+                </div>
+            </div>
+
+            <button
+                onClick={handleSync}
+                disabled={syncing || loading}
+                className="w-full flex justify-center items-center gap-2 px-8 py-3.5 bg-gray-900 text-white rounded-2xl font-bold transition-all shadow-[0_4px_12px_rgba(0,0,0,0.15)] ring-2 ring-gray-900/20 disabled:opacity-50 hover:scale-[1.02] focus:scale-[1.02] active:scale-[0.98] outline-none"
+            >
+                <RefreshCw size={18} className={syncing ? "animate-spin" : ""} />
+                {syncing ? "Sincronizando BCV..." : "Sincronizar Oficial (DolarAPI)"}
+            </button>
         </div>
     );
 }

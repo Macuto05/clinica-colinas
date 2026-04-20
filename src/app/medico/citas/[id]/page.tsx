@@ -203,8 +203,28 @@ export default function ConsultationPage() {
         setSaving(false);
     };
 
-    if (loading) return <div className="p-8 text-center text-gray-500">Cargando paciente...</div>;
-    if (!appointment) return <div className="p-8 text-center text-red-500">Cita no encontrada</div>;
+    if (loading) return (
+        <div className="flex flex-col items-center justify-center min-h-[400px] text-gray-500 animate-pulse">
+            <Activity className="animate-spin mb-4 text-lime-500" size={48} />
+            <p className="text-lg font-medium">Cargando información del paciente...</p>
+        </div>
+    );
+
+    if (!appointment) return (
+        <div className="flex flex-col items-center justify-center min-h-[400px] text-red-500 p-8 text-center">
+            <AlertTriangle size={64} className="mb-4 opacity-50" />
+            <h2 className="text-2xl font-bold mb-2">Cita no encontrada</h2>
+            <p className="text-gray-500 max-w-md mx-auto mb-6">
+                No pudimos localizar los detalles de esta cita. Es posible que el ID sea incorrecto o que la cita ya no exista en el sistema.
+            </p>
+            <button
+                onClick={() => router.push('/medico')}
+                className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2 rounded-xl font-bold transition-colors"
+            >
+                Volver a la Agenda
+            </button>
+        </div>
+    );
 
     return (
         <div className="space-y-6">

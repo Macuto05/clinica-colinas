@@ -25,7 +25,9 @@ export class PrismaInvoiceRepository implements IInvoiceRepository {
 
         return new Invoice({
             id: Number(factura.facturaId),
-            appointmentId: Number(factura.citaId),
+            patientId: Number(factura.pacienteId),
+            appointmentId: factura.citaId ? Number(factura.citaId) : undefined,
+            emergencyId: factura.emergenciaId ? Number(factura.emergenciaId) : undefined,
             invoiceNumber: factura.numeroFactura || undefined,
             issueDate: factura.fechaEmision,
             status: status,
@@ -42,7 +44,9 @@ export class PrismaInvoiceRepository implements IInvoiceRepository {
     async create(invoice: Invoice): Promise<Invoice> {
         const created = await prisma.factura.create({
             data: {
+                pacienteId: invoice.patientId,
                 citaId: invoice.appointmentId,
+                emergenciaId: invoice.emergencyId,
                 fechaEmision: invoice.issueDate,
                 estadoFactura: FacturaEstado.PENDIENTE,
                 subtotal: invoice.subtotal,

@@ -38,6 +38,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
         let type = AppointmentType.CONSULTATION;
         if (cita.tipoCita === CitaTipo.CONTROL) type = AppointmentType.CONTROL;
         if (cita.tipoCita === CitaTipo.ESPECIALIDAD) type = AppointmentType.SPECIALTY;
+        if (cita.tipoCita === CitaTipo.EMERGENCIA) type = AppointmentType.EMERGENCY;
         if (cita.tipoCita === CitaTipo.OTRA) type = AppointmentType.OTHER;
 
         // Origin
@@ -115,6 +116,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
                 // Automatic Invoice Creation
                 factura: {
                     create: {
+                        pacienteId: appointment.patientId,
                         usuarioEmision: 1, // Default Issuer (System/Admin)
                         total: precioConsulta,
                         saldoPendiente: precioConsulta,

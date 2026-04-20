@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CheckCircle, XCircle, Search, Calendar, CreditCard, User, FileText, DollarSign, Wallet, Building, Monitor, HandCoins, ArrowRight, Banknote } from "lucide-react";
+import { CheckCircle, XCircle, Search, Calendar, CreditCard, User, FileText, DollarSign, Wallet, Building, Monitor, HandCoins, Banknote, PlusCircle } from "lucide-react";
 import { Toaster, toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Modal } from "@/components/ui/Modal";
@@ -24,6 +24,17 @@ interface PendingPayment {
     canal?: string;
     numeroFactura?: string | null;
     fechaRegistro?: string; // System Timestamp
+    citaId?: string; // Added to help find emergency if needed
+}
+
+interface FacturaDetalle {
+    detalleId?: string;
+    tipoItem: string;
+    descripcion: string;
+    cantidad: number;
+    precioUnitario: number;
+    importe: number;
+    referenciaId?: string | null;
 }
 
 interface PendingInvoice {
@@ -35,6 +46,11 @@ interface PendingInvoice {
     doctor: string;
     total: number;
     saldoPendiente: number;
+    esEmergencia: boolean;
+    estadoFactura: string;
+    cartaAvalAprobada?: boolean;
+    codigoAval?: string | null;
+    limiteCobertura?: number;
 }
 
 // --- Payment Modal Component ---
@@ -43,11 +59,10 @@ interface ManualPaymentModalProps {
     isOpen: boolean;
     onClose: () => void;
     invoice: PendingInvoice | null;
-    existingPayment?: PendingPayment; // Added prop
     onSuccess: () => void;
 }
 
-function ManualPaymentModal({ isOpen, onClose, invoice, existingPayment, onSuccess }: ManualPaymentModalProps) {
+function ManualPaymentModal({ isOpen, onClose, invoice, onSuccess }: ManualPaymentModalProps) {
     const { user } = useAuth();
     const [activeTab, setActiveTab] = useState<'TRANSFERENCIA' | 'EFECTIVO' | 'PUNTO'>('TRANSFERENCIA');
     const [loading, setLoading] = useState(false);
@@ -82,15 +97,12 @@ function ManualPaymentModal({ isOpen, onClose, invoice, existingPayment, onSucce
     useEffect(() => {
         if (isOpen && invoice) {
             const tasa = exchangeRate || 0;
-            if (existingPayment) {
-                setAmount(existingPayment.monto.toString());
-                if (tasa > 0) setAmountBs((existingPayment.monto * tasa).toFixed(2));
-            } else {
-                setAmount(invoice.saldoPendiente.toString());
-                if (tasa > 0) setAmountBs((invoice.saldoPendiente * tasa).toFixed(2));
-            }
+            setAmount(invoice.saldoPendiente.toString());
+            setReference("");
+            setSelectedBankId("");
+            if (tasa > 0) setAmountBs((invoice.saldoPendiente * tasa).toFixed(2));
         }
-    }, [isOpen, invoice, existingPayment, exchangeRate]);
+    }, [isOpen, invoice, exchangeRate]);
 
     const handleAmountChange = (val: string) => {
         let newAmount = val;
@@ -174,44 +186,25 @@ function ManualPaymentModal({ isOpen, onClose, invoice, existingPayment, onSucce
 
         setLoading(true);
         try {
-            let res;
-            if (existingPayment) {
-                // COMPLETION FLOW
-                const payload = {
-                    metodoPagoId: methodId,
-                    montoBs: parseFloat(amountBs), // Calculated Bs
-                    tasaCambio: exchangeRate,
-                    referencia: finalReference,
-                    cuentaDestinoId: (activeTab === 'TRANSFERENCIA' || activeTab === 'PUNTO') ? selectedBankId : null,
-                    usuarioId: user?.id || 1
-                };
+            // Always create a new PRESENCIAL payment — validated immediately by the API
+            const payload = {
+                facturaId: invoice.facturaId,
+                monto: parseFloat(amount),
+                metodoPagoId: methodId,
+                referencia: finalReference,
+                cuentaDestinoId: (activeTab === 'TRANSFERENCIA' || activeTab === 'PUNTO') ? selectedBankId : null,
+                canalPago: "PRESENCIAL",
+                usuarioId: user?.id || 1
+            };
 
-                res = await fetch(`/api/billing/payments/${existingPayment.pagoId}/complete`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload)
-                });
-            } else {
-                // NEW PAYMENT FLOW
-                const payload = {
-                    facturaId: invoice.facturaId,
-                    monto: parseFloat(amount),
-                    metodoPagoId: methodId,
-                    referencia: finalReference,
-                    cuentaDestinoId: (activeTab === 'TRANSFERENCIA' || activeTab === 'PUNTO') ? selectedBankId : null,
-                    canalPago: "PRESENCIAL", // Important marker
-                    usuarioId: user?.id || 1
-                };
-
-                res = await fetch("/api/billing/payments/register", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload)
-                });
-            }
+            const res = await fetch("/api/billing/payments/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
 
             if (res.ok) {
-                toast.success(existingPayment ? "Pago completado y validado" : "Pago registrado correctamente");
+                toast.success("Cobro registrado correctamente");
                 onSuccess();
                 onClose();
             } else {
@@ -345,7 +338,195 @@ function ManualPaymentModal({ isOpen, onClose, invoice, existingPayment, onSucce
                     className="w-full py-4 bg-lime-500/95 hover:bg-lime-500 text-white font-bold rounded-2xl transition-all shadow-[0_8px_20px_rgba(132,204,22,0.3)] backdrop-blur-md border border-lime-400/50 outline-none focus:ring-2 focus:ring-lime-300 disabled:opacity-50 disabled:shadow-none text-sm tracking-wide"
                 >
                     {loading ? "Procesando..." : "Confirmar Cobro"}
+
                 </button>
+            </div>
+        </Modal>
+    );
+}
+
+// --- Review/Edit Invoice Modal ---
+
+interface ReviewInvoiceModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    facturaId: string | null;
+    onSuccess: () => void;
+}
+
+function ReviewInvoiceModal({ isOpen, onClose, facturaId, onSuccess }: ReviewInvoiceModalProps) {
+    const [factura, setFactura] = useState<any>(null);
+    const [detalles, setDetalles] = useState<FacturaDetalle[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
+
+    // Form logic
+    useEffect(() => {
+        if (isOpen && facturaId) {
+            setLoading(true);
+            fetch(`/api/billing/invoices/${facturaId}`)
+                .then(r => r.json())
+                .then(data => {
+                    setFactura(data);
+                    setDetalles(data.detalles || []);
+                })
+                .finally(() => setLoading(false));
+        }
+    }, [isOpen, facturaId]);
+
+    const handleRemoveItem = (index: number) => {
+        setDetalles(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleAddItem = () => {
+        const newItem: FacturaDetalle = {
+            tipoItem: "SERVICIO",
+            descripcion: "Nuevo Concepto",
+            cantidad: 1,
+            precioUnitario: 0,
+            importe: 0
+        };
+        setDetalles(prev => [...prev, newItem]);
+    };
+
+    const handleUpdateItem = (index: number, field: string, val: any) => {
+        setDetalles(prev => prev.map((item, i) => {
+            if (i !== index) return item;
+            const updated = { ...item, [field]: val };
+            // Auto recalc amount
+            if (field === 'cantidad' || field === 'precioUnitario') {
+                updated.importe = Number(updated.cantidad) * Number(updated.precioUnitario);
+            }
+            return updated;
+        }));
+    };
+
+    const handleSave = async () => {
+        if (!facturaId) return;
+        setSaving(true);
+        
+        const total = detalles.reduce((sum, d) => sum + Number(d.importe), 0);
+        
+        try {
+            const res = await fetch(`/api/billing/invoices/${facturaId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    detalles,
+                    subtotal: total,
+                    total: total,
+                    saldoPendiente: total // Resetting balance to new total for simplicity
+                })
+            });
+
+            if (res.ok) {
+                toast.success("Factura actualizada correctamente");
+                onSuccess();
+                onClose();
+            } else {
+                toast.error("Error al guardar cambios");
+            }
+        } catch {
+            toast.error("Error de conexión");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} title="Revisión de Cargos y Factura">
+            <div className="space-y-6">
+                {loading ? (
+                    <div className="flex justify-center py-10"><Monitor className="animate-spin text-lime-600" /></div>
+                ) : (
+                    <>
+                        <div className="bg-white/40 p-4 rounded-2xl border border-white/50 shadow-inner">
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <p className="text-[10px] uppercase font-black text-gray-400 tracking-widest mb-1">Paciente</p>
+                                    <p className="text-sm font-bold text-gray-800">{factura?.cita?.paciente?.nombres} {factura?.cita?.paciente?.apellidos}</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-[10px] uppercase font-black text-gray-400 tracking-widest mb-1">ID Caso</p>
+                                    <p className="text-sm font-mono font-bold text-gray-600">#{facturaId}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between px-1">
+                                <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest">Desglose de Conceptos</h4>
+                                <button onClick={handleAddItem} className="flex items-center gap-1.5 text-[11px] font-black uppercase text-lime-600 bg-lime-50 px-3 py-1 rounded-full border border-lime-200">
+                                    <PlusCircle size={14} /> Añadir Item
+                                </button>
+                            </div>
+
+                            <div className="max-h-[350px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                                {detalles.map((d, i) => (
+                                    <div key={i} className="flex items-center gap-3 p-3 bg-white/60 border border-white/80 rounded-2xl shadow-sm transition-all hover:bg-white">
+                                        <div className="flex-1">
+                                            <input 
+                                                value={d.descripcion} 
+                                                onChange={e => handleUpdateItem(i, 'descripcion', e.target.value)}
+                                                className="w-full text-xs font-bold bg-transparent border-none outline-none focus:text-lime-700" 
+                                            />
+                                            <div className="flex items-center gap-4 mt-1">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-[10px] text-gray-400 font-bold uppercase">Cant:</span>
+                                                    <input 
+                                                        type="number" 
+                                                        value={isNaN(d.cantidad) ? '' : d.cantidad} 
+                                                        onChange={e => {
+                                                            const val = parseFloat(e.target.value);
+                                                            handleUpdateItem(i, 'cantidad', isNaN(val) ? 0 : val);
+                                                        }}
+                                                        className="w-12 text-xs font-black bg-white/50 rounded-lg px-2 py-1 border border-white/80 shadow-inner" 
+                                                    />
+                                                </div>
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-[10px] text-gray-400 font-bold uppercase">Precio $:</span>
+                                                    <input 
+                                                        type="number" 
+                                                        value={isNaN(d.precioUnitario) ? '' : d.precioUnitario} 
+                                                        onChange={e => {
+                                                            const val = parseFloat(e.target.value);
+                                                            handleUpdateItem(i, 'precioUnitario', isNaN(val) ? 0 : val);
+                                                        }}
+                                                        className="w-20 text-xs font-black bg-white/50 rounded-lg px-2 py-1 border border-white/80 shadow-inner text-emerald-700" 
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-xs font-black text-gray-900">${Number(d.importe).toFixed(2)}</p>
+                                            <button onClick={() => handleRemoveItem(i)} className="p-1.5 text-red-400 hover:text-red-600 transition-colors">
+                                                <XCircle size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="pt-4 border-t border-white/40 flex justify-between items-center">
+                            <div>
+                                <p className="text-[10px] uppercase font-black text-gray-400 tracking-widest">Total Provisional</p>
+                                <p className="text-3xl font-black text-gray-900 tracking-tight">
+                                    ${detalles.reduce((a, b) => a + Number(b.importe), 0).toFixed(2)}
+                                </p>
+                            </div>
+                            <button 
+                                onClick={handleSave}
+                                disabled={saving}
+                                className="px-8 py-3.5 bg-gray-900 text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-black transition-all shadow-lg active:scale-95 disabled:opacity-50"
+                            >
+                                {saving ? "Guardando..." : "Finalizar Auditoría"}
+                            </button>
+                        </div>
+                    </>
+                )}
             </div>
         </Modal>
     );
@@ -353,7 +534,7 @@ function ManualPaymentModal({ isOpen, onClose, invoice, existingPayment, onSucce
 
 // --- Main Page Component ---
 
-export default function PagosiPage() {
+export default function PagosPage() {
     const { user } = useAuth();
     const [activeTab, setActiveTab] = useState<'REGISTRAR' | 'VALIDAR' | 'HISTORIAL'>('REGISTRAR');
 
@@ -366,13 +547,22 @@ export default function PagosiPage() {
     const [processingId, setProcessingId] = useState<string | null>(null);
 
     // Modal State
-    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false); // Correctly using boolean state
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [selectedInvoice, setSelectedInvoice] = useState<PendingInvoice | null>(null);
+
+    // Review Modal State
+    const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+    const [reviewFacturaId, setReviewFacturaId] = useState<string | null>(null);
 
     // Filters State
     const [searchTerm, setSearchTerm] = useState("");
     const [filterRegisterDate, setFilterRegisterDate] = useState("");
     const [filterPaymentDate, setFilterPaymentDate] = useState("");
+
+    // Registrar Cobro Filters State
+    const [regSearchTerm, setRegSearchTerm] = useState("");
+    const [regFilterTipo, setRegFilterTipo] = useState<'TODOS' | 'EMERGENCIA' | 'CONSULTA'>('TODOS');
+    const [regFilterEstado, setRegFilterEstado] = useState<'TODOS' | 'EN_REVISION' | 'PENDIENTE' | 'PARCIAL'>('TODOS');
 
     // Validar Filters State
     const [valSearchTerm, setValSearchTerm] = useState("");
@@ -468,6 +658,43 @@ export default function PagosiPage() {
         setIsPaymentModalOpen(true);
     };
 
+    const handlePagoSeguro = async (inv: PendingInvoice) => {
+        const cobertura = inv.limiteCobertura ?? 0;
+        const pagarMonto = Math.min(cobertura, inv.saldoPendiente);
+        const restante = Math.max(0, inv.saldoPendiente - pagarMonto);
+        const msg = restante > 0
+            ? `¿Aplicar cobertura del seguro? Se cubrirá $${pagarMonto.toFixed(2)} de $${inv.saldoPendiente.toFixed(2)}. El saldo restante de $${restante.toFixed(2)} quedará a cargo del paciente.`
+            : `¿Aplicar cobertura del seguro? El seguro cubre el total de $${inv.saldoPendiente.toFixed(2)}. La factura quedará pagada en su totalidad.`;
+        if (!confirm(msg)) return;
+        setProcessingId(inv.facturaId);
+        try {
+            const res = await fetch(`/api/billing/invoices/${inv.facturaId}/seguro-pago`, { method: "POST" });
+            const data = await res.json();
+            if (res.ok) {
+                toast.success(data.message || "Pago por seguro aplicado");
+                loadData();
+            } else {
+                toast.error(data.error || "Error al procesar pago por seguro");
+            }
+        } catch { toast.error("Error de conexión"); }
+        setProcessingId(null);
+    };
+
+    const handleAprobarFactura = async (facturaId: string) => {
+        setProcessingId(facturaId);
+        try {
+            const res = await fetch(`/api/billing/invoices/${facturaId}/aprobar`, { method: "POST" });
+            if (res.ok) {
+                toast.success("Factura aprobada — ya visible para el paciente");
+                loadData();
+            } else {
+                const err = await res.json();
+                toast.error(err.error || "Error al aprobar factura");
+            }
+        } catch { toast.error("Error de conexión"); }
+        setProcessingId(null);
+    };
+
     return (
         <div className="space-y-6 max-w-7xl mx-auto">
             {/* Header */}
@@ -493,12 +720,6 @@ export default function PagosiPage() {
                     >
                         <HandCoins size={18} />
                         Registrar Cobro
-                        {/* Show count of Presencial Requests + Pending Invoices if needed, or just Presencial */}
-                        {pagos.filter(p => p.canal === 'PRESENCIAL').length > 0 && (
-                            <span className="ml-2 py-0.5 px-2 rounded-full bg-purple-100 text-purple-700 text-xs border border-purple-200/50 shadow-sm animate-pulse">
-                                {pagos.filter(p => p.canal === 'PRESENCIAL').length}
-                            </span>
-                        )}
                     </button>
                     <button
                         onClick={() => setActiveTab('VALIDAR')}
@@ -530,79 +751,77 @@ export default function PagosiPage() {
             {activeTab === 'REGISTRAR' && (
                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
 
-                    {/* SECTION 1: SOLICITUDES DE CAJA (PRESENCIAL) */}
-                    {pagos.filter(p => p.canal === 'PRESENCIAL').length > 0 && (
-                        <div className="bg-white/40 backdrop-blur-md rounded-3xl shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] border border-purple-200/50 overflow-hidden">
-                            <div className="p-5 bg-purple-50/50 border-b border-purple-100/50 flex items-center gap-2">
-                                <Building className="text-purple-600 drop-shadow-sm" size={18} />
-                                <h3 className="font-bold text-purple-900 tracking-tight">Solicitudes de Pago en Caja</h3>
-                                <span className="ml-auto text-xs bg-purple-100/80 text-purple-800 px-3 py-1 rounded-full font-bold border border-purple-200/50 shadow-sm">
-                                    {pagos.filter(p => p.canal === 'PRESENCIAL').length} Pendientes
-                                </span>
-                            </div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse">
-                                    <thead className="bg-white/30 text-xs font-bold text-gray-500/80 uppercase tracking-wider">
-                                        <tr className="border-b border-purple-100/50">
-                                            <th className="p-4">Fecha</th>
-                                            <th className="p-4">Paciente</th>
-                                            <th className="p-4">Referencia</th>
-                                            <th className="p-4 text-right">Monto ($)</th>
-                                            <th className="p-4 text-center">Acción</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-purple-100/30">
-                                        {pagos.filter(p => p.canal === 'PRESENCIAL').map((pago) => (
-                                            <tr key={pago.pagoId} className="hover:bg-white/60 transition-colors">
-                                                <td className="p-4 text-sm font-medium text-gray-600 whitespace-nowrap">
-                                                    <div className="flex items-center gap-2">
-                                                        <Calendar size={14} className="text-gray-400" />
-                                                        {new Date(pago.fecha).toLocaleDateString()}
-                                                    </div>
-                                                </td>
-                                                <td className="p-4">
-                                                    <div className="font-bold text-gray-900 text-sm">{pago.paciente}</div>
-                                                    <div className="text-xs font-medium text-gray-500 mt-0.5">{pago.cedula}</div>
-                                                </td>
-                                                <td className="p-4 text-sm font-bold text-gray-600">{pago.referencia}</td>
-                                                <td className="p-4 text-right font-black text-emerald-600 text-base">${pago.monto.toFixed(2)}</td>
-                                                <td className="p-4 text-center">
-                                                    <button
-                                                        onClick={() => {
-                                                            // Construct Invoice Object from Payment info if not found in list
-                                                            const inv = pendingInvoices.find(i => i.facturaId === pago.facturaId) || {
-                                                                facturaId: pago.facturaId,
-                                                                numeroFactura: pago.numeroFactura || null,
-                                                                fechaEmision: new Date().toISOString(), // Fallback
-                                                                paciente: pago.paciente,
-                                                                cedula: pago.cedula,
-                                                                doctor: "---",
-                                                                total: pago.monto,
-                                                                saldoPendiente: pago.monto // Use payment amount as pending because we are completing it
-                                                            };
-                                                            handleOpenPayment(inv);
-                                                        }}
-                                                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold rounded-2xl transition-colors shadow-[0_8px_20px_rgba(147,51,234,0.3)] hover:shadow-[0_8px_20px_rgba(147,51,234,0.4)] backdrop-blur-md border border-purple-500/50"
-                                                    >
-                                                        <CheckCircle size={16} /> Completar
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* SECTION 2: TODAS LAS FACTURAS PENDIENTES */}
+                    {/* PACIENTES POR COBRAR — todas las facturas no pagadas */}
                     <div className="bg-white/40 backdrop-blur-md rounded-3xl shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] border border-white/50 overflow-hidden">
                         <div className="p-5 border-b border-white/40 flex items-center justify-between">
                             <h3 className="font-bold text-gray-800 flex items-center gap-2 tracking-tight">
                                 <FileText size={18} className="text-lime-600 drop-shadow-sm" /> Pacientes por Cobrar
                             </h3>
                         </div>
+
+                        {/* Filtros */}
+                        <div className="px-5 py-4 border-b border-white/30 bg-white/20 flex flex-wrap gap-3 items-end">
+                            <div className="flex-1 min-w-[200px]">
+                                <label className="text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-1.5 block">Buscar</label>
+                                <div className="relative">
+                                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        placeholder="Nombre, Cédula..."
+                                        value={regSearchTerm}
+                                        onChange={e => setRegSearchTerm(e.target.value)}
+                                        className="w-full pl-8 pr-4 py-2 rounded-xl border border-white/60 bg-white/70 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-lime-300 shadow-sm"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-1.5 block">Tipo</label>
+                                <select
+                                    value={regFilterTipo}
+                                    onChange={e => setRegFilterTipo(e.target.value as any)}
+                                    className="px-3 py-2 rounded-xl border border-white/60 bg-white/70 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-lime-300 shadow-sm"
+                                >
+                                    <option value="TODOS">Todos</option>
+                                    <option value="EMERGENCIA">Emergencia</option>
+                                    <option value="CONSULTA">Consulta</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-1.5 block">Estado</label>
+                                <select
+                                    value={regFilterEstado}
+                                    onChange={e => setRegFilterEstado(e.target.value as any)}
+                                    className="px-3 py-2 rounded-xl border border-white/60 bg-white/70 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-lime-300 shadow-sm"
+                                >
+                                    <option value="TODOS">Todos</option>
+                                    <option value="EN_REVISION">En Revisión</option>
+                                    <option value="PENDIENTE">Pendiente</option>
+                                    <option value="PARCIAL">Parcial</option>
+                                </select>
+                            </div>
+                            {(regSearchTerm || regFilterTipo !== 'TODOS' || regFilterEstado !== 'TODOS') && (
+                                <button
+                                    onClick={() => { setRegSearchTerm(""); setRegFilterTipo('TODOS'); setRegFilterEstado('TODOS'); }}
+                                    className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700 bg-white/60 hover:bg-white rounded-xl border border-white/60 transition-all shadow-sm"
+                                >
+                                    Limpiar
+                                </button>
+                            )}
+                        </div>
+
                         <div className="overflow-x-auto">
+                            {(() => {
+                                const filtered = pendingInvoices.filter(inv => {
+                                    const matchSearch = !regSearchTerm ||
+                                        inv.paciente.toLowerCase().includes(regSearchTerm.toLowerCase()) ||
+                                        inv.cedula.toLowerCase().includes(regSearchTerm.toLowerCase());
+                                    const matchTipo = regFilterTipo === 'TODOS' ||
+                                        (regFilterTipo === 'EMERGENCIA' && inv.esEmergencia) ||
+                                        (regFilterTipo === 'CONSULTA' && !inv.esEmergencia);
+                                    const matchEstado = regFilterEstado === 'TODOS' || inv.estadoFactura === regFilterEstado;
+                                    return matchSearch && matchTipo && matchEstado;
+                                });
+                            return (
                             <table className="w-full text-left border-collapse">
                                 <thead className="bg-white/30 text-xs font-bold text-gray-500/80 uppercase tracking-wider">
                                     <tr className="border-b border-white/40">
@@ -615,16 +834,21 @@ export default function PagosiPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/30">
-                                    {pendingInvoices.length === 0 ? (
+                                    {filtered.length === 0 ? (
                                         <tr><td colSpan={6} className="p-8 text-center text-gray-400 font-medium italic">No hay pacientes esperando pago.</td></tr>
                                     ) : (
                                         pendingInvoices.map((inv) => (
                                             <tr key={inv.facturaId} className="hover:bg-white/60 transition-colors group">
                                                 <td className="p-4 text-sm font-medium text-gray-500">
-                                                    {new Date(inv.fechaEmision).toLocaleDateString()}
+                                                    {new Date(inv.fechaEmision).toLocaleDateString('es-VE', { timeZone: 'America/Caracas' })}
                                                 </td>
-                                                <td className="p-4 text-sm font-bold text-gray-600">
-                                                    #{inv.numeroFactura || '---'}
+                                                <td className="p-4">
+                                                    <div className="text-sm font-bold text-gray-600">#{inv.numeroFactura || '---'}</div>
+                                                    {inv.estadoFactura === 'EN_REVISION' && (
+                                                        <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full mt-1">
+                                                            En Revisión
+                                                        </span>
+                                                    )}
                                                 </td>
                                                 <td className="p-4">
                                                     <div className="font-bold text-gray-900 text-sm">{inv.paciente}</div>
@@ -639,18 +863,55 @@ export default function PagosiPage() {
                                                     </span>
                                                 </td>
                                                 <td className="p-4 text-center">
-                                                    <button
-                                                        onClick={() => handleOpenPayment(inv)}
-                                                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-lime-500/95 hover:bg-lime-500 text-white text-sm font-bold rounded-2xl transition-all shadow-[0_8px_20px_rgba(132,204,22,0.3)] backdrop-blur-md border border-lime-400/50 outline-none focus:ring-2 focus:ring-lime-300"
-                                                    >
-                                                        <DollarSign size={16} /> Cobrar
-                                                    </button>
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        {inv.esEmergencia && (
+                                                            <button
+                                                                onClick={() => {
+                                                                    setReviewFacturaId(inv.facturaId);
+                                                                    setIsReviewModalOpen(true);
+                                                                }}
+                                                                className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white/60 hover:bg-white text-gray-600 text-sm font-bold rounded-2xl transition-all border border-white/80 shadow-sm"
+                                                            >
+                                                                Revisar
+                                                            </button>
+                                                        )}
+                                                        {inv.estadoFactura === 'EN_REVISION' ? (
+                                                            <button
+                                                                onClick={() => handleAprobarFactura(inv.facturaId)}
+                                                                disabled={processingId === inv.facturaId}
+                                                                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-amber-500/95 hover:bg-amber-500 text-white text-sm font-bold rounded-2xl transition-all shadow-[0_8px_20px_rgba(245,158,11,0.3)] border border-amber-400/50 disabled:opacity-50"
+                                                            >
+                                                                <CheckCircle size={16} /> Aprobar
+                                                            </button>
+                                                        ) : (
+                                                            <>
+                                                                {inv.esEmergencia && inv.cartaAvalAprobada && (
+                                                                    <button
+                                                                        onClick={() => handlePagoSeguro(inv)}
+                                                                        disabled={processingId === inv.facturaId}
+                                                                        title={`Carta Aval aprobada — Cobertura: $${(inv.limiteCobertura ?? 0).toFixed(2)}`}
+                                                                        className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-blue-500/95 hover:bg-blue-500 text-white text-sm font-bold rounded-2xl transition-all shadow-[0_8px_20px_rgba(59,130,246,0.3)] border border-blue-400/50 disabled:opacity-50"
+                                                                    >
+                                                                        <CheckCircle size={15} /> Seguro
+                                                                    </button>
+                                                                )}
+                                                                <button
+                                                                    onClick={() => handleOpenPayment(inv)}
+                                                                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-lime-500/95 hover:bg-lime-500 text-white text-sm font-bold rounded-2xl transition-all shadow-[0_8px_20px_rgba(132,204,22,0.3)] backdrop-blur-md border border-lime-400/50 outline-none focus:ring-2 focus:ring-lime-300"
+                                                                >
+                                                                    <DollarSign size={16} /> Cobrar
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))
                                     )}
                                 </tbody>
                             </table>
+                            );
+                            })()}
                         </div>
                     </div>
                 </div>
@@ -928,14 +1189,19 @@ export default function PagosiPage() {
                 isOpen={isPaymentModalOpen}
                 onClose={() => setIsPaymentModalOpen(false)}
                 invoice={selectedInvoice}
-                existingPayment={selectedInvoice ? pagos.find(p => p.facturaId === selectedInvoice.facturaId && p.canal === 'PRESENCIAL') : undefined}
                 onSuccess={() => {
                     loadData();
-                    // Optional: Switch to Historial or Validar, but staying on Registrar allows multiple payments
                 }}
             />
 
+            <ReviewInvoiceModal
+                isOpen={isReviewModalOpen}
+                onClose={() => setIsReviewModalOpen(false)}
+                facturaId={reviewFacturaId}
+                onSuccess={() => loadData()}
+            />
+
             <Toaster position="top-right" richColors />
-        </div >
+        </div>
     );
 }

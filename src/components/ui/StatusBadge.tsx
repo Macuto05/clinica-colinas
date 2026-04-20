@@ -1,4 +1,4 @@
-import { Calendar, CheckCircle, XCircle, UserX, Clock, Activity } from "lucide-react";
+import { Calendar, CheckCircle, XCircle, UserX, Clock, Activity, AlertTriangle, ShieldCheck, Stethoscope, Ban, Hotel, ArrowRight } from "lucide-react";
 
 interface StatusBadgeProps {
     status: string;
@@ -42,6 +42,37 @@ export function StatusBadge({ status, className = "" }: StatusBadgeProps) {
                     color: 'bg-orange-500/20 text-orange-800 border-orange-300/40 shadow-sm shadow-orange-100 backdrop-blur-sm',
                     icon: <UserX size={13} />,
                     label: 'No Asistió'
+                };
+            // --- EMERGENCY STATES ---
+            case 'EN_ATENCION':
+                return {
+                    color: 'bg-amber-500/20 text-amber-800 border-amber-300/40 shadow-sm shadow-amber-100 backdrop-blur-sm',
+                    icon: <Stethoscope size={13} />,
+                    label: 'En Atención'
+                };
+            case 'HOSPITALIZADO':
+                return {
+                    color: 'bg-cyan-500/20 text-cyan-800 border-cyan-300/40 shadow-sm shadow-cyan-100 backdrop-blur-sm',
+                    icon: <Hotel size={13} />,
+                    label: 'Hospitalizado'
+                };
+            case 'CIRUGIA_URGENTE':
+                return {
+                    color: 'bg-red-500/20 text-red-800 border-red-300/40 shadow-sm shadow-red-100 backdrop-blur-sm',
+                    icon: <AlertTriangle size={13} />,
+                    label: 'Cirugía'
+                };
+            case 'REFERIDO':
+                return {
+                    color: 'bg-purple-500/20 text-purple-800 border-purple-300/40 shadow-sm shadow-purple-100 backdrop-blur-sm',
+                    icon: <ArrowRight size={13} />,
+                    label: 'Referido'
+                };
+            case 'ALTA':
+                return {
+                    color: 'bg-teal-500/20 text-teal-800 border-teal-300/40 shadow-sm shadow-teal-100 backdrop-blur-sm',
+                    icon: <ShieldCheck size={13} />,
+                    label: 'Alta'
                 };
             default:
                 return {

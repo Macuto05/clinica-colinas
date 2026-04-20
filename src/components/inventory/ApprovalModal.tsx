@@ -14,13 +14,14 @@ interface ApprovalModalProps {
     pedido: any;
     isOpen: boolean;
     onClose: () => void;
-    onConfirm: (pedidoId: string, assignments: { detalleId: string, proveedorId: string }[]) => Promise<void>;
+    onConfirm: (pedidoId: string, assignments: { detalleId: string, proveedorId: string, costoUnitario?: number }[]) => Promise<void>;
     isProcessing: boolean;
 }
 
 export function ApprovalModal({ pedido, isOpen, onClose, onConfirm, isProcessing }: ApprovalModalProps) {
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [assignments, setAssignments] = useState<Record<string, string>>({});
+    const [costs, setCosts] = useState<Record<string, string>>({});
     const [isLoadingSuppliers, setIsLoadingSuppliers] = useState(false);
 
     // Quick assign all
@@ -33,13 +34,20 @@ export function ApprovalModal({ pedido, isOpen, onClose, onConfirm, isProcessing
 
     useEffect(() => {
         if (isOpen) {
+            document.body.style.overflow = 'hidden';
             fetchSuppliers();
-            // Reset assignments
             setAssignments({});
+            setCosts({});
             setBulkSupplier("");
             setIsCreatingProvider(false);
             setNewProvider({ nombre: "", rifNif: "" });
+        } else {
+            document.body.style.overflow = '';
         }
+        
+        return () => {
+            document.body.style.overflow = '';
+        };
     }, [isOpen]);
 
     const fetchSuppliers = async () => {
@@ -92,15 +100,27 @@ export function ApprovalModal({ pedido, isOpen, onClose, onConfirm, isProcessing
         setAssignments(newAssignments);
     };
 
+    const handleCostChange = (detalleId: string, value: string) => {
+        setCosts(prev => ({ ...prev, [detalleId]: value }));
+    };
+
     const handleConfirm = () => {
-        const payload = Object.entries(assignments).map(([detalleId, proveedorId]) => ({
-            detalleId,
-            proveedorId
-        }));
+        const payload = Object.entries(assignments).map(([detalleId, proveedorId]) => {
+            const rawCost = costs[detalleId];
+            const costoUnitario = rawCost && parseFloat(rawCost) > 0
+                ? parseFloat(rawCost)
+                : undefined;
+            return { detalleId, proveedorId, costoUnitario };
+        });
         onConfirm(pedido.pedidoId, payload);
     };
 
-    const isComplete = pedido?.detalles.every((d: any) => assignments[d.detalleId]);
+    const isComplete = pedido?.detalles.every((d: any) => 
+        assignments[d.detalleId] && 
+        costs[d.detalleId] && 
+        parseFloat(costs[d.detalleId]) > 0
+    );
+
 
     if (!pedido) return null;
 
@@ -120,31 +140,31 @@ export function ApprovalModal({ pedido, isOpen, onClose, onConfirm, isProcessing
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                        className="relative w-full max-w-2xl bg-white/70 backdrop-blur-2xl backdrop-saturate-[1.2] rounded-[3rem] border border-white/60 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] flex flex-col max-h-[90vh] overflow-hidden"
+                        className="relative w-full max-w-4xl bg-white/70 backdrop-blur-2xl backdrop-saturate-[1.2] rounded-[2rem] border border-white/60 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] flex flex-col max-h-[90vh] overflow-hidden"
                     >
-                        <div className="p-10 border-b border-white/60 flex justify-between items-center bg-white/50">
-                            <div className="flex items-center gap-5">
-                                <div className="p-4 bg-lime-500/10 rounded-[1.5rem] text-lime-600 border border-lime-200/50 shadow-sm">
-                                    <Check size={28} strokeWidth={3} />
+                        <div className="py-3 px-6 border-b border-white/60 flex justify-between items-center bg-white/50">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2.5 bg-lime-500/10 rounded-[1rem] text-lime-600 border border-lime-200/50 shadow-sm">
+                                    <Check size={20} strokeWidth={3} />
                                 </div>
                                 <div>
-                                    <h3 className="text-2xl font-black text-gray-900 tracking-tight uppercase tracking-widest leading-none">
+                                    <h3 className="text-lg font-black text-gray-900 tracking-tight uppercase tracking-widest leading-none">
                                         Aprobar Orden
                                     </h3>
                                     <p className="text-[10px] font-mono text-gray-400 font-black uppercase tracking-widest mt-1">PEDIDO #{pedido.pedidoId}</p>
                                 </div>
                             </div>
-                            <button onClick={onClose} className="p-3 hover:bg-rose-500/10 rounded-full transition-colors group active:scale-90">
-                                <X size={24} className="text-gray-400 group-hover:text-rose-600" />
+                            <button onClick={onClose} className="p-2 hover:bg-rose-500/10 rounded-full transition-colors group active:scale-90">
+                                <X size={20} className="text-gray-400 group-hover:text-rose-600" />
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-10 space-y-8 custom-scrollbar">
+                        <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
                             <div className="bg-amber-500/10 border border-amber-200/50 p-6 rounded-[2rem] flex gap-5 items-start">
                                 <AlertCircle className="text-amber-600 shrink-0 mt-1" size={24} />
                                 <div>
-                                    <p className="text-sm font-black text-amber-900 uppercase tracking-tight">Asignación de Proveedores Requerida</p>
-                                    <p className="text-[11px] font-bold text-amber-700/80 mt-1 italic leading-relaxed">Para formalizar la aprobación, debe indicar qué proveedor suministrará cada insumo solicitado.</p>
+                                    <p className="text-sm font-black text-amber-900 uppercase tracking-tight">Asignación de Proveedor y Costo Requerida</p>
+                                    <p className="text-[11px] font-bold text-amber-700/80 mt-1 italic leading-relaxed">Para formalizar la aprobación, debe indicar el proveedor y el costo unitario de cada insumo solicitado.</p>
                                 </div>
                             </div>
 
@@ -234,6 +254,7 @@ export function ApprovalModal({ pedido, isOpen, onClose, onConfirm, isProcessing
                                                 <th className="px-8 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">Insumo</th>
                                                 <th className="px-8 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">Cantidad</th>
                                                 <th className="px-8 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">Proveedor</th>
+                                                <th className="px-8 py-4 text-[9px] font-black text-emerald-600 uppercase tracking-widest">Costo Unit. ($)</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-white/20 bg-white/10">
@@ -263,6 +284,20 @@ export function ApprovalModal({ pedido, isOpen, onClose, onConfirm, isProcessing
                                                             ))}
                                                         </select>
                                                     </td>
+                                                    <td className="px-8 py-5">
+                                                        <div className="relative">
+                                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-emerald-600">$</span>
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                step="0.01"
+                                                                placeholder="0.00"
+                                                                value={costs[d.detalleId] || ""}
+                                                                onChange={(e) => handleCostChange(d.detalleId, e.target.value)}
+                                                                className="w-28 pl-6 pr-3 py-2 rounded-xl border border-emerald-200/60 bg-emerald-50/40 focus:bg-white/80 focus:ring-2 focus:ring-emerald-400/30 outline-none font-black text-sm text-emerald-800 shadow-inner transition-all"
+                                                            />
+                                                        </div>
+                                                    </td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -271,23 +306,23 @@ export function ApprovalModal({ pedido, isOpen, onClose, onConfirm, isProcessing
                             </div>
                         </div>
 
-                        <div className="p-10 border-t border-white/60 bg-white/50 backdrop-blur-md flex justify-end gap-5">
+                        <div className="py-3 px-6 border-t border-white/60 bg-white/50 backdrop-blur-md flex justify-end gap-3">
                             <button
                                 onClick={onClose}
                                 disabled={isProcessing}
-                                className="px-10 py-5 rounded-[1.5rem] font-bold text-gray-500 hover:bg-gray-200/50 transition-all uppercase tracking-widest text-[10px]"
+                                className="px-6 py-2.5 rounded-[1rem] font-bold text-gray-500 hover:bg-gray-200/50 transition-all uppercase tracking-widest text-[10px]"
                             >
                                 Cancelar
                             </button>
                             <button
                                 onClick={handleConfirm}
                                 disabled={!isComplete || isProcessing}
-                                className="px-12 py-5 bg-[#a1db4b] text-white rounded-[1.5rem] hover:bg-[#8cc63f] font-black uppercase tracking-widest text-[10px] shadow-lg shadow-lime-500/20 active:scale-95 disabled:opacity-40 transition-all flex items-center gap-4"
+                                className="px-6 py-2.5 bg-[#a1db4b] text-white rounded-[1rem] hover:bg-[#8cc63f] font-black uppercase tracking-widest text-[10px] shadow-lg shadow-lime-500/20 active:scale-95 disabled:opacity-40 transition-all flex items-center gap-2"
                             >
                                 {isProcessing ? (
-                                    <Loader2 size={18} className="animate-spin" />
+                                    <Loader2 size={14} className="animate-spin" />
                                 ) : (
-                                    <Check size={18} strokeWidth={3} />
+                                    <Check size={14} strokeWidth={3} />
                                 )}
                                 Aprobar y Procesar
                             </button>

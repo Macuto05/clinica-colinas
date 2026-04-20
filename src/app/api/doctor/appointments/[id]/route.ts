@@ -1,6 +1,7 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/infrastructure/database/prisma/client";
+import { calculateAge, formatTimeAMPM } from "@/lib/utils";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
@@ -18,7 +19,20 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
                 receta: {
                     include: { detalles: true }
                 },
-                ordenes: true
+                solicitudesLab: {
+                    include: {
+                        detalles: {
+                            include: { examen: true }
+                        }
+                    }
+                },
+                solicitudesImg: {
+                    include: {
+                        detalles: {
+                            include: { examen: true }
+                        }
+                    }
+                }
             }
         });
 
@@ -35,14 +49,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
                 documento: app.paciente.documentoIdentidad,
                 edad: app.paciente.fechaNacimiento ? calculateAge(new Date(app.paciente.fechaNacimiento)) : 'N/A'
             },
-            hora: (() => {
-                const d = new Date(app.horaInicio);
-                const hours = d.getUTCHours();
-                const minutes = d.getUTCMinutes();
-                const ampm = hours >= 12 ? 'PM' : 'AM';
-                const formattedHour = hours % 12 || 12;
-                return `${formattedHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${ampm}`;
-            })(),
+            hora: formatTimeAMPM(app.horaInicio),
             motivo: app.motivoConsulta,
             estado: app.estadoCita,
             tipo: app.tipoCita,
@@ -63,12 +70,20 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
                     recetaId: d.recetaId.toString()
                 }))
             } : null,
-            ordenes: (app as any).ordenes ? (app as any).ordenes.map((o: any) => ({
-                id: o.ordenId.toString(),
-                tipo: o.tipo,
-                estudio: o.estudio,
-                fecha: o.fechaCreacion
-            })) : []
+            ordenes: [
+                ...(app.solicitudesLab || []).flatMap(s => s.detalles.map(d => ({
+                    id: d.detalleLabId.toString(),
+                    tipo: 'Laboratorio',
+                    estudio: d.examen.nombre,
+                    fecha: s.fechaSolicitud
+                }))),
+                ...(app.solicitudesImg || []).flatMap(s => s.detalles.map(d => ({
+                    id: d.detalleImgId.toString(),
+                    tipo: 'Imagenología',
+                    estudio: d.examen.nombre,
+                    fecha: s.fechaSolicitud
+                })))
+            ]
         };
 
         return NextResponse.json(formatted);
@@ -79,8 +94,3 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     }
 }
 
-function calculateAge(birthday: Date) {
-    const ageDifMs = Date.now() - birthday.getTime();
-    const ageDate = new Date(ageDifMs);
-    return Math.abs(ageDate.getUTCFullYear() - 1970);
-}

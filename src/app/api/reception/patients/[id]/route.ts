@@ -45,7 +45,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
                 return NextResponse.json({ error: "El correo de acceso ya está registrado por otro usuario" }, { status: 400 });
             }
 
-            const bcrypt = require('bcryptjs');
+            const bcrypt = await import('bcryptjs');
 
             if (currentPatient.usuarioId) {
                 // UPDATE Existing User

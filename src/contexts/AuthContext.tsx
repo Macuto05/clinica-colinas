@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User } from "@/domain/entities/User";
 import { useRouter } from "next/navigation";
+import { CAJA_ROLES } from "@/lib/constants/roles";
 
 interface AuthContextType {
     user: Partial<User> | null;
@@ -61,18 +62,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const handleRoleRedirect = (userData: Partial<User>) => {
         const role = (userData.role || "").toUpperCase();
         
+        let targetPath = "/dashboard";
+
         if (role === "ADMIN") {
-            router.push("/admin");
+            targetPath = "/admin";
         } else if (role === "DOCTOR" || role === "MEDICO") {
-            router.push("/medico");
+            targetPath = "/medico";
         } else if (role === "ALMACEN") {
-            router.push("/almacen");
-        } else if (["CAJA", "CAJA Y FACTURACION", "CAJA Y FACTURACIÓN", "CAJA/FACTURACION", "CAJA/FACTURACIÓN"].includes(role)) {
-            router.push("/caja");
+            targetPath = "/almacen";
+        } else if ((CAJA_ROLES as readonly string[]).includes(role)) {
+            targetPath = "/caja";
         } else if (role === "RECEPCION") {
-            router.push("/recepcion");
-        } else {
-            router.push("/dashboard");
+            targetPath = "/recepcion";
+        } else if (role === "ENFERMERIA") {
+            targetPath = "/enfermeria";
+        } else if (role === "FARMACIA" || role === "INVENTORY") {
+            targetPath = "/farmacia";
+        } else if (role === "LABORATORIO") {
+            targetPath = "/laboratorio";
+        } else if (role === "IMAGENOLOGIA") {
+            targetPath = "/imagenologia";
+        }
+
+        if (window.location.pathname !== targetPath) {
+            window.location.href = targetPath;
         }
     };
 
@@ -80,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(userData);
 
         if (redirectPath) {
-            router.push(redirectPath);
+            window.location.href = redirectPath;
             return;
         }
 
@@ -91,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
             await fetch("/api/auth/logout", { method: "POST" });
             setUser(null);
-            router.push("/login");
+            window.location.href = "/login";
         } catch (error) {
             console.error("Logout failed:", error);
         }

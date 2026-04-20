@@ -26,7 +26,8 @@ export async function GET(req: Request) {
                 fechaCita: {
                     gte: start,
                     lte: end
-                }
+                },
+                tipoCita: { not: 'EMERGENCIA' }
             },
             include: {
                 paciente: {

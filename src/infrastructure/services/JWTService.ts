@@ -6,14 +6,21 @@
 
 import { SignJWT, jwtVerify } from 'jose';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-change-this';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    throw new Error('FATAL: JWT_SECRET environment variable is required. Set it in .env');
+}
 const secretKey = new TextEncoder().encode(JWT_SECRET);
 
 export interface TokenPayload {
     userId: number;
     email: string;
     role: string;
-    [key: string]: any; // Allow extra claims
+    patientId?: number;
+    employeeId?: number;
+    sub?: string;
+    iat?: number;
+    exp?: number;
 }
 
 export class JWTService {

@@ -1,4 +1,4 @@
-
+﻿
 import { NextResponse } from "next/server";
 import { prisma } from "@/infrastructure/database/prisma/client";
 
@@ -13,11 +13,12 @@ export async function GET(req: Request) {
 
         const facturas = await prisma.factura.findMany({
             where: {
-                cita: { pacienteId: BigInt(patientId) },
+                pacienteId: BigInt(patientId),
                 estadoFactura: { in: ['PENDIENTE', 'PARCIAL'] }
             },
             include: {
                 cita: true,
+                emergencia: true,
                 pagos: {
                     where: { estadoPago: 'PENDIENTE' }
                 }
@@ -34,17 +35,25 @@ export async function GET(req: Request) {
 
             totalDeuda += deuda;
             totalEnRevision += enRevision;
+            
+            let desc = 'Servicio MÃ©dico';
+            if (f.emergencia) {
+                desc = `Emergencia del ${new Date(f.emergencia.fechaIngreso).toLocaleDateString()}`;
+            } else if (f.cita) {
+                desc = `Consulta del ${new Date(f.cita.fechaCita).toLocaleDateString()}`;
+            }
 
             return {
                 facturaId: f.facturaId.toString(),
-                citaId: f.citaId.toString(),
+                citaId: f.citaId?.toString() || null,
+                emergenciaId: f.emergenciaId?.toString() || null,
                 fecha: f.fechaEmision,
                 total: Number(f.total),
                 saldoPendiente: deuda,
-                montoAsegurado: Number(f.montoAsegurado),
+                montoAsegurado: Number(f.montoAsegurado || 0),
                 enRevision: enRevision,
                 estado: f.estadoFactura,
-                descripcion: `Consulta del ${new Date(f.cita.fechaCita).toLocaleDateString()}`
+                descripcion: desc
             };
         });
 

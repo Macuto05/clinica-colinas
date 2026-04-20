@@ -1,6 +1,7 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/infrastructure/database/prisma/client";
+import { calculateAge, formatTimeAMPM } from "@/lib/utils";
 
 // Force Rebuild: 2026-01-31T21:20:00
 export async function GET(req: Request) {
@@ -77,14 +78,7 @@ export async function GET(req: Request) {
                 documento: app.paciente.documentoIdentidad,
                 edad: app.paciente.fechaNacimiento ? calculateAge(new Date(app.paciente.fechaNacimiento)) : 'N/A'
             },
-            hora: (() => {
-                const d = new Date(app.horaInicio);
-                const hours = d.getUTCHours();
-                const minutes = d.getUTCMinutes();
-                const ampm = hours >= 12 ? 'PM' : 'AM';
-                const formattedHour = hours % 12 || 12;
-                return `${formattedHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${ampm}`;
-            })(),
+            hora: formatTimeAMPM(app.horaInicio),
             motivo: app.motivoConsulta,
             estado: app.estadoCita,
             tipo: app.tipoCita,
@@ -116,8 +110,3 @@ export async function GET(req: Request) {
     }
 }
 
-function calculateAge(birthday: Date) { // age util
-    const ageDifMs = Date.now() - birthday.getTime();
-    const ageDate = new Date(ageDifMs);
-    return Math.abs(ageDate.getUTCFullYear() - 1970);
-}

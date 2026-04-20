@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import EmergenciaDetalleModal from "./components/EmergenciaDetalleModal";
 
 /* ─── Types ─────────────────────────────────────────── */
 interface Emergencia {
@@ -25,6 +26,7 @@ interface Emergencia {
     tieneSeguro: boolean;
     aseguradora: string | null;
     medico: { medicoId: string; nombre: string; especialidad: string } | null;
+    cartasAval: any[];
 }
 
 /* ─── Config maps ────────────────────────────────────── */
@@ -45,9 +47,9 @@ const STATUS: Record<string, { label: string; color: string; Icon: any }> = {
 };
 
 const PAY_LABEL: Record<string, { label: string; color: string }> = {
-    PENDIENTE:      { label: "⏳ Pago pendiente",  color: "text-amber-600" },
-    CONFIRMADO:     { label: "✓ Pago confirmado",  color: "text-green-600" },
-    SIN_COBERTURA:  { label: "✗ Sin cobertura",    color: "text-red-600"   },
+    PENDIENTE:      { label: "Pago pendiente",     color: "text-amber-600" },
+    CONFIRMADO:     { label: "Pago confirmado",    color: "text-green-600" },
+    SIN_COBERTURA:  { label: "Sin cobertura",      color: "text-red-600"   },
 };
 
 /* ─── Helpers ────────────────────────────────────────── */
@@ -60,65 +62,107 @@ function timeSince(dateStr: string) {
 }
 
 /* ─── Emergency Card ─────────────────────────────────── */
-function EmergencyCard({ e }: { e: Emergencia }) {
-    const pathname = usePathname();
+function EmergencyCard({ e, onViewDetails }: { e: Emergencia; onViewDetails: (id: string) => void }) {
     const urg = URGENCY[e.nivelUrgencia] ?? URGENCY.MODERADO;
     const st  = STATUS[e.estadoEmergencia] ?? STATUS.EN_ATENCION;
     const pay = PAY_LABEL[e.verificacionPago] ?? PAY_LABEL.PENDIENTE;
     const StIcon = st.Icon;
 
-    return (
-        <div className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl shadow-[0_4px_16px_0_rgba(0,0,0,0.04)] hover:bg-white/60 hover:shadow-[0_8px_24px_0_rgba(0,0,0,0.08)] transition-all overflow-hidden flex flex-col">
-            {/* Urgency accent bar */}
-            <div className={`h-1 w-full ${urg.bar} opacity-90`} />
+    // Derived Carta Aval State
+    const hasInsurance = e.tieneSeguro;
+    const cartaAval = e.cartasAval?.[0]; // Current latest record
+    
+    let avalUI = null;
+    if (hasInsurance) {
+        if (!cartaAval) {
+            avalUI = <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100/80 text-red-700 border border-red-200 px-2.5 py-1 text-[10px] uppercase tracking-wide font-black"><AlertTriangle size={12}/> Sin Aval</span>;
+        } else if (cartaAval.estado === "SOLICITADA") {
+            avalUI = <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100/80 text-amber-700 border border-amber-200 px-2.5 py-1 text-[10px] uppercase tracking-wide font-black"><Clock size={12}/> Solicitada</span>;
+        } else if (cartaAval.estado === "APROBADA") {
+            avalUI = <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100/80 text-green-700 border border-green-200 px-2.5 py-1 text-[10px] uppercase tracking-wide font-black"><CheckCircle size={12}/> Aprobada</span>;
+        } else {
+            avalUI = <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-100/80 text-rose-700 border border-rose-200 px-2.5 py-1 text-[10px] uppercase tracking-wide font-black"><XCircle size={12}/> Rechazada</span>;
+        }
+    }
 
-            <div className="p-5 flex flex-col gap-3.5 flex-1">
-                {/* Row 1 — Patient + urgency pill + time */}
-                <div className="flex justify-between items-start gap-2">
+    return (
+        <div className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-[2rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.04)] hover:shadow-[0_16px_48px_0_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col relative group">
+            {/* Urgency Top Glow */}
+            <div className={`absolute top-0 left-0 right-0 h-1.5 ${urg.bar} shadow-[0_2px_12px_rgba(0,0,0,0.2)]`} />
+
+            <div className="p-6 flex flex-col h-full gap-5">
+                
+                {/* Header: Identity & Urgency */}
+                <div className="flex justify-between items-start gap-4">
                     <div className="min-w-0">
-                        <p className="font-black text-gray-900 leading-tight truncate tracking-tight">{e.paciente}</p>
-                        <p className="text-xs text-gray-400/80 font-mono mt-0.5">{e.documento}</p>
+                        <h3 className="font-extrabold text-gray-900 text-[17px] leading-tight truncate tracking-tight">{e.paciente}</h3>
+                        <p className="text-xs text-gray-500 font-mono mt-0.5">{e.documento}</p>
                     </div>
-                    <div className="flex flex-col items-end gap-1.5 shrink-0">
-                        <span className={`rounded-full px-3 py-0.5 text-[11px] font-black shadow-sm ${urg.pill}`}>
+                    <div className="flex flex-col items-end gap-2 shrink-0">
+                        <span className={`rounded-xl px-2.5 py-1 text-[10px] font-black shadow-sm tracking-widest uppercase ${urg.pill}`}>
                             {urg.label}
                         </span>
-                        <span className="flex items-center gap-1 text-[11px] text-gray-400/70">
-                            <Clock size={10} /> {timeSince(e.fechaIngreso)}
+                        <span className="flex items-center gap-1.5 text-[11px] font-bold text-gray-500 bg-white/70 px-2.5 py-1 rounded-lg border border-white/80 shadow-sm backdrop-blur-sm">
+                            <Clock size={12} className="text-gray-400" /> {timeSince(e.fechaIngreso)}
                         </span>
                     </div>
                 </div>
 
-                {/* Row 2 — Motivo */}
-                <p className="text-sm text-gray-600 line-clamp-2 font-medium">{e.motivoIngreso}</p>
+                {/* Body: Medical Context */}
+                <div className="bg-gradient-to-br from-gray-50/80 to-gray-100/50 rounded-2xl p-3.5 border border-gray-100/60 shadow-inner flex flex-col gap-3">
+                    <div className="flex items-start gap-2.5">
+                        <Activity size={16} className="text-gray-400 mt-[2px] shrink-0" />
+                        <p className="text-[13px] text-gray-700 font-medium leading-snug line-clamp-2" title={e.motivoIngreso}>
+                            {e.motivoIngreso}
+                        </p>
+                    </div>
+                    
+                    <div className="flex items-center gap-2.5 pt-2 border-t border-gray-200/50">
+                        <User size={14} className={e.medico ? "text-blue-500" : "text-gray-400"} />
+                        <p className={`text-[12px] font-bold truncate ${e.medico ? 'text-blue-700' : 'text-gray-400'}`}>
+                            {e.medico ? e.medico.nombre : "Sin médico asignado"}
+                        </p>
+                    </div>
+                </div>
 
-                {/* Row 3 — Status + Insurance */}
-                <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold border border-white/60 shadow-sm ${st.color}`}>
-                        <StIcon size={11} /> {st.label}
-                    </span>
-                    {e.tieneSeguro && (
-                        <span className="inline-flex items-center gap-1.5 text-xs font-bold bg-blue-100/70 text-blue-800 border border-blue-200/60 rounded-full px-2.5 py-1 shadow-sm">
-                            <Shield size={10} /> {e.aseguradora}
+                {/* Body: Financial & Status */}
+                <div className="flex flex-col gap-2.5 mt-auto pt-1">
+                    {/* Status Badge */}
+                    <div className="flex items-center justify-between">
+                        <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Flujo Clínico</span>
+                        <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold shadow-sm ${st.color}`}>
+                            <StIcon size={12} /> {st.label}
                         </span>
-                    )}
+                    </div>
+
+                    {/* Financial Badge */}
+                    <div className="flex flex-wrap items-center justify-between gap-y-2 mt-1 bg-white/70 rounded-[14px] p-3 border border-gray-200/40 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+                        <div className="flex items-center gap-1.5">
+                            {hasInsurance ? (
+                                <span className="inline-flex items-center gap-1.5 text-[13px] font-bold text-blue-900 tracking-tight">
+                                    <Shield size={14} className="text-blue-500" /> {e.aseguradora}
+                                </span>
+                            ) : (
+                                <span className="inline-flex items-center gap-1.5 text-[13px] font-bold text-emerald-800 tracking-tight">
+                                    <UserCheck size={14} className="text-emerald-500" /> Particular
+                                </span>
+                            )}
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                            {avalUI}
+                            {!hasInsurance && <span className={`text-[11px] font-black uppercase tracking-wider ${pay.color}`}>{pay.label}</span>}
+                        </div>
+                    </div>
                 </div>
 
-                {/* Row 4 — Phone + Payment */}
-                <div className="flex justify-between items-center pt-2 border-t border-white/50">
-                    <span className="flex items-center gap-1.5 text-xs text-gray-400/80 font-medium">
-                        <Phone size={10} /> {e.telefono || "—"}
-                    </span>
-                    <span className={`text-xs font-bold ${pay.color}`}>{pay.label}</span>
-                </div>
-
-                {/* View Detail */}
-                <Link
-                    href={`/emergencias/${e.emergenciaId}?returnTo=${encodeURIComponent(pathname?.includes('/recepcion') ? '/recepcion?tab=EMERGENCIAS' : '/emergencias')}`}
-                    className="w-full flex items-center justify-center gap-1.5 text-sm font-bold text-red-600 hover:text-red-700 py-2.5 rounded-2xl hover:bg-red-50/60 transition-all border border-transparent hover:border-red-200/50"
+                {/* Footer Action */}
+                <button
+                    onClick={() => onViewDetails(e.emergenciaId)}
+                    className="w-full mt-2 flex items-center justify-center gap-2 text-[13px] font-black text-gray-700 bg-white hover:bg-gray-900 hover:text-white border border-gray-200 hover:border-transparent py-3 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 group-hover:scale-[1.01]"
                 >
-                    Ver Detalle <ArrowUpRight size={14} />
-                </Link>
+                    Ver Caso Completo <ArrowUpRight size={16} strokeWidth={2.5} className="opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-300" />
+                </button>
             </div>
         </div>
     );
@@ -489,6 +533,7 @@ export default function EmergenciasPage() {
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<"active" | "all" | "closed">("active");
     const [showModal, setShowModal] = useState(false);
+    const [selectedDetailId, setSelectedDetailId] = useState<string | null>(null);
 
     const fetchEmergencies = async () => {
         setLoading(true);
@@ -561,7 +606,7 @@ export default function EmergenciasPage() {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {emergencias.map(e => <EmergencyCard key={e.emergenciaId} e={e} />)}
+                    {emergencias.map(e => <EmergencyCard key={e.emergenciaId} e={e} onViewDetails={setSelectedDetailId} />)}
                 </div>
             )}
 
@@ -569,6 +614,15 @@ export default function EmergenciasPage() {
                 <NewAdmissionModal
                     onClose={() => setShowModal(false)}
                     onSuccess={() => { setShowModal(false); fetchEmergencies(); }}
+                />
+            )}
+
+            {selectedDetailId && (
+                <EmergenciaDetalleModal
+                    emergenciaId={selectedDetailId}
+                    initialData={emergencias.find(e => e.emergenciaId === selectedDetailId)}
+                    onClose={() => setSelectedDetailId(null)}
+                    onStatusChange={() => fetchEmergencies()}
                 />
             )}
         </div>

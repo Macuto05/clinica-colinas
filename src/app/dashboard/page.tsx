@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Calendar, PlusCircle, User as UserIcon, CreditCard } from "lucide-react";
 import { PaymentModal } from "@/components/billing/PaymentModal";
+import { PageLoader } from "@/components/ui/PageLoader";
 
 export default function DashboardPage() {
     const { user, loading } = useAuth();
@@ -19,42 +20,6 @@ export default function DashboardPage() {
     const [selectedInvoiceId, setSelectedInvoiceId] = useState("");
     const [paymentAmount, setPaymentAmount] = useState(0);
 
-    // Fetch Next Appointment
-    useEffect(() => {
-        const fetchNextAppointment = async () => {
-            if (!user || user.role !== 'PACIENTE') {
-                setIsLoadingNextAppt(false);
-                return;
-            }
-            try {
-                const patientId = (user as any).patientId;
-                if (!patientId) { setIsLoadingNextAppt(false); return; }
-
-                const response = await fetch(`/api/appointments?patientId=${patientId}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    const now = new Date();
-                    const futureAppointments = data.filter((apt: any) => {
-                        return apt.status === 'PROGRAMADA' || apt.status === 'PENDING';
-                    }).sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-                    if (futureAppointments.length > 0) {
-                        setNextAppointment(futureAppointments[0]);
-                    }
-                }
-            } catch (error) {
-                console.error("Failed to fetch next appointment", error);
-            } finally {
-                setIsLoadingNextAppt(false);
-            }
-        };
-
-        if (user) {
-            fetchNextAppointment();
-        }
-    }, [user]);
-
-    // Fetch Debt
     const fetchDebt = async () => {
         if (!user || (user as any).role !== 'PACIENTE') return;
         try {
@@ -64,8 +29,8 @@ export default function DashboardPage() {
                 const data = await res.json();
                 setDebt({
                     total: data.totalDeuda,
-                    totalEnRevision: data.totalEnRevision || 0, // Fallback safety
-                    totalDeudaBs: data.totalDeudaBs || 0, // Fallback safety
+                    totalEnRevision: data.totalEnRevision || 0,
+                    totalDeudaBs: data.totalDeudaBs || 0,
                     invoices: data.facturas
                 });
             }
@@ -74,8 +39,33 @@ export default function DashboardPage() {
         }
     };
 
+    // Fetch both next appointment and debt in parallel
     useEffect(() => {
-        if (user) fetchDebt();
+        if (!user || (user as any).role !== 'PACIENTE') {
+            setIsLoadingNextAppt(false);
+            return;
+        }
+        const patientId = (user as any).patientId;
+        if (!patientId) { setIsLoadingNextAppt(false); return; }
+
+        const fetchNextAppointment = async () => {
+            try {
+                const response = await fetch(`/api/appointments?patientId=${patientId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const future = data
+                        .filter((apt: any) => (apt.status === 'PROGRAMADA' || apt.status === 'PENDING') && apt.type !== 'EMERGENCIA')
+                        .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                    if (future.length > 0) setNextAppointment(future[0]);
+                }
+            } catch (error) {
+                console.error("Failed to fetch next appointment", error);
+            } finally {
+                setIsLoadingNextAppt(false);
+            }
+        };
+
+        Promise.all([fetchNextAppointment(), fetchDebt()]);
     }, [user]);
 
     const handlePayClick = (invoiceId?: string, amount?: number) => {
@@ -95,11 +85,7 @@ export default function DashboardPage() {
 
     // ... existing loading check ...
     if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-            </div>
-        );
+        return <PageLoader message="Cargando resumen..." minHeight="min-h-screen" />;
     }
 
     // ... displayName logic ...
@@ -164,7 +150,7 @@ export default function DashboardPage() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {/* Quick Action: New Appointment */}
                 <div className="bg-lime-500/95 backdrop-blur-xl rounded-3xl p-6 text-white shadow-[0_8px_20px_rgba(132,204,22,0.3)] border border-lime-400/50 relative overflow-hidden group cursor-pointer transition-transform hover:scale-[1.02]" onClick={() => router.push("/dashboard/citas/nueva")}>
                     <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
@@ -187,8 +173,8 @@ export default function DashboardPage() {
                     <div className="bg-lime-500/10 backdrop-blur-md border border-lime-500/20 shadow-inner w-12 h-12 rounded-full flex items-center justify-center mb-4 group-hover:bg-lime-500/20 transition-all">
                         <Calendar size={24} className="text-lime-600" />
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-1">Mis Citas</h3>
-                    <p className="text-gray-500 text-sm">Revisa tus próximas consultas y el historial de atenciones.</p>
+                    <h3 className="text-lg font-bold text-gray-900 mb-1">Mis Visitas</h3>
+                    <p className="text-gray-500 text-sm">Revisa tus próximas consultas y el historial de atenciones y emergencias.</p>
                 </div>
 
                 {/* Quick Action: Profile */}
@@ -199,15 +185,22 @@ export default function DashboardPage() {
                     <h3 className="text-lg font-bold text-gray-900 mb-1">Mi Perfil</h3>
                     <p className="text-gray-500 text-sm">Actualiza tus datos personales y de contacto.</p>
                 </div>
+
+                {/* Quick Action: Results */}
+                <div className="bg-white/40 backdrop-blur-md rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] border border-white/50 hover:bg-white/60 hover:border-lime-300/50 transition-all cursor-pointer group hover:shadow-lg" onClick={() => router.push("/dashboard/resultados")}>
+                    <div className="bg-blue-500/10 backdrop-blur-md border border-blue-500/20 shadow-inner w-12 h-12 rounded-full flex items-center justify-center mb-4 group-hover:bg-blue-500/20 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="m9 15 2 2 4-4"/></svg>
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-1">Mis Resultados</h3>
+                    <p className="text-gray-500 text-sm">Visualiza y descarga exámenes de laboratorio e imagenología.</p>
+                </div>
             </div>
 
             {/* Recent Activity / Next Appointment */}
             <div className="bg-white/40 backdrop-blur-md rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] border border-white/50">
                 <h2 className="text-lg font-bold text-gray-900 mb-4">Próxima Cita</h2>
                 {isLoadingNextAppt ? (
-                    <div className="text-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-lime-600 mx-auto"></div>
-                    </div>
+                    <PageLoader message="Buscando próxima cita..." minHeight="min-h-[100px]" />
                 ) : nextAppointment ? (
                     <div className="bg-white/50 backdrop-blur-md border border-white/60 rounded-3xl p-5 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                         <div className="flex items-start gap-4">

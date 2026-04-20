@@ -54,7 +54,7 @@ export default function CajaComprasPage() {
         }
     };
 
-    const handleConfirmApproval = async (pedidoId: string, assignments: { detalleId: string, proveedorId: string }[]) => {
+    const handleConfirmApproval = async (pedidoId: string, assignments: { detalleId: string, proveedorId: string, costoUnitario?: number }[]) => {
         if (!user || !user.id) return;
         setProcessingId(pedidoId);
 

@@ -48,23 +48,22 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
                 receta: {
                     include: { detalles: true }
                 },
-                ordenes: true
-            }
+                solicitudesLab: {
+                    include: { detalles: { include: { examen: true } } }
+                },
+                solicitudesImg: {
+                    include: { detalles: { include: { examen: true } } }
+                }
+            } as any
         });
 
         if (!app) {
             return NextResponse.json({ error: "Cita no encontrada" }, { status: 404 });
         }
 
-        // Ownership Check
-        // If user is PATIENT, they must own the appointment
+        // Ownership Check — this is a patient-facing endpoint
         if (userRole === 'PACIENTE') {
-            // We need to verify if the user is linked to this patient.
-            // Option 1: payload has patientId
-            // Option 2: fetch User -> Patient link
-
             if (!patientId) {
-                // Fetch from DB if not in token
                 const userRecord = await prisma.usuario.findUnique({
                     where: { usuarioId: BigInt(userId) },
                     include: { paciente: true }
@@ -73,20 +72,30 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
                     patientId = userRecord.paciente.pacienteId;
                 }
             }
-
             if (!patientId || BigInt(patientId) !== app.pacienteId) {
                 return NextResponse.json({ error: "No tienes permiso para ver esta cita" }, { status: 403 });
             }
+        } else if (userRole === 'MEDICO') {
+            // Doctors can only see appointments assigned to them
+            const medicoRecord = await (prisma as any).medico.findFirst({
+                where: { empleado: { usuarioId: BigInt(userId) } },
+                select: { medicoId: true }
+            });
+            if (!medicoRecord || medicoRecord.medicoId !== app.medicoId) {
+                return NextResponse.json({ error: "No tienes permiso para ver esta cita" }, { status: 403 });
+            }
+        } else if (userRole !== 'ADMIN' && userRole !== 'RECEPCION') {
+            return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
         }
 
         // Format Response (Simplified for Patient View)
         const formatted = {
             id: app.citaId.toString(),
             doctor: {
-                nombre: app.medico.empleado
-                    ? `${app.medico.empleado.nombres} ${app.medico.empleado.apellidos}`
+                nombre: (app as any).medico?.empleado
+                    ? `${(app as any).medico.empleado.nombres} ${(app as any).medico.empleado.apellidos}`
                     : 'Dr. No Asignado',
-                especialidad: app.medico.especialidad.nombre || 'General'
+                especialidad: (app as any).medico?.especialidad?.nombre || 'General'
             },
             hora: (() => {
                 const d = new Date(app.horaInicio);
@@ -100,12 +109,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
             motivo: app.motivoConsulta,
             estado: app.estadoCita,
             tipo: app.tipoCita,
-            diagnostico: app.diagnostico ? {
-                descripcion: app.diagnostico.descripcion,
-                notas: app.diagnostico.notas
+            diagnostico: (app as any).diagnostico ? {
+                descripcion: (app as any).diagnostico.descripcion,
+                notas: (app as any).diagnostico.notas
             } : null,
-            receta: app.receta ? {
-                detalles: app.receta.detalles.map(d => ({
+            receta: (app as any).receta ? {
+                detalles: (app as any).receta.detalles.map((d: any) => ({
                     medicamento: d.medicamento,
                     dosis: d.dosis,
                     frecuencia: d.frecuencia,
@@ -113,10 +122,14 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
                     instrucciones: d.instrucciones
                 }))
             } : null,
-            ordenes: app.ordenes ? app.ordenes.map(o => ({
-                tipo: o.tipo,
-                estudio: o.estudio,
-            })) : []
+            ordenes: [
+                ...((app as any).solicitudesLab || []).flatMap((sol: any) => 
+                    sol.detalles.map((det: any) => ({ tipo: 'Laboratorio', estudio: det.examen.nombre }))
+                ),
+                ...((app as any).solicitudesImg || []).flatMap((sol: any) => 
+                    sol.detalles.map((det: any) => ({ tipo: 'Imagenología', estudio: det.examen.nombre }))
+                )
+            ]
         };
 
         return NextResponse.json(formatted);

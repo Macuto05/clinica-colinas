@@ -81,7 +81,7 @@ export async function GET(req: Request) {
         const isFiltering = !!(search || dateRegister || datePayment);
         const limit = (statusParam === 'HISTORIAL' && !isFiltering) ? 50 : undefined;
 
-        console.log("Fetching Payments with params:", { statusParam, search, dateRegister, datePayment });
+
 
         const pagos = await prisma.pago.findMany({
             where: whereCondition,
@@ -102,11 +102,7 @@ export async function GET(req: Request) {
             take: limit
         }) as any[];
 
-        if (pagos.length > 0) {
-            console.log("DEBUG: Sample Payment[0] Keys:", Object.keys(pagos[0]));
-            console.log("DEBUG: Sample Payment[0] fechaRegistro:", pagos[0].fechaRegistro);
-            console.log("DEBUG: Sample Payment[0] fechaPago:", pagos[0].fechaPago);
-        }
+
 
         const formattedPagos = pagos.map(p => ({
             pagoId: p.pagoId.toString(),
@@ -121,7 +117,7 @@ export async function GET(req: Request) {
             // Format Bank Info
             bancoDepositado: (p as any).cuentaBancaria
                 ? `${(p as any).cuentaBancaria.banco} (${(p as any).cuentaBancaria.numeroCuenta.slice(-4)})`
-                : null, // Legacy notes removed from DB
+                : (p.canalPago === 'SEGURO' ? 'Aseguradora' : null),
             paciente: `${p.factura.cita.paciente.nombres} ${p.factura.cita.paciente.apellidos}`,
             cedula: p.factura.cita.paciente.documentoIdentidad,
             facturaId: p.facturaId.toString(),

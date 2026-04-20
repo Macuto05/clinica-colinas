@@ -18,11 +18,16 @@ export default function ExchangeRateWidget() {
     const fetchRate = async () => {
         setLoading(true);
         try {
-            const res = await fetch("/api/admin/config/exchange-rate", { cache: "no-store" });
+            const res = await fetch("/api/billing/config/bcv", { cache: "no-store" });
             if (res.ok) {
                 const data = await res.json();
-                if (data.rate) {
-                    setRate(data.rate);
+                if (data.tasa) {
+                    setRate({
+                        valor: data.tasa,
+                        fecha: data.fechaActualizacion,
+                        moneda: "USD",
+                        fuente: data.fuente ?? "BCV",
+                    });
                     setError(false);
                 }
             } else {
@@ -37,6 +42,13 @@ export default function ExchangeRateWidget() {
 
     useEffect(() => {
         fetchRate();
+
+        const handleUpdate = () => {
+            fetchRate();
+        };
+
+        window.addEventListener("bcv-update", handleUpdate);
+        return () => window.removeEventListener("bcv-update", handleUpdate);
     }, []);
 
     const handleRefresh = (e: React.MouseEvent) => {

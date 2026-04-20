@@ -28,29 +28,32 @@ model Rol {
 }
 
 model Usuario {
-  usuarioId            BigInt                 @id @default(autoincrement()) @map("usuario_id")
-  rolId                BigInt                 @map("rol_id")
-  email                String                 @unique @db.VarChar(255)
-  passwordHash         String                 @map("password_hash")
-  estado               UsuarioEstado          @default(ACTIVO)
-  fechaCreacion        DateTime               @default(now()) @map("fecha_creacion") @db.Timestamptz(6)
-  ultimoAcceso         DateTime?              @map("ultimo_acceso") @db.Timestamptz(6)
-  citasCreadas         CitaMedica[]           @relation("UsuarioCreaCita")
-  empleado             Empleado?
-  facturasEmitidas     Factura[]              @relation("UsuarioEmiteFactura")
-  horariosActualizados MedicoHorario[]
-  movimientos          MovimientoInventario[]
-  paciente             Paciente?
-  pagosRegistrados     Pago[]                 @relation("UsuarioRegistraPago")
-  resultadosCargados   ResultadoLaboratorio[]
-  respuestasIns        SolicitudInsumo[]      @relation("UsuarioRespondeInsumo")
-  solicitudesIns       SolicitudInsumo[]      @relation("UsuarioSolicitaInsumo")
-  solicitudesLab       SolicitudLaboratorio[]
-  rol                  Rol                    @relation(fields: [rolId], references: [rolId])
-  pedidosSolicitados   PedidoCompra[]         @relation("UsuarioSolicitaPedido")
-  pedidosAprobados     PedidoCompra[]         @relation("UsuarioApruebaPedido")
-  diagnosticos         Diagnostico[]
-  historiasActualizadas HistoriaClinica[] @relation("UsuarioActualizaHistoria")
+  usuarioId             BigInt                  @id @default(autoincrement()) @map("usuario_id")
+  rolId                 BigInt                  @map("rol_id")
+  email                 String                  @unique @db.VarChar(255)
+  passwordHash          String                  @map("password_hash")
+  estado                UsuarioEstado           @default(ACTIVO)
+  fechaCreacion         DateTime                @default(now()) @map("fecha_creacion") @db.Timestamptz(6)
+  ultimoAcceso          DateTime?               @map("ultimo_acceso") @db.Timestamptz(6)
+  citasCreadas          CitaMedica[]            @relation("UsuarioCreaCita")
+  empleado              Empleado?
+  facturasEmitidas      Factura[]               @relation("UsuarioEmiteFactura")
+  horariosActualizados  MedicoHorario[]
+  movimientos           MovimientoInventario[]
+  paciente              Paciente?
+  pagosRegistrados      Pago[]                  @relation("UsuarioRegistraPago")
+  resultadosCargados    ResultadoLaboratorio[]
+  resultadosImgCargados ResultadoImagenologia[]
+  respuestasIns         SolicitudInsumo[]       @relation("UsuarioRespondeInsumo")
+  solicitudesIns        SolicitudInsumo[]       @relation("UsuarioSolicitaInsumo")
+  solicitudesLab        SolicitudLaboratorio[]
+  solicitudesImg        SolicitudImagenologia[]
+  rol                   Rol                     @relation(fields: [rolId], references: [rolId])
+  pedidosSolicitados    PedidoCompra[]          @relation("UsuarioSolicitaPedido")
+  pedidosAprobados      PedidoCompra[]          @relation("UsuarioApruebaPedido")
+  diagnosticos          Diagnostico[]
+  historiasActualizadas HistoriaClinica[]       @relation("UsuarioActualizaHistoria")
+  cargosGenerados       CargoCuentaPaciente[]
 
   @@map("usuario")
 }
@@ -87,22 +90,23 @@ model Medico {
 }
 
 model Paciente {
-  pacienteId         BigInt         @id @default(autoincrement()) @map("paciente_id")
-  usuarioId          BigInt?        @unique @map("usuario_id")
-  nombres            String         @db.VarChar(120)
-  apellidos          String         @db.VarChar(120)
-  documentoIdentidad String?        @unique @map("documento_identidad") @db.VarChar(40)
-  fechaNacimiento    DateTime?      @map("fecha_nacimiento") @db.Date
-  sexo               String?        @db.VarChar(20)
-  telefono           String?        @db.VarChar(40)
-  correo             String?        @db.VarChar(255)
+  pacienteId         BigInt           @id @default(autoincrement()) @map("paciente_id")
+  usuarioId          BigInt?          @unique @map("usuario_id")
+  nombres            String           @db.VarChar(120)
+  apellidos          String           @db.VarChar(120)
+  documentoIdentidad String?          @unique @map("documento_identidad") @db.VarChar(40)
+  fechaNacimiento    DateTime?        @map("fecha_nacimiento") @db.Date
+  sexo               String?          @db.VarChar(20)
+  telefono           String?          @db.VarChar(40)
+  correo             String?          @db.VarChar(255)
   direccion          String?
-  estado             PacienteEstado @default(ACTIVO)
+  estado             PacienteEstado   @default(ACTIVO)
   citas              CitaMedica[]
-  usuario            Usuario?       @relation(fields: [usuarioId], references: [usuarioId])
+  usuario            Usuario?         @relation(fields: [usuarioId], references: [usuarioId])
   historiaClinica    HistoriaClinica?
   polizas            Poliza[]
   emergencias        Emergencia[]
+  facturas           Factura[]
 
   @@map("paciente")
 }
@@ -136,33 +140,37 @@ model MedicoHorarioDetalle {
 }
 
 model CitaMedica {
-  citaId            BigInt                 @id @default(autoincrement()) @map("cita_id")
-  pacienteId        BigInt                 @map("paciente_id")
-  medicoId          BigInt                 @map("medico_id")
-  fechaCita         DateTime               @map("fecha_cita") @db.Date
-  horaInicio        DateTime               @map("hora_inicio") @db.Time(6)
-  horaFin           DateTime               @map("hora_fin") @db.Time(6)
-  motivoConsulta    String?                @map("motivo_consulta")
-  estadoCita        CitaEstado             @default(PROGRAMADA) @map("estado_cita")
-  tipoCita          CitaTipo               @default(CONSULTA) @map("tipo_cita")
-  origenCita        CitaOrigen             @default(WEB) @map("origen_cita")
+  citaId            BigInt                  @id @default(autoincrement()) @map("cita_id")
+  pacienteId        BigInt                  @map("paciente_id")
+  medicoId          BigInt                  @map("medico_id")
+  fechaCita         DateTime                @map("fecha_cita") @db.Date
+  horaInicio        DateTime                @map("hora_inicio") @db.Time(6)
+  horaFin           DateTime                @map("hora_fin") @db.Time(6)
+  motivoConsulta    String?                 @map("motivo_consulta")
+  estadoCita        CitaEstado              @default(PROGRAMADA) @map("estado_cita")
+  tipoCita          CitaTipo                @default(CONSULTA) @map("tipo_cita")
+  origenCita        CitaOrigen              @default(WEB) @map("origen_cita")
   observaciones     String?
-  fechaCreacion     DateTime               @default(now()) @map("fecha_creacion") @db.Timestamptz(6)
-  usuarioCreacion   BigInt                 @map("usuario_creacion")
-  medico            Medico                 @relation(fields: [medicoId], references: [empleadoId])
-  paciente          Paciente               @relation(fields: [pacienteId], references: [pacienteId])
-  creador           Usuario                @relation("UsuarioCreaCita", fields: [usuarioCreacion], references: [usuarioId])
+  fechaCreacion     DateTime                @default(now()) @map("fecha_creacion") @db.Timestamptz(6)
+  usuarioCreacion   BigInt                  @map("usuario_creacion")
+  medico            Medico                  @relation(fields: [medicoId], references: [empleadoId])
+  paciente          Paciente                @relation(fields: [pacienteId], references: [pacienteId])
+  creador           Usuario                 @relation("UsuarioCreaCita", fields: [usuarioCreacion], references: [usuarioId])
   documentos        DocumentoClinico[]
   factura           Factura?
   solicitudesInsumo SolicitudInsumo[]
   solicitudesLab    SolicitudLaboratorio[]
+  solicitudesImg    SolicitudImagenologia[]
   diagnostico       Diagnostico?
   receta            Receta?
-  ordenes           OrdenMedica[]
   cartasAval        CartaAval[]
   emergencia        Emergencia?
+  cargosCuenta      CargoCuentaPaciente[]
 
   @@unique([medicoId, fechaCita, horaInicio], name: "uq_cita_slot")
+  @@index([pacienteId])
+  @@index([medicoId, fechaCita])
+  @@index([estadoCita])
   @@map("cita_medica")
 }
 
@@ -178,7 +186,9 @@ model MetodoPago {
 
 model Factura {
   facturaId      BigInt           @id @default(autoincrement()) @map("factura_id")
-  citaId         BigInt           @unique @map("cita_id")
+  pacienteId     BigInt           @map("paciente_id")
+  citaId         BigInt?          @unique @map("cita_id")
+  emergenciaId   BigInt?          @unique @map("emergencia_id")
   numeroFactura  String?          @unique @map("numero_factura") @db.VarChar(60)
   fechaEmision   DateTime         @default(now()) @map("fecha_emision") @db.Timestamptz(6)
   estadoFactura  FacturaEstado    @default(PENDIENTE) @map("estado_factura")
@@ -190,11 +200,16 @@ model Factura {
   montoAsegurado Decimal          @default(0) @map("monto_asegurado") @db.Decimal(12, 2)
   observaciones  String?
   usuarioEmision BigInt           @map("usuario_emision")
-  cita           CitaMedica       @relation(fields: [citaId], references: [citaId])
+  paciente       Paciente         @relation(fields: [pacienteId], references: [pacienteId])
+  cita           CitaMedica?      @relation(fields: [citaId], references: [citaId])
+  emergencia     Emergencia?      @relation(fields: [emergenciaId], references: [emergenciaId])
   emisor         Usuario          @relation("UsuarioEmiteFactura", fields: [usuarioEmision], references: [usuarioId])
   detalles       FacturaDetalle[]
   pagos          Pago[]
 
+  @@index([pacienteId])
+  @@index([estadoFactura])
+  @@index([emergenciaId])
   @@map("factura")
 }
 
@@ -213,24 +228,27 @@ model FacturaDetalle {
 }
 
 model Pago {
-  pagoId            BigInt     @id @default(autoincrement()) @map("pago_id")
-  facturaId         BigInt     @map("factura_id")
-  monto             Decimal    @db.Decimal(12, 2)
-  fechaPago         DateTime   @default(now()) @map("fecha_pago") @db.Timestamptz(6)
-  fechaRegistro     DateTime   @default(now()) @map("fecha_registro") @db.Timestamptz(6) // New System Timestamp
-  estadoPago        PagoEstado @default(PENDIENTE) @map("estado_pago")
-  metodoPagoId      BigInt     @map("metodo_pago_id")
-  referenciaExterna String?    @map("referencia_externa") @db.VarChar(120)
-  canalPago         PagoCanal  @default(PRESENCIAL) @map("canal_pago")
-  montoBs           Decimal?   @map("monto_bs") @db.Decimal(12, 2)
-  tasaCambio        Decimal?   @map("tasa_cambio") @db.Decimal(10, 2)
-  usuarioRegistro   BigInt     @map("usuario_registro")
-  cuentaBancariaId  Int?       @map("cuenta_bancaria_id")
-  factura           Factura    @relation(fields: [facturaId], references: [facturaId])
-  metodoPago        MetodoPago @relation(fields: [metodoPagoId], references: [metodoPagoId])
-  registrador       Usuario    @relation("UsuarioRegistraPago", fields: [usuarioRegistro], references: [usuarioId])
+  pagoId            BigInt          @id @default(autoincrement()) @map("pago_id")
+  facturaId         BigInt          @map("factura_id")
+  monto             Decimal         @db.Decimal(12, 2)
+  fechaPago         DateTime        @default(now()) @map("fecha_pago") @db.Timestamptz(6)
+  fechaRegistro     DateTime        @default(now()) @map("fecha_registro") @db.Timestamptz(6) // New System Timestamp
+  estadoPago        PagoEstado      @default(PENDIENTE) @map("estado_pago")
+  metodoPagoId      BigInt          @map("metodo_pago_id")
+  referenciaExterna String?         @map("referencia_externa") @db.VarChar(120)
+  canalPago         PagoCanal       @default(PRESENCIAL) @map("canal_pago")
+  montoBs           Decimal?        @map("monto_bs") @db.Decimal(12, 2)
+  tasaCambio        Decimal?        @map("tasa_cambio") @db.Decimal(10, 2)
+  usuarioRegistro   BigInt          @map("usuario_registro")
+  cuentaBancariaId  Int?            @map("cuenta_bancaria_id")
+  factura           Factura         @relation(fields: [facturaId], references: [facturaId])
+  metodoPago        MetodoPago      @relation(fields: [metodoPagoId], references: [metodoPagoId])
+  registrador       Usuario         @relation("UsuarioRegistraPago", fields: [usuarioRegistro], references: [usuarioId])
   cuentaBancaria    CuentaBancaria? @relation(fields: [cuentaBancariaId], references: [cuentaId])
 
+  @@index([facturaId])
+  @@index([estadoPago])
+  @@index([fechaRegistro])
   @@map("pago")
 }
 
@@ -243,11 +261,13 @@ model Insumo {
   unidadMedida       String                   @map("unidad_medida") @db.VarChar(40)
   categoria          String                   @db.VarChar(60)
   activo             Boolean                  @default(true)
+  precioVenta        Decimal?                 @map("precio_venta") @db.Decimal(14, 4)
   detalleMovimientos MovimientoDetalle[]
   detalleSolicitudes SolicitudInsumoDetalle[]
   pedidoDetalles     PedidoCompraDetalle[]
   stock              Stock[]
   lotes              Lote[]
+  cargosCuenta       CargoCuentaPaciente[]
 
   @@map("insumo")
 }
@@ -279,13 +299,13 @@ model Stock {
 }
 
 model Proveedor {
-  proveedorId BigInt                 @id @default(autoincrement()) @map("proveedor_id")
-  nombre      String                 @db.VarChar(160)
-  rifNif      String?                @unique @map("rif_nif") @db.VarChar(40)
-  telefono    String?                @db.VarChar(40)
-  correo      String?                @db.VarChar(255)
-  direccion   String?
-  activo      Boolean                @default(true)
+  proveedorId    BigInt                @id @default(autoincrement()) @map("proveedor_id")
+  nombre         String                @db.VarChar(160)
+  rifNif         String?               @unique @map("rif_nif") @db.VarChar(40)
+  telefono       String?               @db.VarChar(40)
+  correo         String?               @db.VarChar(255)
+  direccion      String?
+  activo         Boolean               @default(true)
   pedidosDetalle PedidoCompraDetalle[]
 
   @@map("proveedor")
@@ -306,6 +326,8 @@ model SolicitudInsumo {
   solicitante       Usuario                  @relation("UsuarioSolicitaInsumo", fields: [usuarioSolicita], references: [usuarioId])
   detalles          SolicitudInsumoDetalle[]
 
+  @@index([citaId])
+  @@index([estadoSolicitud])
   @@map("solicitud_insumo")
 }
 
@@ -323,20 +345,21 @@ model SolicitudInsumoDetalle {
 }
 
 model MovimientoInventario {
-  movimientoId      BigInt              @id @default(autoincrement()) @map("movimiento_id")
-  almacenId         BigInt              @map("almacen_id")
-  tipoMovimiento    MovimientoTipo      @map("tipo_movimiento")
-  fechaMovimiento   DateTime            @default(now()) @map("fecha_movimiento") @db.Timestamptz(6)
-  usuarioId         BigInt              @map("usuario_id")
-  solicitudInsumoId BigInt?             @map("solicitud_insumo_id")
-  pedidoCompraId    BigInt?             @map("pedido_compra_id")
-  referencia        String?             @db.VarChar(120)
+  movimientoId      BigInt                @id @default(autoincrement()) @map("movimiento_id")
+  almacenId         BigInt                @map("almacen_id")
+  tipoMovimiento    MovimientoTipo        @map("tipo_movimiento")
+  fechaMovimiento   DateTime              @default(now()) @map("fecha_movimiento") @db.Timestamptz(6)
+  usuarioId         BigInt                @map("usuario_id")
+  solicitudInsumoId BigInt?               @map("solicitud_insumo_id")
+  pedidoCompraId    BigInt?               @map("pedido_compra_id")
+  referencia        String?               @db.VarChar(120)
   observaciones     String?
   detalles          MovimientoDetalle[]
-  almacen           Almacen             @relation(fields: [almacenId], references: [almacenId])
-  solicitudInsumo   SolicitudInsumo?    @relation(fields: [solicitudInsumoId], references: [solicitudInsumoId])
-  pedidoCompra      PedidoCompra?       @relation(fields: [pedidoCompraId], references: [pedidoId])
-  usuario           Usuario             @relation(fields: [usuarioId], references: [usuarioId])
+  almacen           Almacen               @relation(fields: [almacenId], references: [almacenId])
+  solicitudInsumo   SolicitudInsumo?      @relation(fields: [solicitudInsumoId], references: [solicitudInsumoId])
+  pedidoCompra      PedidoCompra?         @relation(fields: [pedidoCompraId], references: [pedidoId])
+  usuario           Usuario               @relation(fields: [usuarioId], references: [usuarioId])
+  cargosCuenta      CargoCuentaPaciente[]
 
   @@map("movimiento_inventario")
 }
@@ -355,11 +378,13 @@ model MovimientoDetalle {
 }
 
 model ExamenLaboratorio {
-  examenId    BigInt                        @id @default(autoincrement()) @map("examen_id")
-  nombre      String                        @unique @db.VarChar(120)
-  descripcion String?
-  activo      Boolean                       @default(true)
-  detalles    SolicitudLaboratorioDetalle[]
+  examenId     BigInt                        @id @default(autoincrement()) @map("examen_id")
+  nombre       String                        @unique @db.VarChar(120)
+  descripcion  String?
+  precio       Decimal                       @default(0) @db.Decimal(12, 2)
+  activo       Boolean                       @default(true)
+  detalles     SolicitudLaboratorioDetalle[]
+  cargosCuenta CargoCuentaPaciente[]
 
   @@map("examen_laboratorio")
 }
@@ -375,6 +400,8 @@ model SolicitudLaboratorio {
   solicitante     Usuario                       @relation(fields: [usuarioSolicita], references: [usuarioId])
   detalles        SolicitudLaboratorioDetalle[]
 
+  @@index([citaId])
+  @@index([estadoSolicitud])
   @@map("solicitud_laboratorio")
 }
 
@@ -403,16 +430,73 @@ model ResultadoLaboratorio {
   @@map("resultado_laboratorio")
 }
 
+// ========== IMAGENOLOGÍA ==========
+
+model ExamenImagenologia {
+  examenId     BigInt                         @id @default(autoincrement()) @map("examen_id")
+  nombre       String                         @unique @db.VarChar(120)
+  descripcion  String?
+  precio       Decimal                        @default(0) @db.Decimal(12, 2)
+  activo       Boolean                        @default(true)
+  detalles     SolicitudImagenologiaDetalle[]
+  cargosCuenta CargoCuentaPaciente[]
+
+  @@map("examen_imagenologia")
+}
+
+model SolicitudImagenologia {
+  solicitudImgId  BigInt                         @id @default(autoincrement()) @map("solicitud_img_id")
+  citaId          BigInt                         @map("cita_id")
+  usuarioSolicita BigInt                         @map("usuario_solicita")
+  fechaSolicitud  DateTime                       @default(now()) @map("fecha_solicitud") @db.Timestamptz(6)
+  estadoSolicitud SolicitudLabEstado             @default(PENDIENTE) @map("estado_solicitud")
+  observaciones   String?
+  cita            CitaMedica                     @relation(fields: [citaId], references: [citaId])
+  solicitante     Usuario                        @relation(fields: [usuarioSolicita], references: [usuarioId])
+  detalles        SolicitudImagenologiaDetalle[]
+
+  @@index([citaId])
+  @@index([estadoSolicitud])
+  @@map("solicitud_imagenologia")
+}
+
+model SolicitudImagenologiaDetalle {
+  detalleImgId   BigInt                 @id @default(autoincrement()) @map("detalle_img_id")
+  solicitudImgId BigInt                 @map("solicitud_img_id")
+  examenId       BigInt                 @map("examen_id")
+  resultado      ResultadoImagenologia?
+  examen         ExamenImagenologia     @relation(fields: [examenId], references: [examenId])
+  solicitud      SolicitudImagenologia  @relation(fields: [solicitudImgId], references: [solicitudImgId], onDelete: Cascade)
+
+  @@unique([solicitudImgId, examenId], name: "uq_solimg_det")
+  @@map("solicitud_imagenologia_detalle")
+}
+
+model ResultadoImagenologia {
+  resultadoId        BigInt                       @id @default(autoincrement()) @map("resultado_id")
+  detalleImgId       BigInt                       @unique @map("detalle_img_id")
+  fechaResultado     DateTime                     @default(now()) @map("fecha_resultado") @db.Timestamptz(6)
+  observacionGeneral String?                      @map("observacion_general")
+  usuarioCarga       BigInt                       @map("usuario_carga")
+  documentos         DocumentoClinico?
+  detalleSol         SolicitudImagenologiaDetalle @relation(fields: [detalleImgId], references: [detalleImgId])
+  cargador           Usuario                      @relation(fields: [usuarioCarga], references: [usuarioId])
+
+  @@map("resultado_imagenologia")
+}
+
 model DocumentoClinico {
-  documentoId   BigInt               @id @default(autoincrement()) @map("documento_id")
-  resultadoId   BigInt               @unique @map("resultado_id")
-  citaId        BigInt               @map("cita_id")
-  nombreArchivo String               @map("nombre_archivo") @db.VarChar(255)
-  rutaArchivo   String               @map("ruta_archivo")
-  tipoDocumento DocumentoTipo        @default(RESULTADO_LAB) @map("tipo_documento")
-  fechaCarga    DateTime             @default(now()) @map("fecha_carga") @db.Timestamptz(6)
-  cita          CitaMedica           @relation(fields: [citaId], references: [citaId])
-  resultado     ResultadoLaboratorio @relation(fields: [resultadoId], references: [resultadoId])
+  documentoId    BigInt                 @id @default(autoincrement()) @map("documento_id")
+  resultadoId    BigInt?                @unique @map("resultado_id")
+  resultadoImgId BigInt?                @unique @map("resultado_img_id")
+  citaId         BigInt                 @map("cita_id")
+  nombreArchivo  String                 @map("nombre_archivo") @db.VarChar(255)
+  rutaArchivo    String                 @map("ruta_archivo")
+  tipoDocumento  DocumentoTipo          @default(RESULTADO_LAB) @map("tipo_documento")
+  fechaCarga     DateTime               @default(now()) @map("fecha_carga") @db.Timestamptz(6)
+  cita           CitaMedica             @relation(fields: [citaId], references: [citaId])
+  resultado      ResultadoLaboratorio?  @relation(fields: [resultadoId], references: [resultadoId])
+  resultadoImg   ResultadoImagenologia? @relation(fields: [resultadoImgId], references: [resultadoId])
 
   @@map("documento_clinico")
 }
@@ -460,6 +544,7 @@ enum CitaTipo {
 }
 
 enum FacturaEstado {
+  EN_REVISION
   PENDIENTE
   PARCIAL
   PAGADA
@@ -535,42 +620,43 @@ model TasaDeCambio {
 }
 
 model PedidoCompra {
-  pedidoId          BigInt                @id @default(autoincrement()) @map("pedido_id")
-  usuarioSolicita   BigInt                @map("usuario_solicita")
-  fechaSolicitud    DateTime              @default(now()) @map("fecha_solicitud") @db.Timestamptz(6)
-  estado            PedidoEstado          @default(PENDIENTE)
-  usuarioAprueba    BigInt?               @map("usuario_aprueba")
-  fechaAprobacion   DateTime?             @map("fecha_aprobacion") @db.Timestamptz(6)
-  observaciones     String?
-  detalles          PedidoCompraDetalle[]
-  movimientos       MovimientoInventario[]
-  solicitante       Usuario               @relation("UsuarioSolicitaPedido", fields: [usuarioSolicita], references: [usuarioId])
-  aprobador         Usuario?              @relation("UsuarioApruebaPedido", fields: [usuarioAprueba], references: [usuarioId])
+  pedidoId        BigInt                 @id @default(autoincrement()) @map("pedido_id")
+  usuarioSolicita BigInt                 @map("usuario_solicita")
+  fechaSolicitud  DateTime               @default(now()) @map("fecha_solicitud") @db.Timestamptz(6)
+  estado          PedidoEstado           @default(PENDIENTE)
+  usuarioAprueba  BigInt?                @map("usuario_aprueba")
+  fechaAprobacion DateTime?              @map("fecha_aprobacion") @db.Timestamptz(6)
+  observaciones   String?
+  detalles        PedidoCompraDetalle[]
+  movimientos     MovimientoInventario[]
+  solicitante     Usuario                @relation("UsuarioSolicitaPedido", fields: [usuarioSolicita], references: [usuarioId])
+  aprobador       Usuario?               @relation("UsuarioApruebaPedido", fields: [usuarioAprueba], references: [usuarioId])
 
   @@map("pedido_compra")
 }
 
 model PedidoCompraDetalle {
-  detalleId       BigInt       @id @default(autoincrement()) @map("detalle_id")
-  pedidoId        BigInt       @map("pedido_id")
-  insumoId        BigInt       @map("insumo_id")
-  cantidad        Decimal      @db.Decimal(14, 2)
-  proveedorId     BigInt?      @map("proveedor_id")
-  pedido          PedidoCompra @relation(fields: [pedidoId], references: [pedidoId], onDelete: Cascade)
-  insumo          Insumo       @relation(fields: [insumoId], references: [insumoId])
-  proveedor       Proveedor?   @relation(fields: [proveedorId], references: [proveedorId])
+  detalleId     BigInt       @id @default(autoincrement()) @map("detalle_id")
+  pedidoId      BigInt       @map("pedido_id")
+  insumoId      BigInt       @map("insumo_id")
+  cantidad      Decimal      @db.Decimal(14, 2)
+  proveedorId   BigInt?      @map("proveedor_id")
+  costoUnitario Decimal?     @map("costo_unitario") @db.Decimal(14, 4)
+  pedido        PedidoCompra @relation(fields: [pedidoId], references: [pedidoId], onDelete: Cascade)
+  insumo        Insumo       @relation(fields: [insumoId], references: [insumoId])
+  proveedor     Proveedor?   @relation(fields: [proveedorId], references: [proveedorId])
 
   @@map("pedido_compra_detalle")
 }
 
 model Lote {
-  loteId           BigInt        @id @default(autoincrement()) @map("lote_id")
-  insumoId         BigInt        @map("insumo_id")
-  codigo           String        @db.VarChar(60)
-  fechaVencimiento DateTime?     @map("fecha_vencimiento") @db.Date
-  fechaFabricacion DateTime?     @map("fecha_fabricacion") @db.Date
-  activo           Boolean       @default(true)
-  insumo           Insumo        @relation(fields: [insumoId], references: [insumoId])
+  loteId           BigInt              @id @default(autoincrement()) @map("lote_id")
+  insumoId         BigInt              @map("insumo_id")
+  codigo           String              @db.VarChar(60)
+  fechaVencimiento DateTime?           @map("fecha_vencimiento") @db.Date
+  fechaFabricacion DateTime?           @map("fecha_fabricacion") @db.Date
+  activo           Boolean             @default(true)
+  insumo           Insumo              @relation(fields: [insumoId], references: [insumoId])
   stock            StockLote[]
   movimientos      MovimientoDetalle[]
 
@@ -579,12 +665,12 @@ model Lote {
 }
 
 model StockLote {
-  stockLoteId    BigInt   @id @default(autoincrement()) @map("stock_lote_id")
-  almacenId      BigInt   @map("almacen_id")
-  loteId         BigInt   @map("lote_id")
-  cantidadActual Decimal  @default(0) @map("cantidad_actual") @db.Decimal(14, 2)
-  almacen        Almacen  @relation(fields: [almacenId], references: [almacenId])
-  lote           Lote     @relation(fields: [loteId], references: [loteId])
+  stockLoteId    BigInt  @id @default(autoincrement()) @map("stock_lote_id")
+  almacenId      BigInt  @map("almacen_id")
+  loteId         BigInt  @map("lote_id")
+  cantidadActual Decimal @default(0) @map("cantidad_actual") @db.Decimal(14, 2)
+  almacen        Almacen @relation(fields: [almacenId], references: [almacenId])
+  lote           Lote    @relation(fields: [loteId], references: [loteId])
 
   @@unique([almacenId, loteId], name: "uq_stock_lote")
   @@map("stock_lote")
@@ -607,66 +693,54 @@ model Configuracion {
 }
 
 model CuentaBancaria {
-  cuentaId      Int      @id @default(autoincrement()) @map("cuenta_id")
-  banco         String   @db.VarChar(80)
-  numeroCuenta  String   @unique @map("numero_cuenta") @db.VarChar(50)
-  titular       String   @db.VarChar(120)
-  rifTitular    String   @map("rif_titular") @db.VarChar(20)
-  tipo              String   @default("CORRIENTE") @db.VarChar(20)
-  activa        Boolean  @default(true)
-  pagos         Pago[]
-  
+  cuentaId     Int     @id @default(autoincrement()) @map("cuenta_id")
+  banco        String  @db.VarChar(80)
+  numeroCuenta String  @unique @map("numero_cuenta") @db.VarChar(50)
+  titular      String  @db.VarChar(120)
+  rifTitular   String  @map("rif_titular") @db.VarChar(20)
+  tipo         String  @default("CORRIENTE") @db.VarChar(20)
+  activa       Boolean @default(true)
+  pagos        Pago[]
+
   @@map("cuenta_bancaria")
 }
 
 model Diagnostico {
-  diagnosticoId BigInt            @id @default(autoincrement()) @map("diagnostico_id")
-  citaId        BigInt            @unique @map("cita_id")
-  descripcion   String            @db.Text
+  diagnosticoId BigInt @id @default(autoincrement()) @map("diagnostico_id")
+  citaId        BigInt @unique @map("cita_id")
+  descripcion   String @db.Text
 
-  notas         String?           @db.Text
-  fechaRegistro DateTime          @default(now()) @map("fecha_registro") @db.Timestamptz(6)
-  usuarioId     BigInt            @map("usuario_id") // Doctor who recorded it
-  cita          CitaMedica        @relation(fields: [citaId], references: [citaId], onDelete: Cascade)
-  medico        Usuario           @relation(fields: [usuarioId], references: [usuarioId])
+  notas         String?    @db.Text
+  fechaRegistro DateTime   @default(now()) @map("fecha_registro") @db.Timestamptz(6)
+  usuarioId     BigInt     @map("usuario_id") // Doctor who recorded it
+  cita          CitaMedica @relation(fields: [citaId], references: [citaId], onDelete: Cascade)
+  medico        Usuario    @relation(fields: [usuarioId], references: [usuarioId])
 
   @@map("diagnostico")
 }
 
 model Receta {
-  recetaId      BigInt          @id @default(autoincrement()) @map("receta_id")
-  citaId        BigInt          @unique @map("cita_id")
-  fecha         DateTime        @default(now()) @db.Date
-  detalles      RecetaDetalle[]
-  cita          CitaMedica      @relation(fields: [citaId], references: [citaId], onDelete: Cascade)
+  recetaId BigInt          @id @default(autoincrement()) @map("receta_id")
+  citaId   BigInt          @unique @map("cita_id")
+  fecha    DateTime        @default(now()) @db.Date
+  detalles RecetaDetalle[]
+  cita     CitaMedica      @relation(fields: [citaId], references: [citaId], onDelete: Cascade)
 
   @@map("receta")
 }
 
 model RecetaDetalle {
-  detalleId     BigInt   @id @default(autoincrement()) @map("detalle_id")
-  recetaId      BigInt   @map("receta_id")
-  medicamento   String   @db.VarChar(120)
-  dosis         String   @db.VarChar(60)
-  frecuencia    String   @db.VarChar(60)
-  duracion      String   @db.VarChar(60)
-  instrucciones String?  @db.Text
-  receta        Receta   @relation(fields: [recetaId], references: [recetaId], onDelete: Cascade)
+  detalleId     BigInt  @id @default(autoincrement()) @map("detalle_id")
+  recetaId      BigInt  @map("receta_id")
+  medicamento   String  @db.VarChar(120)
+  dosis         String  @db.VarChar(60)
+  frecuencia    String  @db.VarChar(60)
+  duracion      String  @db.VarChar(60)
+  instrucciones String? @db.Text
+  receta        Receta  @relation(fields: [recetaId], references: [recetaId], onDelete: Cascade)
 
   @@map("receta_detalle")
 }
-
-model OrdenMedica {
-  ordenId       BigInt     @id @default(autoincrement()) @map("orden_id")
-  citaId        BigInt     @map("cita_id")
-  tipo          String     @db.VarChar(50) // LABORATORIO, IMAGENOLOGIA, OTRO
-  estudio       String     @db.VarChar(150)
-  fechaCreacion DateTime   @default(now()) @map("fecha_creacion") @db.Timestamptz(6)
-  cita          CitaMedica @relation(fields: [citaId], references: [citaId], onDelete: Cascade)
-
-  @@map("orden_medica")
-}
-
 
 model HistoriaClinica {
   historiaId  Int      @id @default(autoincrement()) @map("historia_id")
@@ -674,9 +748,9 @@ model HistoriaClinica {
   contenido   Json
   updatedAt   DateTime @updatedAt @map("updated_at")
   updatedById BigInt?  @map("updated_by_id")
-  
-  paciente    Paciente @relation(fields: [pacienteId], references: [pacienteId])
-  updatedBy   Usuario? @relation("UsuarioActualizaHistoria", fields: [updatedById], references: [usuarioId])
+
+  paciente  Paciente @relation(fields: [pacienteId], references: [pacienteId])
+  updatedBy Usuario? @relation("UsuarioActualizaHistoria", fields: [updatedById], references: [usuarioId])
 
   @@map("historia_clinica")
 }
@@ -698,19 +772,19 @@ model Aseguradora {
 }
 
 model Poliza {
-  polizaId      BigInt       @id @default(autoincrement()) @map("poliza_id")
-  pacienteId    BigInt       @map("paciente_id")
-  aseguradoraId BigInt       @map("aseguradora_id")
-  numeroPoliza  String       @map("numero_poliza") @db.VarChar(60)
-  tipoCobertura String?      @map("tipo_cobertura") @db.VarChar(80)
-  montoCobertura Decimal?    @map("monto_cobertura") @db.Decimal(12, 2)
-  fechaInicio   DateTime?    @map("fecha_inicio") @db.Date
-  fechaVence    DateTime?    @map("fecha_vence") @db.Date
-  estado        PolizaEstado @default(ACTIVA)
-  observaciones String?
-  paciente      Paciente     @relation(fields: [pacienteId], references: [pacienteId])
-  aseguradora   Aseguradora  @relation(fields: [aseguradoraId], references: [aseguradoraId])
-  cartasAval    CartaAval[]
+  polizaId       BigInt       @id @default(autoincrement()) @map("poliza_id")
+  pacienteId     BigInt       @map("paciente_id")
+  aseguradoraId  BigInt       @map("aseguradora_id")
+  numeroPoliza   String       @map("numero_poliza") @db.VarChar(60)
+  tipoCobertura  String?      @map("tipo_cobertura") @db.VarChar(80)
+  montoCobertura Decimal?     @map("monto_cobertura") @db.Decimal(12, 2)
+  fechaInicio    DateTime?    @map("fecha_inicio") @db.Date
+  fechaVence     DateTime?    @map("fecha_vence") @db.Date
+  estado         PolizaEstado @default(ACTIVA)
+  observaciones  String?
+  paciente       Paciente     @relation(fields: [pacienteId], references: [pacienteId])
+  aseguradora    Aseguradora  @relation(fields: [aseguradoraId], references: [aseguradoraId])
+  cartasAval     CartaAval[]
 
   @@unique([pacienteId, aseguradoraId, numeroPoliza], name: "uq_poliza")
   @@map("poliza")
@@ -736,23 +810,27 @@ model CartaAval {
 // ========== EMERGENCIAS ==========
 
 model Emergencia {
-  emergenciaId     BigInt             @id @default(autoincrement()) @map("emergencia_id")
-  pacienteId       BigInt             @map("paciente_id")
-  citaId           BigInt?            @unique @map("cita_id")
-  medicoId         BigInt?            @map("medico_id")
-  motivoIngreso    String             @map("motivo_ingreso")
-  nivelUrgencia    NivelUrgencia      @default(MODERADO) @map("nivel_urgencia")
-  estadoEmergencia EmergenciaEstado   @default(EN_ATENCION) @map("estado_emergencia")
-  verificacionPago VerificacionPago   @default(PENDIENTE) @map("verificacion_pago")
-  tipoPago         TipoPagoEmergencia @default(PENDIENTE) @map("tipo_pago")
-  fechaIngreso     DateTime           @default(now()) @map("fecha_ingreso") @db.Timestamptz(6)
-  fechaAlta        DateTime?          @map("fecha_alta") @db.Timestamptz(6)
+  emergenciaId     BigInt                @id @default(autoincrement()) @map("emergencia_id")
+  pacienteId       BigInt                @map("paciente_id")
+  citaId           BigInt?               @unique @map("cita_id")
+  medicoId         BigInt?               @map("medico_id")
+  motivoIngreso    String                @map("motivo_ingreso")
+  nivelUrgencia    NivelUrgencia         @default(MODERADO) @map("nivel_urgencia")
+  estadoEmergencia EmergenciaEstado      @default(EN_ATENCION) @map("estado_emergencia")
+  verificacionPago VerificacionPago      @default(PENDIENTE) @map("verificacion_pago")
+  tipoPago         TipoPagoEmergencia    @default(PENDIENTE) @map("tipo_pago")
+  fechaIngreso     DateTime              @default(now()) @map("fecha_ingreso") @db.Timestamptz(6)
+  fechaAlta        DateTime?             @map("fecha_alta") @db.Timestamptz(6)
   observaciones    String?
-  paciente         Paciente           @relation(fields: [pacienteId], references: [pacienteId])
-  cita             CitaMedica?        @relation(fields: [citaId], references: [citaId])
-  medico           Medico?            @relation(fields: [medicoId], references: [empleadoId])
+  paciente         Paciente              @relation(fields: [pacienteId], references: [pacienteId])
+  cita             CitaMedica?           @relation(fields: [citaId], references: [citaId])
+  medico           Medico?               @relation(fields: [medicoId], references: [empleadoId])
   cartasAval       CartaAval[]
+  cargosCuenta     CargoCuentaPaciente[]
+  factura          Factura?
 
+  @@index([pacienteId])
+  @@index([estadoEmergencia])
   @@map("emergencia")
 }
 
@@ -795,4 +873,38 @@ enum TipoPagoEmergencia {
   PARTICULAR
   ASEGURADO
   PENDIENTE
+}
+
+enum CargoEstado {
+  PENDIENTE
+  FACTURADO
+  ANULADO
+}
+
+model CargoCuentaPaciente {
+  cargoId          BigInt          @id @default(autoincrement()) @map("cargo_id")
+  emergenciaId     BigInt?         @map("emergencia_id")
+  citaId           BigInt?         @map("cita_id")
+  tipoCargo        FacturaItemTipo @map("tipo_cargo")
+  referenciaId     BigInt?         @map("referencia_id")
+  examenLabId      BigInt?         @map("examen_lab_id")
+  examenImgId      BigInt?         @map("examen_img_id")
+  cantidad         Decimal         @db.Decimal(12, 2)
+  movimientoId     BigInt?         @map("movimiento_id")
+  fechaCargo       DateTime        @default(now()) @map("fecha_cargo") @db.Timestamptz(6)
+  usuarioGenerador BigInt          @map("usuario_generador")
+  observaciones    String?
+  estadoCobro      CargoEstado     @default(PENDIENTE) @map("estado_cobro")
+
+  emergencia Emergencia?           @relation(fields: [emergenciaId], references: [emergenciaId])
+  cita       CitaMedica?           @relation(fields: [citaId], references: [citaId])
+  movimiento MovimientoInventario? @relation(fields: [movimientoId], references: [movimientoId])
+  generador  Usuario               @relation(fields: [usuarioGenerador], references: [usuarioId])
+  insumo     Insumo?               @relation(fields: [referenciaId], references: [insumoId])
+  examenLab  ExamenLaboratorio?    @relation(fields: [examenLabId], references: [examenId])
+  examenImg  ExamenImagenologia?   @relation(fields: [examenImgId], references: [examenId])
+
+  @@index([emergenciaId])
+  @@index([estadoCobro])
+  @@map("cargo_cuenta_paciente")
 }

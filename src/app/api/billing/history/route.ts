@@ -1,5 +1,4 @@
-
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { prisma } from "@/infrastructure/database/prisma/client";
 
 export async function GET(req: Request) {
@@ -13,18 +12,21 @@ export async function GET(req: Request) {
 
         const idBigInt = BigInt(patientId);
 
-        // 1. Fetch Payments (Money out of pocket)
+        // 1. Fetch Payments (Money out of pocket) â€” use direct pacienteId
         const pagos = await prisma.pago.findMany({
             where: {
-                factura: {
-                    cita: { pacienteId: idBigInt }
-                }
+                factura: { pacienteId: idBigInt }
             },
             include: {
                 metodoPago: true,
                 cuentaBancaria: true,
                 factura: {
                     include: {
+                        emergencia: {
+                            select: {
+                                medico: { include: { empleado: true } }
+                            }
+                        },
                         cita: {
                             include: {
                                 medico: { include: { empleado: true } }
@@ -36,12 +38,15 @@ export async function GET(req: Request) {
             orderBy: { fechaPago: 'desc' }
         });
 
-        // 2. Fetch ALL Invoices
+        // 2. Fetch ALL Invoices â€” use direct pacienteId
         const facturasRaw = await prisma.factura.findMany({
-            where: {
-                cita: { pacienteId: idBigInt }
-            },
+            where: { pacienteId: idBigInt },
             include: {
+                emergencia: {
+                    select: {
+                        medico: { include: { empleado: true } }
+                    }
+                },
                 cita: {
                     include: {
                         medico: { include: { empleado: true } }
@@ -67,22 +72,27 @@ export async function GET(req: Request) {
         const payments = [];
         const debts = [];
 
-        // Helper to format Bank Destination
         const formatDestination = (p: any) => {
             if (p.cuentaBancaria) {
                 const num = p.cuentaBancaria.numeroCuenta;
                 const last4 = num ? num.slice(-4) : '';
                 return `${p.cuentaBancaria.banco} (${last4})`;
             }
+            if (p.canalPago === 'SEGURO') return 'Aseguradora';
             return '-';
         };
 
-        // Helper to format Concept
-        const formatConcept = (cita: any) => {
-            if (cita && cita.medico && cita.medico.empleado) {
-                return `Consulta - ${cita.medico.empleado.nombres} ${cita.medico.empleado.apellidos}`;
+        // Uses emergencia or cita to determine concept
+        const formatConcept = (factura: any) => {
+            const isEmergency = !!factura.emergenciaId;
+            const prefix = isEmergency ? 'Emergencia' : 'Consulta';
+            const doctor = isEmergency
+                ? factura.emergencia?.medico?.empleado
+                : factura.cita?.medico?.empleado;
+            if (doctor) {
+                return `${prefix} - ${doctor.nombres} ${doctor.apellidos}`;
             }
-            return 'Consulta Médica';
+            return isEmergency ? 'AtenciÃ³n de Emergencia' : 'Consulta MÃ©dica';
         };
 
         // Map Payments
@@ -93,7 +103,7 @@ export async function GET(req: Request) {
                 facturaId: p.facturaId.toString(),
                 type: 'PAYMENT',
                 date: p.fechaPago,
-                concept: formatConcept(p.factura?.cita),
+                concept: formatConcept(p.factura),
                 method: p.metodoPago?.nombre || 'OTRO',
                 destination: formatDestination(p),
                 reference: p.referenciaExterna || '-',
@@ -106,7 +116,6 @@ export async function GET(req: Request) {
 
         // Map Invoices (Debts)
         for (const f of facturas) {
-
             // Legacy Paid (Virtual Payment Record)
             if (f.estadoFactura === 'PAGADA') {
                 payments.push({
@@ -115,8 +124,8 @@ export async function GET(req: Request) {
                     facturaId: f.facturaId.toString(),
                     type: 'PAYMENT',
                     date: f.fechaEmision,
-                    concept: formatConcept(f.cita),
-                    method: 'HISTÓRICO',
+                    concept: formatConcept(f),
+                    method: 'HISTÃ“RICO',
                     destination: '-',
                     reference: '-',
                     amountUsd: Number(f.total),
@@ -127,9 +136,7 @@ export async function GET(req: Request) {
                 continue;
             }
 
-            // 2. Map All Invoices to Debts (History of Invoices)
-            // Includes Pending, Partial, Paid, and Annulled
-            const amountTotal = Number(f.total);
+            const amountTotal   = Number(f.total);
             const amountPending = f.estadoFactura === 'ANULADA' ? 0 : Number(f.saldoPendiente);
 
             debts.push({
@@ -138,24 +145,21 @@ export async function GET(req: Request) {
                 numeroFactura: f.numeroFactura || '-',
                 type: 'DEBT',
                 date: f.fechaEmision,
-                concept: formatConcept(f.cita),
-                amountTotal: amountTotal,
-                amountPending: amountPending, // 0 if Paid/Annulled
+                concept: formatConcept(f),
+                amountTotal,
+                amountPending,
                 amountInsured: Number((f as any).montoAsegurado || 0),
                 status: f.estadoFactura,
                 rawDate: f.fechaEmision
             });
         }
 
-        // Sort both arrays
-        // Payments: Sort by ID numeric descending
         payments.sort((a, b) => {
             const idA = a.pagoId === 'LEGACY' ? 0 : Number(a.pagoId);
             const idB = b.pagoId === 'LEGACY' ? 0 : Number(b.pagoId);
             return idB - idA;
         });
 
-        // Debts: Maintain Date Descending (or Invoice ID Descending)
         debts.sort((a, b) => new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime());
 
         // 6. Summaries
@@ -168,10 +172,7 @@ export async function GET(req: Request) {
             .reduce((sum, d) => sum + d.amountPending, 0);
 
         const safeResponse = JSON.parse(JSON.stringify({
-            summary: {
-                totalPagado,
-                totalPendiente
-            },
+            summary: { totalPagado, totalPendiente },
             debts,
             payments
         }, (key, value) => typeof value === 'bigint' ? value.toString() : value));
@@ -183,7 +184,6 @@ export async function GET(req: Request) {
         return NextResponse.json({
             error: "Error interno",
             details: error.message,
-            stack: error.stack
         }, { status: 500 });
     }
 }

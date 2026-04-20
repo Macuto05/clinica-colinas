@@ -48,6 +48,8 @@ export default function ReceptionAgendaPage() {
     const [activeTab, setActiveTab] = useState<'AGENDA' | 'EMERGENCIAS'>('AGENDA');
     const [activeEmergenciesCount, setActiveEmergenciesCount] = useState(0);
 
+    const [isMounted, setIsMounted] = useState(false);
+
     const fetchEmergenciesCount = async () => {
         try {
             const res = await fetch('/api/emergency?active=true');
@@ -61,6 +63,7 @@ export default function ReceptionAgendaPage() {
     };
 
     useEffect(() => {
+        setIsMounted(true);
         fetchEmergenciesCount();
         
         // Handle return routing
@@ -95,8 +98,10 @@ export default function ReceptionAgendaPage() {
     };
 
     useEffect(() => {
-        fetchAppointments();
-    }, [selectedDate]);
+        if (isMounted) {
+            fetchAppointments();
+        }
+    }, [selectedDate, isMounted]);
 
     // Filter Logic
     useEffect(() => {
@@ -152,6 +157,8 @@ export default function ReceptionAgendaPage() {
             </span>
         );
     };
+
+    if (!isMounted) return null;
 
     return (
         <div className="space-y-6">

@@ -1,94 +1,81 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import Link from "next/link";
-import { JWTService } from "@/infrastructure/services/JWTService";
-import { PrismaUserRepository } from "@/infrastructure/database/prisma/repositories/PrismaUserRepository";
-import { Heart, Package, FlaskConical, LogOut, LayoutDashboard } from "lucide-react";
-import AdminProfile from "@/app/admin/components/AdminProfile";
-import ExchangeRateWidget from "@/components/admin/ExchangeRateWidget";
+"use client";
 
-export default async function EnfermeriaLayout({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("auth-token")?.value;
+import { ReactNode, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
+import { Activity, LogOut, Stethoscope } from "lucide-react";
 
-    if (!token) redirect("/login");
+export default function EnfermeriaLayout({ children }: { children: ReactNode }) {
+    const { user, loading, logout } = useAuth();
+    const router = useRouter();
 
-    const payload = await JWTService.verifyToken(token);
-    // Allow ENFERMERIA role — also allow RECEPCION and ADMIN for now so it's accessible
-    const allowedRoles = ["ENFERMERIA", "RECEPCION", "ADMIN"];
-    if (!payload || !allowedRoles.includes((payload as any).role)) {
-        redirect("/login");
+    useEffect(() => {
+        if (!loading && (!user || (user.role as string)?.toUpperCase() !== "ENFERMERIA")) {
+            if (!loading && !user) router.push("/login");
+        }
+    }, [user, loading, router]);
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 via-lime-50/30 to-green-50/30">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-lime-500/10 border border-lime-400/20 flex items-center justify-center animate-pulse">
+                        <Activity size={24} className="text-lime-500" />
+                    </div>
+                    <p className="text-sm font-bold text-gray-500 tracking-wide">Cargando estación de enfermería…</p>
+                </div>
+            </div>
+        );
     }
 
-    const userRepository = new PrismaUserRepository();
-    const user = await userRepository.findByEmail(payload.email);
-    if (!user) redirect("/login");
-
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-100 via-teal-50/20 to-cyan-50/10 flex transition-colors duration-300">
-            {/* Sidebar */}
-            <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-white/60 backdrop-blur-xl border-r border-white/50 shadow-[2px_0_16px_0_rgba(0,0,0,0.06)] flex flex-col overflow-hidden">
-                <div className="flex h-16 items-center px-6 border-b border-white/40 shrink-0 bg-white/30">
-                    <img
-                        src="/logo-clinicas-colina.jpg"
-                        alt="Clinica Colinas Logo"
-                        className="h-10 w-auto object-contain"
-                    />
+        <div className="min-h-screen bg-gradient-to-br from-slate-100 via-lime-50/20 to-green-50/20 flex">
+            {/* ── Sidebar ─────────────────────────────────── */}
+            <aside className="w-64 shrink-0 bg-white/60 backdrop-blur-xl border-r border-white/50 shadow-[2px_0_16px_0_rgba(0,0,0,0.06)] hidden md:flex flex-col">
+                {/* Logo */}
+                <div className="p-6 border-b border-white/40">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-lime-500 flex items-center justify-center shadow-lg shadow-lime-200">
+                            <Stethoscope size={18} className="text-white" />
+                        </div>
+                        <div>
+                            <p className="font-extrabold text-gray-900 text-sm leading-none">Clínica Colinas</p>
+                            <p className="text-[11px] font-bold text-lime-500 tracking-widest uppercase mt-0.5">Enfermería</p>
+                        </div>
+                    </div>
                 </div>
 
-                <div className="flex-1 p-3 space-y-0 overflow-y-auto">
-                    <p className="px-4 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1.5 mt-3">
-                        Enfermería
-                    </p>
-                    <NavItem href="/enfermeria" icon={<LayoutDashboard size={16} />} label="Centro de Pacientes" />
+                {/* Nav items */}
+                <nav className="flex-1 p-4 space-y-1.5">
+                    <div className="px-3 py-2.5 rounded-2xl bg-lime-50/70 border border-lime-200/50 flex items-center gap-3 shadow-sm">
+                        <div className="w-8 h-8 rounded-xl bg-lime-500 flex items-center justify-center shadow-sm shadow-lime-200">
+                            <Activity size={15} className="text-white" />
+                        </div>
+                        <span className="text-sm font-bold text-lime-700">Pacientes en Piso</span>
+                    </div>
+                </nav>
 
-                    <div className="my-3 border-t border-white/40 mx-2" />
-
-                    <p className="px-4 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1.5">
-                        Acciones Rápidas
-                    </p>
-                    <NavItem href="/enfermeria" icon={<Package size={16} />} label="Carga de Insumos" />
-                    <NavItem href="/enfermeria" icon={<FlaskConical size={16} />} label="Solicitar Laboratorio" />
-                </div>
-
-                <div className="shrink-0 p-4 border-t border-white/40">
-                    <AdminProfile user={{ name: user.name }} role="Enfermería" />
+                {/* Footer: user info + logout */}
+                <div className="p-4 border-t border-white/40">
+                    <div className="bg-white/50 rounded-2xl p-3 border border-white/60 shadow-sm mb-3">
+                        <p className="text-xs font-bold text-gray-700 truncate">{user?.email}</p>
+                        <p className="text-[11px] text-lime-500 font-bold uppercase tracking-wider mt-0.5">Enfermería</p>
+                    </div>
+                    <button
+                        onClick={logout}
+                        className="w-full flex items-center justify-center gap-2 text-sm font-bold text-gray-500 hover:text-gray-700 py-2.5 rounded-2xl hover:bg-white/60 border border-transparent hover:border-white/60 transition-all"
+                    >
+                        <LogOut size={15} /> Cerrar Sesión
+                    </button>
                 </div>
             </aside>
 
-            {/* Content Area */}
-            <div className="flex-1 lg:ml-64 flex flex-col min-h-screen">
-                <header className="hidden lg:flex items-center justify-end sticky top-0 z-40 px-8 py-4 pointer-events-none">
-                    <div className="pointer-events-auto">
-                        <ExchangeRateWidget />
-                    </div>
-                </header>
-
-                <header className="flex lg:hidden items-center justify-between sticky top-0 z-40 bg-white/60 backdrop-blur-xl border-b border-white/50 p-4">
-                    <span className="text-lg font-bold text-gray-900">Enfermería</span>
-                    <ExchangeRateWidget />
-                </header>
-
-                <main className="flex-1">
+            {/* ── Main content ─────────────────────────────── */}
+            <div className="flex-1 overflow-auto">
+                <div className="max-w-7xl mx-auto p-6 md:p-8">
                     {children}
-                </main>
+                </div>
             </div>
         </div>
-    );
-}
-
-function NavItem({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
-    return (
-        <Link
-            href={href}
-            className="flex items-center gap-3 px-4 py-1.5 rounded-lg text-gray-600 hover:bg-white/60 hover:text-teal-700 hover:shadow-sm transition-all duration-300 group"
-        >
-            <div className="transition-transform group-hover:scale-110 shrink-0">{icon}</div>
-            <span className="font-bold text-sm tracking-tight truncate">{label}</span>
-        </Link>
     );
 }
