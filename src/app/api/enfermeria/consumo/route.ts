@@ -31,12 +31,14 @@ export async function POST(req: NextRequest) {
         const body   = await req.json();
         const result = consumoSchema.safeParse(body);
         if (!result.success) {
-            return NextResponse.json({ error: "Datos inválidos", details: result.error.format() }, { status: 400 });
+            return NextResponse.json({ error: "Datos invÃ¡lidos", details: result.error.format() }, { status: 400 });
         }
 
         const { citaId, insumos, observaciones } = result.data;
         const citaIdBig  = BigInt(citaId);
-        const usuarioId  = BigInt((payload as any).userId || (payload as any).sub || 1);
+        const rawUserId = payload.userId ?? payload.sub;
+        if (!rawUserId) return NextResponse.json({ error: "Token inválido: sin userId" }, { status: 401 });
+        const usuarioId = BigInt(rawUserId);
 
         // Verify cita exists
         const cita = await prisma.citaMedica.findUnique({ where: { citaId: citaIdBig } });
@@ -50,9 +52,15 @@ export async function POST(req: NextRequest) {
             },
         }) || await (prisma as any).almacen.findFirst({ where: { activo: true } });
 
-        if (!almacen) return NextResponse.json({ error: "No hay almacén disponible" }, { status: 400 });
+        if (!almacen) return NextResponse.json({ error: "No hay almacÃ©n disponible" }, { status: 400 });
 
         await (prisma as any).$transaction(async (tx: any) => {
+            // Lookup if this cita belongs to an emergencia (for cargo linkage)
+            const emergenciaLink = await tx.emergencia.findUnique({
+                where: { citaId: citaIdBig },
+                select: { emergenciaId: true }
+            }).catch(() => null);
+
             // 1. Create SolicitudInsumo
             const solicitud = await tx.solicitudInsumo.create({
                 data: {
@@ -61,7 +69,7 @@ export async function POST(req: NextRequest) {
                     estadoSolicitud: "DESPACHADA",
                     usuarioResponde: usuarioId,
                     fechaRespuesta:  new Date(),
-                    observaciones:   observaciones || "Consumo registrado por Enfermería",
+                    observaciones:   observaciones || "Consumo registrado por EnfermerÃ­a",
                     detalles: {
                         create: insumos.map(i => ({
                             insumoId:          BigInt(i.insumoId),
@@ -72,19 +80,19 @@ export async function POST(req: NextRequest) {
                 },
             });
 
-            // 2. Create MovimientoInventario (SALIDA)
-            await tx.movimientoInventario.create({
+            // 2. Create MovimientoInventario (SALIDA) â cantidades siempre positivas
+            const movimiento = await tx.movimientoInventario.create({
                 data: {
                     almacenId:        almacen.almacenId,
                     tipoMovimiento:   "SALIDA",
                     usuarioId:        usuarioId,
                     solicitudInsumoId: solicitud.solicitudInsumoId,
-                    referencia:       `Enfermería - Cita #${citaId}`,
+                    referencia:       `ENF-CONSUMO-${citaId}`,
                     observaciones:    observaciones || null,
                     detalles: {
                         create: insumos.map(i => ({
                             insumoId: BigInt(i.insumoId),
-                            cantidad: -Math.abs(i.cantidad), // negative = salida
+                            cantidad: i.cantidad, // Positivo: la direcciÃ³n la indica tipoMovimiento
                         })),
                     },
                 },
@@ -93,10 +101,26 @@ export async function POST(req: NextRequest) {
             // 3. Update stock (deduct from almacen)
             for (const ins of insumos) {
                 const insBig = BigInt(ins.insumoId);
-                // Upsert stock reduction
                 await tx.stock.updateMany({
                     where: { almacenId: almacen.almacenId, insumoId: insBig },
                     data: { cantidadActual: { decrement: ins.cantidad } },
+                });
+            }
+
+            // 4. Create CargoCuentaPaciente for each consumed supply
+            for (const ins of insumos) {
+                await tx.cargoCuentaPaciente.create({
+                    data: {
+                        emergenciaId:     emergenciaLink?.emergenciaId || null,
+                        citaId:           citaIdBig,
+                        tipoCargo:        'INSUMO',
+                        referenciaId:     BigInt(ins.insumoId),
+                        cantidad:         ins.cantidad,
+                        movimientoId:     movimiento.movimientoId,
+                        usuarioGenerador: usuarioId,
+                        observaciones:    'Consumo directo por EnfermerÃ­a',
+                        estadoCobro:      'PENDIENTE',
+                    },
                 });
             }
         });

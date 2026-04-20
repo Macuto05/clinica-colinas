@@ -13,8 +13,8 @@ const labSchema = z.object({
 });
 
 /**
- * GET  /api/enfermeria/laboratorio  → list all ExamenLaboratorio
- * POST /api/enfermeria/laboratorio  → create SolicitudLaboratorio
+ * GET  /api/enfermeria/laboratorio  â list all ExamenLaboratorio
+ * POST /api/enfermeria/laboratorio  â create SolicitudLaboratorio
  */
 export async function GET(_req: NextRequest) {
     try {
@@ -32,7 +32,7 @@ export async function GET(_req: NextRequest) {
         );
     } catch (error) {
         console.error("Error fetching examenes:", error);
-        return NextResponse.json({ error: "Error al cargar exámenes" }, { status: 500 });
+        return NextResponse.json({ error: "Error al cargar exÃ¡menes" }, { status: 500 });
     }
 }
 
@@ -46,12 +46,14 @@ export async function POST(req: NextRequest) {
         const body   = await req.json();
         const result = labSchema.safeParse(body);
         if (!result.success) {
-            return NextResponse.json({ error: "Datos inválidos", details: result.error.format() }, { status: 400 });
+            return NextResponse.json({ error: "Datos invÃ¡lidos", details: result.error.format() }, { status: 400 });
         }
 
         const { citaId, examenes, observaciones } = result.data;
         const citaIdBig = BigInt(citaId);
-        const usuarioId = BigInt((payload as any).userId || (payload as any).sub || 1);
+        const rawUserId = payload.userId ?? payload.sub;
+        if (!rawUserId) return NextResponse.json({ error: "Token inválido: sin userId" }, { status: 401 });
+        const usuarioId = BigInt(rawUserId);
 
         const cita = await prisma.citaMedica.findUnique({ where: { citaId: citaIdBig } });
         if (!cita) return NextResponse.json({ error: "Cita no encontrada" }, { status: 404 });
