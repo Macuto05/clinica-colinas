@@ -29,7 +29,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     const navigation = [
         { name: "Resumen", href: "/dashboard", icon: LayoutDashboard },
         { name: "Nueva Cita", href: "/dashboard/citas/nueva", icon: PlusCircle },
-        { name: "Mis Citas", href: "/dashboard/citas", icon: Calendar },
+        { name: "Mis Visitas", href: "/dashboard/citas", icon: Calendar },
         { name: "Mis Finanzas", href: "/dashboard/pagos", icon: CreditCard },
         { name: "Mi Perfil", href: "/dashboard/perfil", icon: User },
     ];
@@ -49,7 +49,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             {/* Sidebar */}
             <aside
                 className={`
-                    fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white/60 backdrop-blur-xl border-r border-white/50 shadow-[2px_0_16px_0_rgba(0,0,0,0.06)] transform transition-transform duration-200 ease-in-out
+                    fixed inset-y-0 left-0 z-50 w-56 bg-white/60 backdrop-blur-xl border-r border-white/50 shadow-[2px_0_16px_0_rgba(0,0,0,0.06)] transform transition-transform duration-200 ease-in-out
                     ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
                 `}
             >
@@ -129,7 +129,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </aside>
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden lg:pl-56">
                 {/* Mobile Header */}
                 <header className="lg:hidden h-16 bg-white/60 backdrop-blur-xl border-b border-white/50 flex items-center justify-between px-4">
                     <button
@@ -146,7 +146,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
                 {/* Page Content */}
                 <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-                    <div className="max-w-6xl mx-auto">
+                    <div className="max-w-7xl mx-auto">
                         {children}
                     </div>
                 </main>

@@ -22,12 +22,43 @@ const createEmergencySchema = z.object({
 ────────────────────────────────────────────────────────── */
 export async function GET(req: NextRequest) {
     try {
+        const token = req.cookies.get("auth-token")?.value;
+        if (!token) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+        const payload = await JWTService.verifyToken(token);
+        if (!payload) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
         const { searchParams } = new URL(req.url);
         const status  = searchParams.get("status");
         const status2 = searchParams.get("status2");
         const active  = searchParams.get("active");
+        let patientId = searchParams.get("patientId");
+
+        const userRole = (payload as any).role;
+        if (userRole === "PACIENTE") {
+            const tokenPatientId = (payload as any).patientId;
+            if (tokenPatientId) {
+                // Fast path: token already has patientId
+                patientId = tokenPatientId.toString();
+            } else {
+                // Fallback: look up the patient linked to this userId in DB
+                const rawUserId = (payload as any).userId ?? (payload as any).sub;
+                if (!rawUserId) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+                const userRecord = await prisma.usuario.findUnique({
+                    where: { usuarioId: BigInt(rawUserId) },
+                    include: { paciente: { select: { pacienteId: true } } },
+                });
+                if (!userRecord?.paciente) {
+                    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+                }
+                patientId = userRecord.paciente.pacienteId.toString();
+            }
+        }
 
         const where: any = {};
+        if (patientId) {
+            where.pacienteId = BigInt(patientId);
+        }
+
         if (status && status2) {
             where.estadoEmergencia = { in: [status, status2] };
         } else if (status) {
@@ -49,6 +80,16 @@ export async function GET(req: NextRequest) {
                             take: 1,
                         },
                     },
+                },
+                cita: {
+                    select: {
+                        _count: {
+                            select: {
+                                solicitudesLab: true,
+                                solicitudesImg: true,
+                            }
+                        }
+                    }
                 },
                 medico: {
                     include: {
@@ -82,6 +123,7 @@ export async function GET(req: NextRequest) {
                 fechaIngreso:     e.fechaIngreso,
                 fechaAlta:        e.fechaAlta,
                 observaciones:    e.observaciones,
+                tieneExamenes:    (e.cita?._count?.solicitudesLab ?? 0) + (e.cita?._count?.solicitudesImg ?? 0) > 0,
                 tieneSeguro:      !!pol,
                 aseguradora:      pol?.aseguradora?.nombre || null,
                 medico: e.medico ? {
@@ -128,7 +170,9 @@ export async function POST(req: NextRequest) {
 
         const { pacienteId, motivoIngreso, nivelUrgencia, observaciones } = result.data;
         const pacIdBigInt = BigInt(pacienteId);
-        const usuarioId   = BigInt((payload as any).userId || (payload as any).sub || 1);
+        const rawUserId = (payload as any).userId ?? (payload as any).sub;
+        if (!rawUserId) return NextResponse.json({ error: "Token inválido: sin userId" }, { status: 401 });
+        const usuarioId = BigInt(rawUserId);
 
         // Verify patient
         const paciente = await prisma.paciente.findUnique({
@@ -151,28 +195,49 @@ export async function POST(req: NextRequest) {
             let citaId: bigint | null = null;
 
             if (anyMedico) {
-                // Try to find a non-conflicting slot time (same medico could have a unique constraint)
-                // We use the current timestamp as horaInicio — unique enough in practice.
-                try {
-                    const cita = await tx.citaMedica.create({
-                        data: {
-                            pacienteId:      pacIdBigInt,
-                            medicoId:        anyMedico.empleadoId,
-                            fechaCita:       now,
-                            horaInicio:      now,
-                            horaFin:         horaFin,
-                            motivoConsulta:  motivoIngreso,
-                            estadoCita:      "PROGRAMADA",
-                            tipoCita:        "EMERGENCIA",
-                            origenCita:      "RECEPCION",
-                            usuarioCreacion: usuarioId,
-                            observaciones:   "Cita generada automáticamente por ingreso de emergencia",
-                        },
-                    });
-                    citaId = cita.citaId;
-                } catch {
-                    // If cita creation fails (e.g. slot conflict) we still allow emergency creation
-                    citaId = null;
+                // Add a random millisecond offset (0–9999ms) so simultaneous emergencies
+                // never collide on the uq_cita_slot constraint (medicoId+fechaCita+horaInicio).
+                // Retry up to 3 times with different offsets.
+                let citaCreated = false;
+                for (let attempt = 0; attempt < 3; attempt++) {
+                    const offsetMs = Math.floor(Math.random() * 9999);
+                    const horaInicioUnique = new Date(now.getTime() + offsetMs);
+                    const horaFinUnique    = new Date(horaInicioUnique.getTime() + 60 * 60 * 1000);
+
+                    try {
+                        const cita = await tx.citaMedica.create({
+                            data: {
+                                pacienteId:      pacIdBigInt,
+                                medicoId:        anyMedico.empleadoId,
+                                fechaCita:       horaInicioUnique,
+                                horaInicio:      horaInicioUnique,
+                                horaFin:         horaFinUnique,
+                                motivoConsulta:  motivoIngreso,
+                                estadoCita:      "PROGRAMADA",
+                                tipoCita:        "EMERGENCIA",
+                                origenCita:      "RECEPCION",
+                                usuarioCreacion: usuarioId,
+                                observaciones:   "Cita generada automáticamente por ingreso de emergencia",
+                            },
+                        });
+                        citaId = cita.citaId;
+                        citaCreated = true;
+                        break;
+                    } catch (slotError: any) {
+                        // Only retry on unique constraint violations (P2002)
+                        if (slotError?.code === "P2002" && attempt < 2) {
+                            continue;
+                        }
+                        console.error(`[Emergency] CitaMedica creation failed (attempt ${attempt + 1}):`, slotError?.message);
+                        break;
+                    }
+                }
+
+                if (!citaCreated) {
+                    console.warn(
+                        `[Emergency] WARN: Could not create CitaMedica for patient ${pacienteId}. ` +
+                        `Emergency will have citaId=null — billing will be blocked until manually fixed.`
+                    );
                 }
             }
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { toast } from "sonner";
 import {
     Shield, Plus, Loader2, Edit2, Trash2, AlertTriangle,
     Calendar, Tag, Building2, X, Save, Hash, DollarSign
@@ -89,6 +90,24 @@ export default function PatientInsuranceSection({ pacienteId }: { pacienteId: st
         }));
     };
 
+    // #3 — Policy number: only numbers, dashes and letters (uppercase)
+    const handlePolizaNumeroChange = (val: string) => {
+        const upper = val.toUpperCase();
+        const filtered = upper.replace(/[^0-9A-Z\-]/g, '');
+        setForm(prev => ({ ...prev, numeroPoliza: filtered }));
+    };
+
+    // #4 — Auto-fill fechaVence = fechaInicio + 1 year
+    const handleFechaInicioChange = (val: string) => {
+        let fechaVence = '';
+        if (val) {
+            const d = new Date(val + 'T00:00:00');
+            d.setFullYear(d.getFullYear() + 1);
+            fechaVence = d.toISOString().split('T')[0];
+        }
+        setForm(prev => ({ ...prev, fechaInicio: val, fechaVence }));
+    };
+
     const fetchPolizas = async () => {
         try {
             const res = await fetch(`/api/patients/${pacienteId}/policies`);
@@ -103,8 +122,13 @@ export default function PatientInsuranceSection({ pacienteId }: { pacienteId: st
             if (res.ok) {
                 const data = await res.json();
                 setAseguradoras(data.filter((a: Aseguradora) => a.activa));
+            } else {
+                toast.error("No se pudieron cargar las aseguradoras");
             }
-        } catch (e) { console.error(e); }
+        } catch (e) {
+            console.error(e);
+            toast.error("Error al conectar con el servidor");
+        }
     };
 
     useEffect(() => { fetchPolizas(); fetchAseguradoras(); }, [pacienteId]);
@@ -133,8 +157,25 @@ export default function PatientInsuranceSection({ pacienteId }: { pacienteId: st
     };
 
     const handleSave = async () => {
-        if (!form.aseguradoraId || !form.numeroPoliza.trim()) {
-            setError("Aseguradora y número de póliza son obligatorios.");
+        // #4b — Full field validation before saving
+        if (!form.aseguradoraId) {
+            setError("Debes seleccionar una aseguradora.");
+            return;
+        }
+        if (!form.numeroPoliza.trim()) {
+            setError("El número de póliza es obligatorio.");
+            return;
+        }
+        if (!form.tipoCobertura) {
+            setError("Debes seleccionar un plan de cobertura.");
+            return;
+        }
+        if (!form.fechaInicio) {
+            setError("La fecha de inicio es obligatoria.");
+            return;
+        }
+        if (!form.fechaVence) {
+            setError("La fecha de vencimiento es obligatoria.");
             return;
         }
         setIsSaving(true);
@@ -177,8 +218,18 @@ export default function PatientInsuranceSection({ pacienteId }: { pacienteId: st
         if (!confirm("¿Está seguro de eliminar esta póliza? Si tiene cartas aval asociadas, quedará suspendida.")) return;
         try {
             const res = await fetch(`/api/patients/${pacienteId}/policies/${polizaId}`, { method: "DELETE" });
-            if (res.ok) fetchPolizas();
-        } catch (e) { console.error(e); }
+            if (res.ok) {
+                const data = await res.json();
+                toast.success(data.softDeleted ? "Póliza suspendida (tiene cartas aval asociadas)" : "Póliza eliminada correctamente");
+                fetchPolizas();
+            } else {
+                const data = await res.json().catch(() => ({}));
+                toast.error(data.error || "Error al eliminar la póliza");
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error("Error de conexión al eliminar");
+        }
     };
 
     const formatDate = (d: string | null) => d ? new Date(d).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' }) : "—";
@@ -282,138 +333,181 @@ export default function PatientInsuranceSection({ pacienteId }: { pacienteId: st
 
             {/* Create/Edit Inner Modal */}
             {isModalOpen && typeof document !== "undefined" && createPortal(
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-150">
-                    <div className="bg-white/75 backdrop-blur-2xl backdrop-saturate-[1.2] rounded-[2rem] w-full max-w-lg shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-white/60 overflow-hidden animate-in zoom-in-95 duration-200">
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[200] flex items-center justify-center p-4 sm:p-6 md:p-8 animate-in fade-in duration-200">
+                    <div className="bg-white/70 backdrop-blur-2xl rounded-[2.5rem] w-full max-w-4xl max-h-[92vh] flex flex-col shadow-[0_8px_32px_0_rgba(0,0,0,0.12)] border border-white/60 overflow-hidden">
 
                         {/* Modal Header */}
-                        <div className="px-6 py-5 border-b border-white/40 bg-white/30 flex items-center justify-between">
-                            <h4 className="font-bold text-gray-900 text-base flex items-center gap-2">
-                                <Shield size={18} className="text-lime-600" />
-                                {editingId ? "Editar Póliza" : "Nueva Póliza"}
-                            </h4>
-                            <button onClick={() => setIsModalOpen(false)} className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-white/60 rounded-full transition-all">
+                        <div className="px-6 py-4 border-b border-white/40 bg-white/30 backdrop-blur-md flex justify-between items-center shrink-0">
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-900 tracking-tight">
+                                    {editingId ? "Editar Póliza" : "Nueva Póliza"}
+                                </h2>
+                                <p className="text-xs font-medium text-gray-500 mt-0.5">
+                                    {editingId ? "Modifica los datos de la póliza." : "Vincula una nueva póliza de seguro médico."}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setIsModalOpen(false)}
+                                className="w-9 h-9 bg-white/50 hover:bg-white rounded-full flex items-center justify-center border border-white/60 shadow-sm transition-all text-gray-500 hover:text-gray-800"
+                            >
                                 <X size={18} />
                             </button>
                         </div>
 
                         {/* Modal Body */}
-                        <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+                        <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 space-y-5 custom-scrollbar">
                             {error && (
-                                <div className="p-3 bg-red-50/70 border border-red-200/50 text-red-700 rounded-2xl text-sm font-bold flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> {error}
+                                <div className="p-4 bg-red-50 text-red-700/90 rounded-2xl flex items-center gap-2 border border-red-200/50 shadow-sm backdrop-blur-md">
+                                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
+                                    <span className="text-sm font-bold">{error}</span>
                                 </div>
                             )}
 
-                            {/* Aseguradora */}
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-black text-gray-500 uppercase tracking-wider">Aseguradora *</label>
-                                <select
-                                    value={form.aseguradoraId}
-                                    onChange={e => handleAsegChange(e.target.value)}
-                                    className="w-full px-4 py-3 rounded-2xl border border-white/60 bg-white/50 backdrop-blur-sm text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-lime-400/50 transition-all"
-                                >
-                                    <option value="">Seleccionar aseguradora...</option>
-                                    {aseguradoras.map(a => (
-                                        <option key={a.aseguradoraId} value={a.aseguradoraId}>{a.nombre}</option>
-                                    ))}
-                                </select>
-                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            {/* Section 1: Datos de la Póliza */}
+                            <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-5 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] space-y-5">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <span className="w-7 h-7 rounded-full bg-gray-900/90 text-white shadow-md text-xs font-black flex items-center justify-center shrink-0">1</span>
+                                    <h4 className="font-bold text-gray-800 text-base">Datos de la Póliza</h4>
+                                </div>
 
-                            {/* Plan de Cobertura */}
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-black text-gray-500 uppercase tracking-wider">Plan de Cobertura</label>
-                                {availablePlans.length > 0 ? (
-                                    <>
-                                        <select
-                                            value={form.tipoCobertura}
-                                            onChange={e => handlePlanChange(e.target.value)}
-                                            className="w-full px-4 py-3 rounded-2xl border border-white/60 bg-white/50 backdrop-blur-sm text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-lime-400/50 transition-all"
-                                        >
-                                            <option value="">Seleccionar plan...</option>
-                                            {availablePlans.map(plan => (
-                                                <option key={plan.nombre} value={plan.nombre}>
-                                                    {plan.nombre} — USD {Number(plan.montoMaximo).toLocaleString('es-VE')}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        {selectedPlan && (
-                                            <div className="flex items-center gap-2 text-xs font-bold text-lime-700 bg-lime-50/60 border border-lime-300/40 rounded-2xl px-4 py-2.5">
-                                                <DollarSign size={13} />
-                                                Suma asegurada máxima: <span className="text-base font-black">${Number(selectedPlan.montoMaximo).toLocaleString('es-VE')}</span>
-                                            </div>
-                                        )}
-                                    </>
-                                ) : (
-                                    <div className="px-4 py-3 rounded-2xl border border-white/60 bg-white/30 text-sm text-gray-400 italic">
-                                        {form.aseguradoraId
-                                            ? "Esta aseguradora no tiene planes definidos. Contáctese con el administrador."
-                                            : "Seleccione una aseguradora primero."}
+                                {/* Aseguradora */}
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Aseguradora *</label>
+                                    <select
+                                        value={form.aseguradoraId}
+                                        onChange={e => handleAsegChange(e.target.value)}
+                                        className="w-full px-4 py-3 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all text-gray-800 cursor-pointer"
+                                    >
+                                        <option value="">Seleccionar aseguradora...</option>
+                                        {aseguradoras.map(a => (
+                                            <option key={a.aseguradoraId} value={a.aseguradoraId}>{a.nombre}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Plan de Cobertura */}
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Plan de Cobertura</label>
+                                    {availablePlans.length > 0 ? (
+                                        <>
+                                            <select
+                                                value={form.tipoCobertura}
+                                                onChange={e => handlePlanChange(e.target.value)}
+                                                className="w-full px-4 py-3 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all text-gray-800 cursor-pointer"
+                                            >
+                                                <option value="">Seleccionar plan...</option>
+                                                {availablePlans.map(plan => (
+                                                    <option key={plan.nombre} value={plan.nombre}>
+                                                        {plan.nombre} — USD {Number(plan.montoMaximo).toLocaleString('es-VE')}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            {selectedPlan && (
+                                                <div className="flex items-center gap-2 text-xs font-bold text-lime-700 bg-lime-50/60 border border-lime-300/40 rounded-2xl px-4 py-2.5">
+                                                    <DollarSign size={13} />
+                                                    Suma asegurada máxima: <span className="text-base font-black">${Number(selectedPlan.montoMaximo).toLocaleString('es-VE')}</span>
+                                                </div>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <div className="px-4 py-3 rounded-2xl bg-white/50 border border-white/60 text-sm text-gray-400 italic shadow-inner">
+                                            {form.aseguradoraId
+                                                ? "Esta aseguradora no tiene planes definidos. Contáctese con el administrador."
+                                                : "Seleccione una aseguradora primero."}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* N° Póliza */}
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">N° de Póliza *</label>
+                                    <input
+                                        type="text"
+                                        value={form.numeroPoliza}
+                                        onChange={e => handlePolizaNumeroChange(e.target.value)}
+                                        placeholder="Ej: MER-2024-0089123"
+                                        className="w-full px-4 py-3 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all text-gray-800 placeholder:text-gray-400 font-mono uppercase"
+                                    />
+                                    <p className="text-[10px] font-medium text-gray-400/80 italic ml-1">Solo números, letras y guiones. Se convierte a mayúsculas automáticamente.</p>
+                                </div>
+                            </section>
+
+                            {/* Section 2: Vigencia y Notas */}
+                            <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-5 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] space-y-5">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <span className="w-7 h-7 rounded-full bg-gray-900/90 text-white shadow-md text-xs font-black flex items-center justify-center shrink-0">2</span>
+                                    <h4 className="font-bold text-gray-800 text-base">Vigencia y Notas</h4>
+                                </div>
+
+                                {/* Fechas */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Fecha Inicio *</label>
+                                        <input
+                                            type="date"
+                                            value={form.fechaInicio}
+                                            onChange={e => handleFechaInicioChange(e.target.value)}
+                                            className="w-full px-4 py-3 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all text-gray-800"
+                                        />
                                     </div>
-                                )}
-                            </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Fecha Vencimiento *</label>
+                                        <input
+                                            type="date"
+                                            value={form.fechaVence}
+                                            onChange={e => setForm({ ...form, fechaVence: e.target.value })}
+                                            className="w-full px-4 py-3 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all text-gray-800"
+                                        />
+                                        {form.fechaInicio && form.fechaVence && (
+                                            <p className="text-[10px] text-lime-600 font-bold mt-1 ml-1 flex items-center gap-1">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-lime-500 inline-block" />
+                                                Auto-calculado: 1 año de vigencia
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
 
-                            {/* N° Póliza */}
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-black text-gray-500 uppercase tracking-wider">N° de Póliza *</label>
-                                <input
-                                    type="text"
-                                    value={form.numeroPoliza}
-                                    onChange={e => setForm({ ...form, numeroPoliza: e.target.value })}
-                                    placeholder="Ej: MER-2024-0089123"
-                                    className="w-full px-4 py-3 rounded-2xl border border-white/60 bg-white/50 backdrop-blur-sm text-sm font-medium text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lime-400/50 transition-all font-mono"
-                                />
-                            </div>
-
-                            {/* Fechas */}
-                            <div className="grid grid-cols-2 gap-4">
+                                {/* Observaciones */}
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-black text-gray-500 uppercase tracking-wider">Fecha Inicio</label>
-                                    <input
-                                        type="date"
-                                        value={form.fechaInicio}
-                                        onChange={e => setForm({ ...form, fechaInicio: e.target.value })}
-                                        className="w-full px-4 py-3 rounded-2xl border border-white/60 bg-white/50 backdrop-blur-sm text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-lime-400/50 transition-all"
+                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Observaciones</label>
+                                    <textarea
+                                        value={form.observaciones}
+                                        onChange={e => setForm({ ...form, observaciones: e.target.value })}
+                                        rows={2}
+                                        placeholder="Notas adicionales sobre la póliza..."
+                                        className="w-full px-4 py-3 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all text-gray-800 placeholder:text-gray-400 resize-none"
                                     />
                                 </div>
-                                <div className="space-y-1.5">
-                                    <label className="text-xs font-black text-gray-500 uppercase tracking-wider">Fecha Vencimiento</label>
-                                    <input
-                                        type="date"
-                                        value={form.fechaVence}
-                                        onChange={e => setForm({ ...form, fechaVence: e.target.value })}
-                                        className="w-full px-4 py-3 rounded-2xl border border-white/60 bg-white/50 backdrop-blur-sm text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-lime-400/50 transition-all"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Observaciones */}
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-black text-gray-500 uppercase tracking-wider">Observaciones</label>
-                                <textarea
-                                    value={form.observaciones}
-                                    onChange={e => setForm({ ...form, observaciones: e.target.value })}
-                                    rows={2}
-                                    placeholder="Notas adicionales sobre la póliza..."
-                                    className="w-full px-4 py-3 rounded-2xl border border-white/60 bg-white/50 backdrop-blur-sm text-sm font-medium text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lime-400/50 transition-all resize-none"
-                                />
+                            </section>
                             </div>
                         </div>
 
                         {/* Modal Footer */}
-                        <div className="px-6 py-4 border-t border-white/40 bg-white/30 flex justify-end gap-3">
+                        <div className="px-6 py-4 border-t border-white/40 flex justify-end gap-3 shrink-0 bg-white/30 backdrop-blur-md">
                             <button
+                                type="button"
                                 onClick={() => setIsModalOpen(false)}
-                                className="px-5 py-2.5 rounded-2xl bg-white/50 border border-white/60 text-gray-700 font-bold text-sm hover:bg-white/80 transition-all"
+                                className="px-6 py-3.5 rounded-2xl bg-white/50 border border-white/60 text-gray-700 font-bold hover:bg-white transition-colors text-sm shadow-sm backdrop-blur-sm outline-none focus:ring-2 focus:ring-gray-300"
                             >
                                 Cancelar
                             </button>
                             <button
                                 onClick={handleSave}
                                 disabled={isSaving}
-                                className="px-5 py-2.5 bg-lime-500 hover:bg-lime-600 text-white font-bold text-sm rounded-2xl transition-all flex items-center gap-2 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                                className="px-8 py-3.5 bg-lime-500/95 backdrop-blur-md text-white font-bold rounded-2xl hover:bg-lime-600 disabled:opacity-50 flex items-center gap-2 shadow-[0_4px_12px_rgba(132,204,22,0.3)] border border-lime-400/50 transition-all outline-none focus:ring-2 focus:ring-lime-300"
                             >
-                                {isSaving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
-                                {editingId ? "Guardar Cambios" : "Agregar Póliza"}
+                                {isSaving ? (
+                                    <>
+                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        <span>Guardando...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Save size={18} />
+                                        {editingId ? "Guardar Cambios" : "Agregar Póliza"}
+                                    </>
+                                )}
                             </button>
                         </div>
                     </div>

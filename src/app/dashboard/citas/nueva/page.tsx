@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { FormInput } from "@/components/auth/FormInput";
 import { Calendar as CustomCalendar } from "@/components/ui/Calendar";
+import { PageLoader } from "@/components/ui/PageLoader";
 import { format, parse } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -77,7 +78,6 @@ export default function NewAppointmentPage() {
     useEffect(() => {
         if (selectedSpeciality) {
             fetchDoctors(selectedSpeciality);
-            fetchDoctors(selectedSpeciality);
             setSelectedDoctor(""); // Reset doctor
             setAvailableSlots([]); // Reset slots
             setSelectedSlot("");
@@ -108,7 +108,7 @@ export default function NewAppointmentPage() {
                     id: d.id,
                     firstName: d.firstName,
                     lastName: d.lastName,
-                    specialityId: d.specialtiyId
+                    specialityId: d.specialtyId
                 })));
             }
         } catch (err) {
@@ -232,6 +232,10 @@ export default function NewAppointmentPage() {
 
     return (
         <div className="flex justify-center p-4 sm:p-6 md:p-8 animate-in fade-in duration-300">
+
+            {/* Full-screen Loading Overlay */}
+            {isLoading && <PageLoader fullPage message="Agendando tu cita..." />}
+
             <div className="bg-white/70 backdrop-blur-2xl w-full max-w-2xl rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.12)] border border-white/60 flex flex-col overflow-hidden">
                 
                 {/* Header */}
@@ -326,10 +330,7 @@ export default function NewAppointmentPage() {
                                         </div>
 
                                         {isFetchingSlots ? (
-                                            <div className="p-8 text-center bg-white/30 backdrop-blur-sm rounded-2xl border border-white/50 shadow-inner">
-                                                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-lime-600 mb-2"></div>
-                                                <p className="text-sm font-bold text-gray-500">Buscando horarios...</p>
-                                            </div>
+                                            <PageLoader message="Buscando horarios..." minHeight="min-h-[120px]" />
                                         ) : availableSlots.length > 0 ? (
                                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
                                                 {availableSlots.map((slot, idx) => (

@@ -1,4 +1,5 @@
 import { Modal } from "@/components/ui/Modal";
+import { PageLoader } from "@/components/ui/PageLoader";
 import { FileText, Pill, ClipboardList, Activity, Clock, Calendar } from "lucide-react";
 
 interface AppointmentDetailsModalProps {
@@ -18,9 +19,7 @@ export function AppointmentDetailsModal({ isOpen, onClose, appointment, loading 
             title={loading ? "Cargando..." : `Detalles de la Cita`}
         >
             {loading ? (
-                <div className="flex justify-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-lime-600"></div>
-                </div>
+                <PageLoader message="Cargando detalles..." minHeight="min-h-[180px]" />
             ) : !appointment ? (
                 <div className="text-center py-8 text-red-500">
                     No se pudo cargar la información.

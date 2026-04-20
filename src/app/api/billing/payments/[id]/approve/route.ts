@@ -36,11 +36,11 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
             const insuredAmount = Number(pago.factura.montoAsegurado || 0);
             const paymentAmount = Number(pago.monto);
 
-            // Get ALL validated payments for this invoice (including this one being approved)
+            // Get ALL validated payments for this invoice (already includes the one we just validated above)
             const allValidatedPayments = await tx.pago.findMany({
                 where: { facturaId: pago.facturaId, estadoPago: 'VALIDADO' }
             });
-            const totalValidatedPayments = allValidatedPayments.reduce((sum, p) => sum + Number(p.monto), 0) + paymentAmount;
+            const totalValidatedPayments = allValidatedPayments.reduce((sum, p) => sum + Number(p.monto), 0);
 
             // New balance = total - insured - all validated payments
             const newBalance = Math.max(0, invoiceTotal - insuredAmount - totalValidatedPayments);
@@ -53,13 +53,35 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
                 newStatus = 'PARCIAL';
             }
 
-            const updatedFactura = await tx.factura.update({
+            const updatedFactura = await (tx as any).factura.update({
                 where: { facturaId: pago.facturaId },
                 data: {
                     saldoPendiente: newBalance,
                     estadoFactura: newStatus
                 }
             });
+
+            // 4. AUTOMATIC EMERGENCY PROGRESSION
+            // If the invoice is fully paid, mark emergency as ATENDIDO and confirm payment verification.
+            if (newStatus === 'PAGADA' && updatedFactura.emergenciaId) {
+                try {
+                    const emergency = await (tx as any).emergencia.findUnique({
+                        where: { emergenciaId: updatedFactura.emergenciaId }
+                    });
+                    if (emergency) {
+                        const updateData: any = { verificacionPago: 'CONFIRMADO' };
+                        if (emergency.estadoEmergencia === 'ALTA') {
+                            updateData.estadoEmergencia = 'ATENDIDO';
+                        }
+                        await (tx as any).emergencia.update({
+                            where: { emergenciaId: emergency.emergenciaId },
+                            data: updateData
+                        });
+                    }
+                } catch (e) {
+                    console.error("Failed to progress emergency status:", e);
+                }
+            }
 
             return { pagoId: updatedPago.pagoId.toString() };
         }, {
