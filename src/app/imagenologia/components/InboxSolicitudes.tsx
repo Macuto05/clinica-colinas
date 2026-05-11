@@ -3,14 +3,21 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { ClipboardList, User, CheckCircle2, AlertCircle, ArrowRight, X, Loader2, RefreshCcw, Activity, Filter, UploadCloud } from "lucide-react";
+import { ClipboardList, User, CheckCircle2, AlertCircle, ArrowRight, X, Loader2, RefreshCcw, Activity, Filter, UploadCloud, Eye, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { createClient } from "@supabase/supabase-js";
+import { toast } from "sonner";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 interface Examen {
     detalleImgId: string;
     examenId: string;
     nombre: string;
     atendido: boolean;
+    documentoUrl?: string;
 }
 
 interface Solicitud {
@@ -45,7 +52,7 @@ export default function InboxSolicitudes() {
 
     const [processingDetalleId, setProcessingDetalleId] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
-    const [uploadForm, setUploadForm] = useState<{ obs: string, fileName: string, base64: string }>({ obs: "", fileName: "", base64: "" });
+    const [uploadForm, setUploadForm] = useState<{ obs: string, fileName: string, file: File | null, objectUrl: string }>({ obs: "", fileName: "", file: null, objectUrl: "" });
 
     const toggleRequest = (id: string) => {
         setExpandedRequests(prev => {
@@ -90,31 +97,62 @@ export default function InboxSolicitudes() {
 
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
 
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            setUploadForm(prev => ({ 
-                ...prev, 
-                fileName: file.name, 
-                base64: event.target?.result as string 
-            }));
-        };
-        reader.readAsDataURL(file);
+        if (files.length > 1) {
+            toast.error("Solo se permite adjuntar 1 archivo por estudio");
+            return;
+        }
+
+        const file = files[0];
+        const objectUrl = URL.createObjectURL(file);
+        
+        setUploadForm(prev => ({ 
+            ...prev, 
+            fileName: file.name, 
+            file: file,
+            objectUrl: objectUrl
+        }));
     };
 
     const handleAtenderExamen = async (solicitudId: string, detalleImgId: string) => {
+        if (!uploadForm.file) {
+            toast.error("Debes adjuntar un documento primero");
+            return;
+        }
+
         setIsUploading(true);
         try {
+            // 1. Upload to Supabase Storage
+            const fileExt = uploadForm.fileName.split('.').pop() || 'pdf';
+            const uniqueName = `img_${solicitudId}_${detalleImgId}_${Date.now()}.${fileExt}`;
+            
+            const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('imagenologia-resultados')
+                .upload(uniqueName, uploadForm.file, {
+                    cacheControl: '3600',
+                    upsert: false
+                });
+
+            if (uploadError) {
+                throw new Error("Error al subir archivo a la nube: " + uploadError.message);
+            }
+
+            // 2. Get Public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('imagenologia-resultados')
+                .getPublicUrl(uniqueName);
+
+            // 3. Save in DB
             const res = await fetch(`/api/imagenologia/solicitudes/${solicitudId}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     detalleImgId,
                     observacionGeneral: uploadForm.obs,
-                    documentoBase64: uploadForm.base64 || undefined,
-                    nombreArchivo: uploadForm.fileName || undefined
+                    documentoUrl: publicUrl,
+                    nombreArchivo: uploadForm.fileName
                 })
             });
 
@@ -123,16 +161,18 @@ export default function InboxSolicitudes() {
                 throw new Error(err.error || `Error al procesar`);
             }
             
+            toast.success("Estudio cargado correctamente");
             setActionStatusMap(prev => ({ ...prev, [detalleImgId]: { type: 'success', message: "Resultado Guardado" } }));
             
             setTimeout(() => {
                 fetchSolicitudes(viewMode);
                 setProcessingDetalleId(null);
-                setUploadForm({ obs: "", fileName: "", base64: "" });
+                setUploadForm({ obs: "", fileName: "", file: null, objectUrl: "" });
             }, 1000);
 
         } catch (error: any) {
             console.error("Upload error img:", error);
+            toast.error(error.message);
             setActionStatusMap(prev => ({ ...prev, [detalleImgId]: { type: 'error', message: error.message } }));
         } finally {
             setIsUploading(false);
@@ -369,11 +409,19 @@ export default function InboxSolicitudes() {
                                                                                 <button
                                                                                     onClick={() => {
                                                                                         setProcessingDetalleId(examen.detalleImgId);
-                                                                                        setUploadForm({ obs: "", base64: "", fileName: "" });
+                                                                                        setUploadForm({ obs: "", file: null, fileName: "", objectUrl: "" });
                                                                                     }}
                                                                                     className="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all shadow-sm"
                                                                                 >
                                                                                     Cargar Estudio / Informe
+                                                                                </button>
+                                                                            )}
+                                                                            {viewMode === "historial" && examen.documentoUrl && (
+                                                                                <button
+                                                                                    onClick={() => window.open(examen.documentoUrl, '_blank')}
+                                                                                    className="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all shadow-sm flex items-center gap-2"
+                                                                                >
+                                                                                    <Eye size={12} /> Ver Resultado
                                                                                 </button>
                                                                             )}
                                                                         </div>
@@ -397,30 +445,59 @@ export default function InboxSolicitudes() {
                                                                                             />
                                                                                         </div>
                                                                                         
-                                                                                        <div className="flex items-center gap-3">
-                                                                                            <label className="flex-1 border-2 border-dashed border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer hover:border-lime-400 hover:bg-lime-50/50 transition-all">
-                                                                                                <UploadCloud className="text-gray-400 mb-2" size={24} />
-                                                                                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
-                                                                                                    {uploadForm.fileName || "Adjuntar PDF o Foto (Rayos X)"}
-                                                                                                </span>
-                                                                                                <input type="file" className="hidden" accept=".pdf,image/png,image/jpeg" onChange={handleFileChange} />
-                                                                                            </label>
+                                                                                        <div className="flex flex-col gap-3">
+                                                                                            {!uploadForm.file ? (
+                                                                                                <label className="border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:border-lime-400 hover:bg-lime-50/50 transition-all min-h-[120px]">
+                                                                                                    <UploadCloud className="text-gray-400 mb-2" size={28} />
+                                                                                                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                                                                                                        Adjuntar PDF o Foto (Rayos X)
+                                                                                                    </span>
+                                                                                                    <input type="file" className="hidden" accept=".pdf,image/png,image/jpeg" multiple={false} onChange={handleFileChange} />
+                                                                                                </label>
+                                                                                            ) : (
+                                                                                                <div className="border-2 border-solid border-lime-200 bg-lime-50 rounded-xl p-4 flex items-center justify-between">
+                                                                                                    <div className="flex items-center gap-3 overflow-hidden">
+                                                                                                        <CheckCircle2 className="text-lime-500 shrink-0" size={24} />
+                                                                                                        <span className="text-xs font-bold text-lime-700 truncate">
+                                                                                                            {uploadForm.fileName}
+                                                                                                        </span>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            )}
 
-                                                                                            <div className="flex flex-col gap-2">
-                                                                                                <button
-                                                                                                    disabled={isUploading}
-                                                                                                    onClick={() => handleAtenderExamen(sol.solicitudImgId, examen.detalleImgId)}
-                                                                                                    className="px-6 py-3 bg-lime-500 text-white rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-lime-500/20 flex items-center justify-center min-w-[120px]"
-                                                                                                >
-                                                                                                    {isUploading ? <Loader2 size={14} className="animate-spin" /> : "Guardar"}
-                                                                                                </button>
-                                                                                                <button
-                                                                                                    disabled={isUploading}
-                                                                                                    onClick={() => setProcessingDetalleId(null)}
-                                                                                                    className="px-6 py-2 text-gray-400 hover:text-gray-600 font-black uppercase tracking-widest text-[9px]"
-                                                                                                >
-                                                                                                    Cancelar
-                                                                                                </button>
+                                                                                            <div className="flex items-center gap-2 mt-2">
+                                                                                                {uploadForm.file ? (
+                                                                                                    <>
+                                                                                                        <button
+                                                                                                            disabled={isUploading}
+                                                                                                            onClick={() => window.open(uploadForm.objectUrl, '_blank')}
+                                                                                                            className="flex-1 py-3 bg-blue-50 text-blue-600 rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
+                                                                                                        >
+                                                                                                            <Eye size={14} /> Previsualizar
+                                                                                                        </button>
+                                                                                                        <button
+                                                                                                            disabled={isUploading}
+                                                                                                            onClick={() => setUploadForm({ obs: uploadForm.obs, fileName: "", file: null, objectUrl: "" })}
+                                                                                                            className="flex-1 py-3 bg-red-50 text-red-600 rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
+                                                                                                        >
+                                                                                                            <Trash2 size={14} /> Eliminar
+                                                                                                        </button>
+                                                                                                        <button
+                                                                                                            disabled={isUploading}
+                                                                                                            onClick={() => handleAtenderExamen(sol.solicitudImgId, examen.detalleImgId)}
+                                                                                                            className="flex-1 py-3 bg-lime-500 text-white rounded-xl font-black uppercase tracking-widest text-[9px] shadow-lg shadow-lime-500/20 hover:bg-lime-600 transition-colors flex items-center justify-center gap-2"
+                                                                                                        >
+                                                                                                            {isUploading ? <Loader2 size={14} className="animate-spin" /> : <><CheckCircle2 size={14} /> Confirmar Carga</>}
+                                                                                                        </button>
+                                                                                                    </>
+                                                                                                ) : (
+                                                                                                    <button
+                                                                                                        onClick={() => setProcessingDetalleId(null)}
+                                                                                                        className="flex-1 py-3 bg-gray-50 text-gray-400 hover:text-gray-600 rounded-xl font-black uppercase tracking-widest text-[9px] transition-colors"
+                                                                                                    >
+                                                                                                        Cancelar
+                                                                                                    </button>
+                                                                                                )}
                                                                                             </div>
                                                                                         </div>
 

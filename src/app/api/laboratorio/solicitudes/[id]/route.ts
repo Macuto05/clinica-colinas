@@ -29,7 +29,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         const rawUserId = payload.userId ?? payload.sub;
         if (!rawUserId) return NextResponse.json({ error: "Token inválido: sin userId" }, { status: 401 });
         const usuarioId = BigInt(rawUserId);
-        const { detalleLabId, observacionGeneral, documentoBase64, nombreArchivo } = await req.json();
+        const { detalleLabId, observacionGeneral, documentoBase64, nombreArchivo, documentoUrl } = await req.json();
 
         if (!detalleLabId) {
             return NextResponse.json({ error: "Detalle de laboratorio no proporcionado" }, { status: 400 });
@@ -59,8 +59,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         let rutaArchivoDb = null;
         let finalNombre = nombreArchivo || "resultado.pdf";
 
-        // Handle File upload if provided
-        if (documentoBase64) {
+        // If file was already uploaded to Supabase Storage by the client:
+        if (documentoUrl) {
+             rutaArchivoDb = documentoUrl;
+        } 
+        // Backward compatibility: Handle Base64 File upload if provided
+        else if (documentoBase64) {
             const uploadsDir = path.join(process.cwd(), "public", "uploads", "resultados-lab");
             await fs.mkdir(uploadsDir, { recursive: true });
 

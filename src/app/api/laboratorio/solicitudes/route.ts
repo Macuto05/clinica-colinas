@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
                 detalles: {
                     include: { 
                         examen: { select: { nombre: true } },
-                        resultado: true 
+                        resultado: { include: { documentos: true } }
                     },
                 },
             },
@@ -84,7 +84,8 @@ export async function GET(req: NextRequest) {
                 detalleLabId: d.detalleLabId.toString(),
                 examenId:     d.examenId.toString(),
                 nombre:       d.examen.nombre,
-                atendido:     !!d.resultado
+                atendido:     !!d.resultado,
+                documentoUrl: d.resultado?.documentos?.rutaArchivo || null
             })),
         }));
 

@@ -1,97 +1,148 @@
-
 "use client";
 
-import { useAuth } from "@/contexts/AuthContext";
-import {
-    LayoutDashboard,
-    Calendar,
-    Users,
-    Stethoscope,
-    LogOut,
-    Activity,
-    History as HistoryIcon
-} from "lucide-react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+    Calendar,
+    History as HistoryIcon,
+    LogOut,
+    Menu,
+    ChevronRight,
+} from "lucide-react";
 
-export default function DoctorLayout({ children }: { children: React.ReactNode }) {
-    const { logout, user } = useAuth();
+interface DoctorLayoutProps {
+    children: React.ReactNode;
+}
+
+export default function DoctorLayout({ children }: DoctorLayoutProps) {
+    const { user, logout } = useAuth();
     const pathname = usePathname();
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    const menuItems = [
-        { label: "Mi Agenda", icon: <Calendar size={20} />, href: "/medico" },
-        { label: "Historial Citas", icon: <HistoryIcon size={20} />, href: "/medico/historial" },
+    const navigation = [
+        { name: "Mi Agenda", href: "/medico", icon: Calendar },
+        { name: "Historial Citas", href: "/medico/historial", icon: HistoryIcon },
     ];
 
-    return (
-        <div className="flex h-screen bg-gray-50 dark:bg-black text-gray-900 dark:text-gray-100 font-sans selection:bg-lime-500/30">
-            {/* Sidebar */}
-            <aside className="w-64 bg-white dark:bg-zinc-900 border-r border-gray-200 dark:border-zinc-800 flex flex-col fixed inset-y-0 z-50 transition-all duration-300">
-                <div className="p-6 flex items-center gap-3 border-b border-gray-100 dark:border-zinc-800/50">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-500 to-emerald-600 flex items-center justify-center text-white shadow-lg shadow-lime-500/20">
-                        <Activity size={24} />
-                    </div>
-                    <div>
-                        <h1 className="font-bold text-lg tracking-tight">Portal Médico</h1>
-                        <p className="text-xs text-gray-500 font-medium">Clínica Colinas</p>
-                    </div>
-                </div>
+    const isActive = (path: string) => pathname === path;
 
-                <div className="p-4">
-                    <div className="mb-6 p-4 rounded-xl bg-lime-50 dark:bg-lime-900/10 border border-lime-100 dark:border-lime-900/30">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-lime-100 dark:bg-lime-800 flex items-center justify-center text-lime-600 dark:text-lime-200 font-bold">
-                                Dr.
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-100 via-green-50/30 to-lime-50/30 flex">
+            {/* Mobile Menu Overlay */}
+            {isMobileMenuOpen && (
+                <div
+                    className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                />
+            )}
+
+            {/* Sidebar */}
+            <aside
+                className={`
+                    fixed inset-y-0 left-0 z-50 w-56 bg-white/60 backdrop-blur-xl border-r border-white/50 shadow-[2px_0_16px_0_rgba(0,0,0,0.06)] transform transition-transform duration-200 ease-in-out
+                    ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+                `}
+            >
+                <div className="h-full flex flex-col">
+                    {/* Logo */}
+                    <div className="h-16 flex items-center px-6 border-b border-white/50">
+                        <Link href="/" className="flex items-center gap-2">
+                            <div className="relative h-8 w-32 transition-transform hover:scale-105">
+                                <img
+                                    src="/logo-clinicas-colina.jpg"
+                                    alt="Clínicas Colina"
+                                    className="object-contain h-full w-full"
+                                />
                             </div>
-                            <div className="overflow-hidden">
-                                <p className="font-bold text-sm truncate">
+                        </Link>
+                    </div>
+
+                    {/* User Profile Summary */}
+                    <div className="p-4 border-b border-white/50 bg-white/30 backdrop-blur-md">
+                        <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-full bg-lime-500/10 flex items-center justify-center text-lime-700 font-black shadow-inner border border-lime-500/20 backdrop-blur-md">
+                                {user?.name?.charAt(0) || "D"}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-900 truncate">
                                     {(user as any)?.name || `${(user as any)?.firstName || ''} ${(user as any)?.lastName || ''}`.trim() || "Doctor"}
                                 </p>
-                                <p className="text-xs text-lime-600 dark:text-lime-400">En línea</p>
+                                <p className="text-xs text-gray-500 truncate">
+                                    Médico
+                                </p>
                             </div>
                         </div>
                     </div>
 
-                    <nav className="space-y-1">
-                        {menuItems.map((item) => {
-                            const isActive = pathname === item.href;
+                    {/* Navigation */}
+                    <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+                        {navigation.map((item) => {
+                            const active = isActive(item.href);
                             return (
                                 <Link
-                                    key={item.href}
+                                    key={item.name}
                                     href={item.href}
-                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group
-                                        ${isActive
-                                            ? "bg-lime-500 text-white shadow-md shadow-lime-500/20"
-                                            : "text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-zinc-800 dark:hover:text-white"
-                                        }`}
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className={`
+                                        flex items-center gap-3 px-3 py-2.5 rounded-2xl border text-sm font-bold transition-all duration-200 group
+                                        ${active
+                                            ? "border-lime-500/80 bg-lime-50/80 text-lime-700 shadow-[0_4px_12px_rgba(132,204,22,0.2)] ring-2 ring-lime-400/20 scale-[1.02] backdrop-blur-sm"
+                                            : "border-transparent bg-transparent text-gray-500/80 hover:bg-white/50 hover:border-white/60 hover:text-gray-700 hover:shadow-sm"
+                                        }
+                                    `}
                                 >
-                                    <span className={isActive ? "text-white" : "text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300"}>
-                                        {item.icon}
-                                    </span>
-                                    {item.label}
+                                    <item.icon
+                                        size={20}
+                                        className={`
+                                            transition-colors duration-200
+                                            ${active ? "text-lime-600" : "text-gray-400 group-hover:text-gray-600"}
+                                        `}
+                                    />
+                                    {item.name}
+                                    {active && <ChevronRight size={16} className="ml-auto text-lime-400" />}
                                 </Link>
                             );
                         })}
                     </nav>
-                </div>
 
-                <div className="mt-auto p-4 border-t border-gray-200 dark:border-zinc-800">
-                    <button
-                        onClick={logout}
-                        className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/10 transition-colors"
-                    >
-                        <LogOut size={20} />
-                        Cerrar Sesión
-                    </button>
+                    {/* Logout */}
+                    <div className="p-4 border-t border-white/50 bg-white/30 backdrop-blur-md">
+                        <button
+                            onClick={() => logout()}
+                            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-2xl border border-transparent text-sm font-bold text-red-600 transition-all focus:outline-none hover:bg-red-50 hover:text-red-700 hover:border-red-200 hover:shadow-[0_4px_12px_rgba(239,68,68,0.2)]"
+                        >
+                            <LogOut size={20} />
+                            Cerrar Sesión
+                        </button>
+                    </div>
                 </div>
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 ml-64 p-8 overflow-y-auto">
-                <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    {children}
-                </div>
-            </main>
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden lg:pl-56">
+                {/* Mobile Header */}
+                <header className="lg:hidden h-16 bg-white/60 backdrop-blur-xl border-b border-white/50 flex items-center justify-between px-4">
+                    <button
+                        onClick={() => setIsMobileMenuOpen(true)}
+                        className="p-2 -ml-2 text-gray-600 hover:bg-white/60 rounded-xl transition-colors"
+                    >
+                        <Menu size={24} />
+                    </button>
+                    <span className="font-semibold text-gray-900">
+                        {navigation.find(n => isActive(n.href))?.name || "Portal Médico"}
+                    </span>
+                    <div className="w-8" /> {/* Spacer for centering */}
+                </header>
+
+                {/* Page Content */}
+                <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+                    <div className="max-w-7xl mx-auto">
+                        {children}
+                    </div>
+                </main>
+            </div>
         </div>
     );
 }
