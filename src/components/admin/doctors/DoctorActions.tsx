@@ -1,84 +1,88 @@
-
 "use client";
 
-import { useState } from "react";
-import { MoreVertical, Edit, History, CalendarClock } from "lucide-react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { MoreVertical, Edit, CalendarClock } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { DoctorForm, DoctorFormData } from "./DoctorForm";
 import { useRouter } from "next/navigation";
-
 import { ScheduleEditor } from "./ScheduleEditor";
 
 interface DoctorActionsProps {
-    doctor: any; // Using any for simplicity with Prisma includes, or define strict type
+    doctor: any;
     specialties: { id: string; nombre: string }[];
 }
 
+const MENU_W = 208; // w-52
+const MENU_H = 104; // approx height for 2 items
+const GAP    = 6;
+
 export function DoctorActions({ doctor, specialties }: DoctorActionsProps) {
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const router = useRouter();
+    const [isMenuOpen,          setIsMenuOpen]          = useState(false);
+    const [isEditModalOpen,     setIsEditModalOpen]     = useState(false);
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
-    const [scheduleData, setScheduleData] = useState<any[]>([]);
-    const [isSaving, setIsSaving] = useState(false);
+    const [scheduleData,        setScheduleData]        = useState<any[]>([]);
+    const [isSaving,            setIsSaving]            = useState(false);
+    const [menuPos,             setMenuPos]             = useState({ top: 0, left: 0 });
+    // Portal requires the DOM to be mounted
+    const [mounted,             setMounted]             = useState(false);
+    const router = useRouter();
 
-    // Map Prisma object to Form Data
+    useEffect(() => { setMounted(true); }, []);
+
     const initialFormData: DoctorFormData = {
-        id: doctor.empleado.empleadoId.toString(),
-        nombres: doctor.empleado.nombres,
-        apellidos: doctor.empleado.apellidos,
-        documentoIdentidad: doctor.empleado.documentoIdentidad,
-        telefono: doctor.empleado.telefono || "",
-        especialidad: doctor.especialidadId.toString(),
+        id:                  doctor.empleado.empleadoId.toString(),
+        nombres:             doctor.empleado.nombres,
+        apellidos:           doctor.empleado.apellidos,
+        documentoIdentidad:  doctor.empleado.documentoIdentidad,
+        telefono:            doctor.empleado.telefono || "",
+        especialidad:        doctor.especialidadId.toString(),
         licenciaProfesional: doctor.licenciaProfesional || "",
-        numeroColegiatura: doctor.numeroColegiatura || "",
-        fechaIngreso: doctor.empleado.fechaIngreso
-            ? new Date(doctor.empleado.fechaIngreso).toISOString().split('T')[0]
+        numeroColegiatura:   doctor.numeroColegiatura || "",
+        fechaIngreso:        doctor.empleado.fechaIngreso
+            ? new Date(doctor.empleado.fechaIngreso).toISOString().split("T")[0]
             : "",
-        email: doctor.empleado.usuario?.email || "",
-        activo: doctor.activo,
-        estadoLaboral: doctor.empleado.estadoLaboral || "ACTIVO",
-        usuarioEstado: doctor.empleado.usuario?.estado || "ACTIVO",
+        email:               doctor.empleado.usuario?.email || "",
+        activo:              doctor.activo,
+        estadoLaboral:       doctor.empleado.estadoLaboral || "ACTIVO",
+        usuarioEstado:       doctor.empleado.usuario?.estado || "ACTIVO",
     };
 
-    const handleSuccess = () => {
-        setIsEditModalOpen(false);
-        router.refresh();
+    const handleOpenMenu = (e: React.MouseEvent<HTMLButtonElement>) => {
+        // Use the button's real viewport coordinates
+        const r = e.currentTarget.getBoundingClientRect();
+
+        // Horizontal: right-align menu to the button
+        const left = Math.max(8, r.right - MENU_W);
+
+        // Vertical: open below; flip above if there's not enough space
+        const spaceBelow = window.innerHeight - r.bottom;
+        const top = spaceBelow >= MENU_H + GAP
+            ? r.bottom + GAP          // open downward
+            : r.top - MENU_H - GAP;   // open upward
+
+        setMenuPos({ top, left });
+        setIsMenuOpen(true);
     };
+
+    const handleSuccess = () => { setIsEditModalOpen(false); router.refresh(); };
 
     const handleOpenSchedule = () => {
-        // Transform existing schedule to Editor format if available
-        if (doctor.horario && doctor.horario.detalles) {
-            const daysMap = ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"];
-            const mappedSchedule = daysMap.map(day => {
-                const dayDetails = doctor.horario.detalles.filter((d: any) => d.diaSemana === day);
-                const isActive = dayDetails.length > 0;
-
-                const blocks = dayDetails.map((detail: any) => {
-                    // Extract HH:MM from Date string or object
-                    const startInfo = new Date(detail.horaInicio);
-                    const endInfo = new Date(detail.horaFin); // Assuming valid date objects
-
-                    // Simple formatter
-                    const formatTime = (d: Date) => {
-                        return d.toISOString().substr(11, 5); // Extract HH:MM if ISO
-                    };
-
-                    return {
-                        startTime: formatTime(startInfo),
-                        endTime: formatTime(endInfo)
-                    };
-                });
-
+        if (doctor.horario?.detalles) {
+            const days = ["LUNES","MARTES","MIERCOLES","JUEVES","VIERNES","SABADO","DOMINGO"];
+            setScheduleData(days.map(day => {
+                const det = doctor.horario.detalles.filter((d: any) => d.diaSemana === day);
+                const fmt = (dt: Date) => dt.toISOString().substr(11, 5);
                 return {
-                    day: day,
-                    active: isActive,
-                    blocks: isActive ? blocks : []
+                    day,
+                    active: det.length > 0,
+                    blocks: det.map((d: any) => ({
+                        startTime: fmt(new Date(d.horaInicio)),
+                        endTime:   fmt(new Date(d.horaFin)),
+                    })),
                 };
-            });
-            setScheduleData(mappedSchedule);
+            }));
         } else {
-            // Let component handle defaults or set empty
             setScheduleData([]);
         }
         setIsScheduleModalOpen(true);
@@ -87,75 +91,80 @@ export function DoctorActions({ doctor, specialties }: DoctorActionsProps) {
     const handleSaveSchedule = async () => {
         setIsSaving(true);
         try {
-            const response = await fetch(`/api/admin/doctors/${doctor.empleadoId}/schedule`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ schedule: scheduleData })
+            const res = await fetch(`/api/admin/doctors/${doctor.empleadoId}/schedule`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ schedule: scheduleData }),
             });
-
-            if (!response.ok) throw new Error("Error al guardar horario");
-
+            if (!res.ok) throw new Error();
             setIsScheduleModalOpen(false);
             router.refresh();
-        } catch (error) {
-            console.error(error);
+        } catch {
             alert("Error al guardar el horario");
         } finally {
             setIsSaving(false);
         }
     };
 
+    /* ─── Dropdown via Portal ────────────────────────────────────────
+       Rendered at document.body so it is never affected by any
+       backdrop-filter / overflow:hidden ancestor (which would otherwise
+       break position:fixed or clip the element).
+    ─────────────────────────────────────────────────────────────── */
+    const dropdown = isMenuOpen && mounted && createPortal(
+        <>
+            {/* Full-screen backdrop to close on outside click */}
+            <div
+                style={{ position: "fixed", inset: 0, zIndex: 9998 }}
+                onClick={() => setIsMenuOpen(false)}
+            />
+            {/* Menu panel */}
+            <div
+                style={{
+                    position: "fixed",
+                    top:      menuPos.top,
+                    left:     menuPos.left,
+                    width:    MENU_W,
+                    zIndex:   9999,
+                }}
+                className="rounded-2xl bg-white border border-gray-200 shadow-[0_8px_32px_rgba(0,0,0,0.15)] overflow-hidden"
+            >
+                <div className="py-1">
+                    <button
+                        onClick={() => { setIsEditModalOpen(true); setIsMenuOpen(false); }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                    >
+                        <Edit className="w-4 h-4 text-gray-400 shrink-0" />
+                        Editar Perfil
+                    </button>
+                    <button
+                        onClick={() => { handleOpenSchedule(); setIsMenuOpen(false); }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                    >
+                        <CalendarClock className="w-4 h-4 text-gray-400 shrink-0" />
+                        Modificar Horario
+                    </button>
+                </div>
+            </div>
+        </>,
+        document.body,
+    );
+
     return (
         <>
-            <div className="relative inline-block text-left">
-                <button
-                    onClick={() => setIsMenuOpen(!isMenuOpen)}
-                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
-                >
-                    <MoreVertical className="h-5 w-5" />
-                </button>
-
-                {/* Dropdown Menu */}
-                {isMenuOpen && (
-                    <>
-                        <div
-                            className="fixed inset-0 z-10"
-                            onClick={() => setIsMenuOpen(false)}
-                        />
-                        <div className="absolute right-0 z-20 mt-0 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-zinc-800 dark:ring-zinc-700 animate-in fade-in zoom-in-95 duration-100">
-                            <div className="py-1">
-                                <button
-                                    onClick={() => {
-                                        setIsEditModalOpen(true);
-                                        setIsMenuOpen(false);
-                                    }}
-                                    className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700 flex items-center gap-2"
-                                >
-                                    <Edit className="w-4 h-4" />
-                                    Editar Perfil
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        handleOpenSchedule();
-                                        setIsMenuOpen(false);
-                                    }}
-                                    className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700 flex items-center gap-2"
-                                >
-                                    <CalendarClock className="w-4 h-4" />
-                                    Modificar Horario
-                                </button>
-                            </div>
-                        </div>
-                    </>
-                )}
-            </div>
-
-            {/* Edit Modal */}
-            <Modal
-                isOpen={isEditModalOpen}
-                onClose={() => setIsEditModalOpen(false)}
-                title="Editar Médico"
+            {/* Trigger button */}
+            <button
+                onClick={handleOpenMenu}
+                className="p-2 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
             >
+                <MoreVertical className="h-5 w-5" />
+            </button>
+
+            {/* Dropdown portal */}
+            {dropdown}
+
+            {/* Edit modal */}
+            <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Editar Médico">
                 <DoctorForm
                     initialData={initialFormData}
                     specialties={specialties}
@@ -164,30 +173,21 @@ export function DoctorActions({ doctor, specialties }: DoctorActionsProps) {
                 />
             </Modal>
 
-            {/* Schedule Modal */}
-            <Modal
-                isOpen={isScheduleModalOpen}
-                onClose={() => setIsScheduleModalOpen(false)}
-                title="Modificar Horario Base"
-            >
+            {/* Schedule modal */}
+            <Modal isOpen={isScheduleModalOpen} onClose={() => setIsScheduleModalOpen(false)} title="Modificar Horario Base">
                 <div className="space-y-6">
-                    <div className="p-1">
-                        <ScheduleEditor
-                            value={scheduleData}
-                            onChange={setScheduleData}
-                        />
-                    </div>
-                    <div className="flex justify-end gap-3 pt-4 border-t dark:border-zinc-800">
+                    <ScheduleEditor value={scheduleData} onChange={setScheduleData} />
+                    <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
                         <button
                             onClick={() => setIsScheduleModalOpen(false)}
-                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 dark:bg-zinc-800 dark:text-gray-300 dark:border-zinc-600 dark:hover:bg-zinc-700"
+                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
                         >
                             Cancelar
                         </button>
                         <button
                             onClick={handleSaveSchedule}
                             disabled={isSaving}
-                            className="px-4 py-2 text-sm font-medium text-white bg-lime-600 border border-transparent rounded-md hover:bg-lime-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            className="px-4 py-2 text-sm font-medium text-white bg-lime-600 rounded-lg hover:bg-lime-700 disabled:opacity-50"
                         >
                             {isSaving ? "Guardando..." : "Guardar Cambios"}
                         </button>
