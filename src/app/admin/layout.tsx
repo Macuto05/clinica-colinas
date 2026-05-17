@@ -57,8 +57,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         { name: "Citas Médicas", href: "/admin/citas", icon: Calendar, section: "Clínica" },
         { name: "Especialidades", href: "/admin/especialidades", icon: Activity, section: "Clínica" },
         { name: "Aseguradoras", href: "/admin/aseguradoras", icon: Shield, section: "Clínica" },
-        { name: "Emergencias", href: "/emergencias", icon: Siren, section: "Clínica" },
-        { name: "Enfermería", href: "/enfermeria", icon: Heart, section: "Clínica" },
+        { name: "Emergencias", href: "/admin/emergencias", icon: Siren, section: "Clínica" },
+        { name: "Enfermería", href: "/admin/enfermeria", icon: Heart, section: "Clínica" },
         { name: "Auditoría / Logs", href: "/admin/auditoria", icon: LayoutDashboard, section: "Control y Métricas" },
         { name: "Métricas Bi", href: "/admin/metricas", icon: LayoutDashboard, section: "Control y Métricas" },
     ];

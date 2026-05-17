@@ -72,6 +72,13 @@ export async function POST(request: NextRequest) {
         const hashedPassword = await bcrypt.hash(data.password, 10);
         const ingresoDate = data.fechaIngreso ? new Date(data.fechaIngreso) : new Date();
 
+        // Normalize optional unique fields: empty string → null
+        // (unique constraints in PostgreSQL treat multiple empty strings as duplicates)
+        const licenciaProfesional = data.licenciaProfesional?.trim() || null;
+        const numeroColegiatura   = data.numeroColegiatura?.trim()   || null;
+        const documentoIdentidad  = data.documentoIdentidad?.trim()  || null;
+        const telefono            = data.telefono?.trim()            || null;
+
         const result = await prisma.$transaction(async (tx) => {
             // A. Create Usuario
             const newUser = await tx.usuario.create({
@@ -89,11 +96,11 @@ export async function POST(request: NextRequest) {
                     usuarioId: newUser.usuarioId,
                     nombres: data.nombres,
                     apellidos: data.apellidos,
-                    documentoIdentidad: data.documentoIdentidad,
-                    telefono: data.telefono,
-                    correoInstitucional: data.correoInstitucional || null,
+                    documentoIdentidad,
+                    telefono,
+                    correoInstitucional: data.correoInstitucional?.trim() || null,
                     fechaIngreso: ingresoDate,
-                    estadoLaboral: 'ACTIVO', // Prisma Enum
+                    estadoLaboral: 'ACTIVO',
                 }
             });
 
@@ -102,8 +109,8 @@ export async function POST(request: NextRequest) {
                 data: {
                     empleadoId: newEmployee.empleadoId,
                     especialidadId: BigInt(data.especialidad),
-                    licenciaProfesional: data.licenciaProfesional,
-                    numeroColegiatura: data.numeroColegiatura,
+                    licenciaProfesional,
+                    numeroColegiatura,
                     activo: true
                 }
             });

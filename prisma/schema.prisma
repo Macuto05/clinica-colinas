@@ -54,8 +54,23 @@ model Usuario {
   diagnosticos          Diagnostico[]
   historiasActualizadas HistoriaClinica[]       @relation("UsuarioActualizaHistoria")
   cargosGenerados       CargoCuentaPaciente[]
+  resetTokens           PasswordResetToken[]
 
   @@map("usuario")
+}
+
+model PasswordResetToken {
+  id         Int      @id @default(autoincrement())
+  token      String   @unique @db.VarChar(255)
+  usuarioId  BigInt   @map("usuario_id")
+  expiresAt  DateTime @map("expires_at") @db.Timestamptz(6)
+  used       Boolean  @default(false)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  usuario    Usuario  @relation(fields: [usuarioId], references: [usuarioId], onDelete: Cascade)
+
+  @@index([token])
+  @@index([usuarioId])
+  @@map("password_reset_token")
 }
 
 model Empleado {
