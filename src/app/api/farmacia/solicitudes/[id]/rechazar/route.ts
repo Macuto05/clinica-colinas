@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/infrastructure/database/prisma/client";
 import { JWTService } from "@/infrastructure/services/JWTService";
+import { logAuditoria } from "@/infrastructure/services/AuditService";
 
 // @ts-ignore
 BigInt.prototype.toJSON = function () { return this.toString() };
@@ -39,6 +40,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
                 usuarioResponde: usuarioId,
                 fechaRespuesta:  new Date()
             }
+        });
+
+        logAuditoria({
+            usuarioId: usuarioId,
+            nombreUsuario: (payload as any).email,
+            rolUsuario: (payload as any).role,
+            modulo: 'FARMACIA',
+            accion: 'SOLICITUD_RECHAZADA',
+            descripcion: `Solicitud de insumos #${solicitudId} rechazada. Motivo: ${motivo}`,
+            severidad: 'WARNING',
+            entidadTipo: 'SolicitudInsumo',
+            entidadId: solicitudId,
+            req,
         });
 
         return NextResponse.json({ success: true, solicitudId: updated.solicitudInsumoId.toString() });

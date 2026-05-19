@@ -1,6 +1,7 @@
 ﻿
 import { NextResponse } from "next/server";
 import { prisma } from "@/infrastructure/database/prisma/client";
+import { logAuditoria } from "@/infrastructure/services/AuditService";
 
 // @ts-ignore
 BigInt.prototype.toJSON = function () { return this.toString() };
@@ -105,6 +106,18 @@ export async function POST(req: Request) {
                 timeout: 20000
             });
 
+            logAuditoria({
+                usuarioId: usuarioId ? BigInt(usuarioId) : null,
+                nombreUsuario: String(usuarioId),
+                rolUsuario: 'CAJA',
+                modulo: 'CAJA',
+                accion: 'PAGO_REGISTRADO_PRESENCIAL',
+                descripcion: `Pago presencial de $${monto} registrado para factura #${facturaId}`,
+                entidadTipo: 'Pago',
+                entidadId: result.pagoId,
+                metadatos: { facturaId, monto, metodoPagoId, referencia, canalPago },
+            });
+
             return NextResponse.json({ success: true, pagoId: result.pagoId });
         }
 
@@ -137,6 +150,18 @@ export async function POST(req: Request) {
                 ...paymentData,
                 fechaRegistro: new Date()
             }
+        });
+
+        logAuditoria({
+            usuarioId: usuarioId ? BigInt(usuarioId) : null,
+            nombreUsuario: String(usuarioId),
+            rolUsuario: 'CAJA',
+            modulo: 'CAJA',
+            accion: 'PAGO_REGISTRADO_ONLINE',
+            descripcion: `Pago ${canalPago} de $${monto} registrado (pendiente validación) — Factura #${facturaId}`,
+            entidadTipo: 'Pago',
+            entidadId: pago.pagoId.toString(),
+            metadatos: { facturaId, monto, canalPago, referencia },
         });
 
         return NextResponse.json({ success: true, pagoId: pago.pagoId.toString() });

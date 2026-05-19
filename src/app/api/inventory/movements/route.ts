@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/infrastructure/database/prisma/client";
+import { logAuditoria } from "@/infrastructure/services/AuditService";
 
 
 // GET: List Inventory Movements (Kardex)
@@ -400,6 +401,24 @@ export async function POST(request: Request) {
         }, {
             maxWait: 5000,
             timeout: 20000
+        });
+
+        const tipoDescMap: Record<string, string> = {
+            ENTRADA: 'Entrada de mercancía',
+            SALIDA: 'Salida de inventario',
+            TRASLADO: 'Traslado entre almacenes',
+            AJUSTE: 'Ajuste de inventario',
+        };
+        logAuditoria({
+            usuarioId: usuarioId,
+            nombreUsuario: String(usuarioId),
+            rolUsuario: 'ALMACEN',
+            modulo: 'ALMACEN',
+            accion: `MOVIMIENTO_${tipo}`,
+            descripcion: `${tipoDescMap[tipo] || tipo}: ${items.length} ítem(s)${pedidoId ? ` — Pedido #${pedidoId}` : ''}`,
+            severidad: tipo === 'AJUSTE' ? 'WARNING' : 'INFO',
+            entidadTipo: 'MovimientoInventario',
+            metadatos: { tipo, cantidadItems: items.length, pedidoId, almacenDestinoId, motivo },
         });
 
         return NextResponse.json({ success: true, message: "Movimientos registrados correctamente" });

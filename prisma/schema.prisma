@@ -55,6 +55,7 @@ model Usuario {
   historiasActualizadas HistoriaClinica[]       @relation("UsuarioActualizaHistoria")
   cargosGenerados       CargoCuentaPaciente[]
   resetTokens           PasswordResetToken[]
+  registrosAuditoria    RegistroAuditoria[]
 
   @@map("usuario")
 }
@@ -922,4 +923,39 @@ model CargoCuentaPaciente {
   @@index([emergenciaId])
   @@index([estadoCobro])
   @@map("cargo_cuenta_paciente")
+}
+
+model RegistroAuditoria {
+  id            BigInt   @id @default(autoincrement()) @map("id")
+  fechaHora     DateTime @default(now()) @map("fecha_hora") @db.Timestamptz(6)
+
+  usuarioId     BigInt?  @map("usuario_id")
+  nombreUsuario String   @map("nombre_usuario") @db.VarChar(200)
+  rolUsuario    String   @map("rol_usuario") @db.VarChar(60)
+
+  modulo        String   @db.VarChar(60)
+  accion        String   @db.VarChar(100)
+  descripcion   String
+  severidad     AuditSeveridad @default(INFO)
+
+  entidadTipo   String?  @map("entidad_tipo") @db.VarChar(80)
+  entidadId     String?  @map("entidad_id") @db.VarChar(40)
+
+  metadatos     Json?
+
+  ipOrigen      String?  @map("ip_origen") @db.VarChar(45)
+
+  usuario       Usuario? @relation(fields: [usuarioId], references: [usuarioId])
+
+  @@index([fechaHora(sort: Desc)])
+  @@index([modulo])
+  @@index([usuarioId])
+  @@index([accion])
+  @@map("registro_auditoria")
+}
+
+enum AuditSeveridad {
+  INFO
+  WARNING
+  CRITICAL
 }

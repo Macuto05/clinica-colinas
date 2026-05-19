@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/infrastructure/database/prisma/client";
 import { JWTService } from "@/infrastructure/services/JWTService";
+import { logAuditoria } from "@/infrastructure/services/AuditService";
 
 // @ts-ignore
 BigInt.prototype.toJSON = function () { return this.toString() };
@@ -123,6 +124,19 @@ export async function POST(req: NextRequest) {
                     },
                 });
             }
+        });
+
+        logAuditoria({
+            usuarioId: usuarioId,
+            nombreUsuario: (payload as any).email,
+            rolUsuario: (payload as any).role,
+            modulo: 'ENFERMERIA',
+            accion: 'CONSUMO_INSUMO',
+            descripcion: `Consumo de ${insumos.length} insumo(s) registrado para cita #${citaId}`,
+            entidadTipo: 'CitaMedica',
+            entidadId: citaId,
+            metadatos: { insumos, observaciones },
+            req,
         });
 
         return NextResponse.json({ success: true, message: "Consumo registrado correctamente" });

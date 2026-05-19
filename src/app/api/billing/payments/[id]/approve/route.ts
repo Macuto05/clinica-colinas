@@ -1,6 +1,7 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/infrastructure/database/prisma/client";
+import { logAuditoria } from "@/infrastructure/services/AuditService";
 
 // @ts-ignore
 BigInt.prototype.toJSON = function () { return this.toString() };
@@ -87,6 +88,18 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
         }, {
             maxWait: 5000, // Wait 5s for a connection
             timeout: 20000 // Allow 20s for the transaction
+        });
+
+        logAuditoria({
+            usuarioId: usuarioId ? BigInt(usuarioId) : null,
+            nombreUsuario: String(usuarioId),
+            rolUsuario: 'CAJA',
+            modulo: 'CAJA',
+            accion: 'PAGO_APROBADO',
+            descripcion: `Pago #${id} aprobado y validado`,
+            entidadTipo: 'Pago',
+            entidadId: id,
+            metadatos: { pagoId: result.pagoId },
         });
 
         return NextResponse.json({ success: true, ...result });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/infrastructure/database/prisma/client";
 import { JWTService } from "@/infrastructure/services/JWTService";
+import { logAuditoria } from "@/infrastructure/services/AuditService";
 
 // @ts-ignore
 BigInt.prototype.toJSON = function () { return this.toString() };
@@ -158,6 +159,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             });
 
             return { movementId: movement.movimientoId.toString(), approvedCount: updatedDetails.length };
+        });
+
+        logAuditoria({
+            usuarioId: usuarioId,
+            nombreUsuario: (payload as any).email,
+            rolUsuario: (payload as any).role,
+            modulo: 'FARMACIA',
+            accion: 'SOLICITUD_DESPACHADA',
+            descripcion: `Solicitud de insumos #${solicitudId} despachada (${result.approvedCount} ítems)`,
+            entidadTipo: 'SolicitudInsumo',
+            entidadId: solicitudId,
+            metadatos: { almacenId, movimientoId: result.movementId },
+            req,
         });
 
         return NextResponse.json({ success: true, ...result });

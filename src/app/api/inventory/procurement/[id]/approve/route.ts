@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/infrastructure/database/prisma/client";
+import { logAuditoria } from "@/infrastructure/services/AuditService";
 
 export async function PUT(
     request: Request,
@@ -66,6 +67,18 @@ export async function PUT(
                     fechaAprobacion: new Date()
                 }
             });
+        });
+
+        logAuditoria({
+            usuarioId: BigInt(usuarioId),
+            nombreUsuario: String(usuarioId),
+            rolUsuario: 'ADMIN',
+            modulo: 'ALMACEN',
+            accion: 'PEDIDO_COMPRA_APROBADO',
+            descripcion: `Pedido de compra #${id} aprobado (${detalles.length} ítems)`,
+            entidadTipo: 'PedidoCompra',
+            entidadId: id,
+            metadatos: { pedidoId: id, cantidadDetalles: detalles.length },
         });
 
         return NextResponse.json({

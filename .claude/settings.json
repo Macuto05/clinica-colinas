@@ -6,7 +6,15 @@
       "Bash(xargs grep:*)",
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git pull *)",
+      "Read(//c/Users/Marcu/**)",
+      "Bash(npm install *)",
+      "Bash(node -e \"const p = require\\('c:/Users/Marcu/clinica-colinas/node_modules/next/package.json'\\); console.log\\(p.version\\)\")",
+      "Bash(node -e \"const p = require\\('c:/Users/Marcu/clinica-colinas/node_modules/@tailwindcss/postcss/package.json'\\); console.log\\(p.version\\)\")",
+      "Bash(node \"c:/Users/Marcu/clinica-colinas/node_modules/.bin/next\" dev --help)",
+      "Bash(npx next *)",
+      "Bash(node -e ' *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\Marcu\\clinica-colinas\\src\\app\\api\\billing\\invoices\\[id]",

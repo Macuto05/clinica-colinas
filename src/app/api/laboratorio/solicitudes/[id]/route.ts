@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/infrastructure/database/prisma/client";
 import { JWTService } from "@/infrastructure/services/JWTService";
+import { logAuditoria } from "@/infrastructure/services/AuditService";
 import fs from "fs/promises";
 import path from "path";
 
@@ -146,6 +147,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             }
 
             return resultado;
+        });
+
+        logAuditoria({
+            usuarioId: usuarioId,
+            nombreUsuario: (payload as any).email,
+            rolUsuario: (payload as any).role,
+            modulo: 'LABORATORIO',
+            accion: 'RESULTADO_LAB_REGISTRADO',
+            descripcion: `Resultado de laboratorio registrado para solicitud #${id}`,
+            entidadTipo: 'SolicitudLaboratorio',
+            entidadId: id,
+            metadatos: { detalleLabId, tieneDocumento: !!rutaArchivoDb },
+            req,
         });
 
         return NextResponse.json({ success: true, resultadoId: result.resultadoId.toString() });

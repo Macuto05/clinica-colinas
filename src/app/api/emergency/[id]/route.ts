@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/infrastructure/database/prisma/client";
 import { JWTService } from "@/infrastructure/services/JWTService";
+import { logAuditoria } from "@/infrastructure/services/AuditService";
 
 // @ts-ignore
 BigInt.prototype.toJSON = function () { return this.toString() };
@@ -300,6 +301,23 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
                     }
                 });
             }
+        }
+
+        if (data.estadoEmergencia) {
+            const estadosGraves = ['CIRUGIA_URGENTE', 'ALTA', 'REFERIDO'];
+            logAuditoria({
+                usuarioId: (payload as any).userId ?? (payload as any).sub,
+                nombreUsuario: (payload as any).email,
+                rolUsuario: (payload as any).role,
+                modulo: 'EMERGENCIAS',
+                accion: 'EMERGENCIA_ESTADO_CAMBIADO',
+                descripcion: `Emergencia #${id} cambió estado a ${data.estadoEmergencia}`,
+                severidad: estadosGraves.includes(data.estadoEmergencia) ? 'WARNING' : 'INFO',
+                entidadTipo: 'Emergencia',
+                entidadId: id,
+                metadatos: { nuevoEstado: data.estadoEmergencia, nivelUrgencia: data.nivelUrgencia },
+                req,
+            });
         }
 
         return NextResponse.json({

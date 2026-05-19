@@ -4,6 +4,7 @@ import { loginSchema } from "@/lib/validations/auth";
 import { LoginUser } from "@/application/use-cases/auth/LoginUser";
 import { PrismaUserRepository } from "@/infrastructure/database/prisma/repositories/PrismaUserRepository";
 import { JWTService } from "@/infrastructure/services/JWTService";
+import { logAuditoria } from "@/infrastructure/services/AuditService";
 
 export async function POST(request: NextRequest) {
     try {
@@ -47,6 +48,18 @@ export async function POST(request: NextRequest) {
 
         // Return user data (password is already excluded in toJSON)
         const userJson = user.toJSON();
+
+        logAuditoria({
+            usuarioId: user.id,
+            nombreUsuario: user.email,
+            rolUsuario: user.role,
+            modulo: 'AUTH',
+            accion: 'LOGIN',
+            descripcion: `Inicio de sesión: ${user.email}`,
+            entidadTipo: 'Usuario',
+            entidadId: String(user.id),
+            req: request,
+        });
 
         return NextResponse.json({
             success: true,
