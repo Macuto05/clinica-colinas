@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Calendar, User, Stethoscope, Search, Loader2 } from "lucide-react";
+import { Calendar, User, Stethoscope, Search, Loader2, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { AppointmentStatus } from "@/domain/entities/Appointment";
 
 interface AppointmentWithDetails {
@@ -16,28 +16,131 @@ interface AppointmentWithDetails {
     doctorName?: string;
 }
 
+interface PaginationData {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    appointments: AppointmentWithDetails[];
+}
+
+interface CreateFormData {
+    pacienteId: string;
+    medicoId: string;
+    fechaCita: string;
+    horaInicio: string;
+    motivoConsulta: string;
+}
+
 export default function AdminAppointmentsPage() {
     const [appointments, setAppointments] = useState<AppointmentWithDetails[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const [page, setPage] = useState(1);
+    const [pageSize] = useState(10);
+    const [totalPages, setTotalPages] = useState(1);
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [formData, setFormData] = useState<CreateFormData>({
+        pacienteId: "",
+        medicoId: "",
+        fechaCita: "",
+        horaInicio: "",
+        motivoConsulta: "",
+    });
+    const [patients, setPatients] = useState<any[]>([]);
+    const [doctors, setDoctors] = useState<any[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         fetchAppointments();
-    }, []);
+        if (showCreateModal) {
+            fetchPatients();
+            fetchDoctors();
+        }
+    }, [page, searchTerm, showCreateModal]);
 
     const fetchAppointments = async () => {
+        setIsLoading(true);
         try {
-            const res = await fetch("/api/admin/appointments");
+            const params = new URLSearchParams({
+                page: page.toString(),
+                pageSize: pageSize.toString(),
+            });
+            if (searchTerm) params.append("search", searchTerm);
+
+            const res = await fetch(`/api/admin/citas?${params}`);
             if (res.ok) {
-                const data = await res.json();
+                const data: PaginationData = await res.json();
                 setAppointments(data.appointments);
-            } else {
-                console.error("Failed to fetch");
+                setTotalPages(data.totalPages);
             }
         } catch (error) {
             console.error("Error:", error);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const fetchPatients = async () => {
+        try {
+            const res = await fetch("/api/admin/patients");
+            if (res.ok) {
+                const data = await res.json();
+                setPatients(data.patients || []);
+            }
+        } catch (error) {
+            console.error("Error fetching patients:", error);
+        }
+    };
+
+    const fetchDoctors = async () => {
+        try {
+            const res = await fetch("/api/admin/doctors");
+            if (res.ok) {
+                const data = await res.json();
+                setDoctors(data.doctors || []);
+            }
+        } catch (error) {
+            console.error("Error fetching doctors:", error);
+        }
+    };
+
+    const handleCreateCita = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!formData.pacienteId || !formData.medicoId || !formData.fechaCita || !formData.horaInicio) {
+            alert("Por favor completa todos los campos requeridos");
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const res = await fetch("/api/reception/appointments", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    pacienteId: formData.pacienteId,
+                    medicoId: formData.medicoId,
+                    fechaCita: formData.fechaCita,
+                    horaInicio: formData.horaInicio,
+                    motivoConsulta: formData.motivoConsulta || null,
+                }),
+            });
+
+            if (res.ok) {
+                alert("Cita creada exitosamente");
+                setShowCreateModal(false);
+                setFormData({ pacienteId: "", medicoId: "", fechaCita: "", horaInicio: "", motivoConsulta: "" });
+                setPage(1);
+                await fetchAppointments();
+            } else {
+                const err = await res.json();
+                alert(`Error: ${err.error || "No se pudo crear la cita"}`);
+            }
+        } catch (error) {
+            console.error("Error creating cita:", error);
+            alert("Error al crear la cita");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -66,11 +169,6 @@ export default function AdminAppointmentsPage() {
         );
     };
 
-    const filtered = appointments.filter(apt =>
-        apt.patientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        apt.doctorName?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center bg-white/40 backdrop-blur-md p-8 rounded-[2.5rem] border border-white/50 shadow-sm">
@@ -83,6 +181,13 @@ export default function AdminAppointmentsPage() {
                         <p className="text-gray-500 font-medium mt-1">Monitoreo y administración global de la agenda clínica.</p>
                     </div>
                 </div>
+                <button
+                    onClick={() => setShowCreateModal(true)}
+                    className="flex items-center gap-2 px-6 py-3 bg-lime-500 text-white rounded-2xl font-bold shadow-lg hover:bg-lime-600 transition-colors"
+                >
+                    <Plus size={20} />
+                    Nueva Cita
+                </button>
             </div>
 
             {/* Filters */}
@@ -94,7 +199,10 @@ export default function AdminAppointmentsPage() {
                         placeholder="Buscar por paciente o doctor..."
                         className="w-full pl-11 pr-4 py-3 rounded-2xl border border-white/60 bg-white/50 focus:bg-white/80 focus:ring-4 focus:ring-lime-500/10 outline-none transition-all placeholder:text-gray-400/60 shadow-inner text-sm font-medium"
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            setPage(1);
+                        }}
                     />
                 </div>
             </div>
@@ -106,7 +214,7 @@ export default function AdminAppointmentsPage() {
                         <Loader2 className="animate-spin text-lime-500" size={40} strokeWidth={2.5} />
                         <p className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Cargando agenda...</p>
                     </div>
-                ) : filtered.length === 0 ? (
+                ) : appointments.length === 0 ? (
                     <div className="py-32 text-center">
                         <div className="bg-gray-50/50 border border-gray-100/50 w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4">
                             <Calendar className="text-gray-300" size={24} />
@@ -116,55 +224,174 @@ export default function AdminAppointmentsPage() {
                         </p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full">
-                            <thead>
-                                <tr className="bg-white/30 border-b border-white/40">
-                                    <th scope="col" className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-gray-500/80 cursor-default">Fecha y Hora</th>
-                                    <th scope="col" className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-gray-500/80 cursor-default">Paciente</th>
-                                    <th scope="col" className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-gray-500/80 cursor-default">Doctor</th>
-                                    <th scope="col" className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-gray-500/80 cursor-default">Tipo</th>
-                                    <th scope="col" className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-gray-500/80 cursor-default">Motivo</th>
-                                    <th scope="col" className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-gray-500/80 cursor-default">Estado</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/40">
-                                {filtered.map((appointment) => (
-                                    <tr key={appointment.id} className="hover:bg-white/60 transition-colors group">
-                                        <td className="px-6 py-5 whitespace-nowrap">
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-black text-gray-900 tracking-tight">
-                                                    {format(new Date(appointment.datetime), "dd 'de' MMMM", { locale: es })}
-                                                </span>
-                                                <span className="text-[10px] font-black text-lime-600 uppercase tracking-widest mt-0.5">
-                                                    {format(new Date(appointment.datetime), "h:mm a")}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-5 whitespace-nowrap">
-                                            <span className="text-sm font-black text-gray-900 tracking-tight">{appointment.patientName}</span>
-                                        </td>
-                                        <td className="px-6 py-5 whitespace-nowrap">
-                                            <span className="text-sm font-black text-gray-900 tracking-tight">Dr. {appointment.doctorName}</span>
-                                        </td>
-                                        <td className="px-6 py-5 whitespace-nowrap">
-                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-purple-50/50 text-purple-700 border border-purple-200/50 shadow-sm">
-                                                {appointment.type}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-5 text-gray-500 font-bold text-sm truncate max-w-[200px]">
-                                            {appointment.reason || "Sin motivo especificado"}
-                                        </td>
-                                        <td className="px-6 py-5 whitespace-nowrap">
-                                            <StatusBadge status={appointment.status} />
-                                        </td>
+                    <>
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full">
+                                <thead>
+                                    <tr className="bg-white/30 border-b border-white/40">
+                                        <th scope="col" className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-gray-500/80 cursor-default">Fecha y Hora</th>
+                                        <th scope="col" className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-gray-500/80 cursor-default">Paciente</th>
+                                        <th scope="col" className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-gray-500/80 cursor-default">Doctor</th>
+                                        <th scope="col" className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-gray-500/80 cursor-default">Tipo</th>
+                                        <th scope="col" className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-gray-500/80 cursor-default">Motivo</th>
+                                        <th scope="col" className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-gray-500/80 cursor-default">Estado</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody className="divide-y divide-white/40">
+                                    {appointments.map((appointment) => (
+                                        <tr key={appointment.id} className="hover:bg-white/60 transition-colors group">
+                                            <td className="px-6 py-5 whitespace-nowrap">
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-black text-gray-900 tracking-tight">
+                                                        {format(new Date(appointment.datetime), "dd 'de' MMMM", { locale: es })}
+                                                    </span>
+                                                    <span className="text-[10px] font-black text-lime-600 uppercase tracking-widest mt-0.5">
+                                                        {format(new Date(appointment.datetime), "h:mm a")}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-5 whitespace-nowrap">
+                                                <span className="text-sm font-black text-gray-900 tracking-tight">{appointment.patientName}</span>
+                                            </td>
+                                            <td className="px-6 py-5 whitespace-nowrap">
+                                                <span className="text-sm font-black text-gray-900 tracking-tight">Dr. {appointment.doctorName}</span>
+                                            </td>
+                                            <td className="px-6 py-5 whitespace-nowrap">
+                                                <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-purple-50/50 text-purple-700 border border-purple-200/50 shadow-sm">
+                                                    {appointment.type}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-5 text-gray-500 font-bold text-sm truncate max-w-[200px]">
+                                                {appointment.reason || "Sin motivo especificado"}
+                                            </td>
+                                            <td className="px-6 py-5 whitespace-nowrap">
+                                                <StatusBadge status={appointment.status} />
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Pagination */}
+                        <div className="bg-white/20 px-6 py-4 flex items-center justify-between border-t border-white/40">
+                            <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">
+                                Página {page} de {totalPages}
+                            </p>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setPage(Math.max(1, page - 1))}
+                                    disabled={page === 1}
+                                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/50 border border-white/60 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/70 transition-colors"
+                                >
+                                    <ChevronLeft size={16} />
+                                </button>
+                                <button
+                                    onClick={() => setPage(Math.min(totalPages, page + 1))}
+                                    disabled={page === totalPages}
+                                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/50 border border-white/60 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/70 transition-colors"
+                                >
+                                    <ChevronRight size={16} />
+                                </button>
+                            </div>
+                        </div>
+                    </>
                 )}
             </div>
+
+            {/* Create Cita Modal */}
+            {showCreateModal && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 space-y-6">
+                        <h2 className="text-2xl font-black text-gray-900">Nueva Cita Médica</h2>
+                        <form onSubmit={handleCreateCita} className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-600 mb-2">Paciente</label>
+                                <select
+                                    value={formData.pacienteId}
+                                    onChange={(e) => setFormData({ ...formData, pacienteId: e.target.value })}
+                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-lime-500 outline-none"
+                                    required
+                                >
+                                    <option value="">Seleccionar paciente...</option>
+                                    {patients.map(p => (
+                                        <option key={p.pacienteId} value={p.pacienteId}>
+                                            {p.nombres} {p.apellidos}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-gray-600 mb-2">Médico</label>
+                                <select
+                                    value={formData.medicoId}
+                                    onChange={(e) => setFormData({ ...formData, medicoId: e.target.value })}
+                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-lime-500 outline-none"
+                                    required
+                                >
+                                    <option value="">Seleccionar médico...</option>
+                                    {doctors.map(d => (
+                                        <option key={d.empleadoId} value={d.empleadoId}>
+                                            Dr. {d.empleado.nombres} {d.empleado.apellidos} ({d.especialidad.nombre})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-gray-600 mb-2">Fecha</label>
+                                <input
+                                    type="date"
+                                    value={formData.fechaCita}
+                                    onChange={(e) => setFormData({ ...formData, fechaCita: e.target.value })}
+                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-lime-500 outline-none"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-gray-600 mb-2">Hora</label>
+                                <input
+                                    type="time"
+                                    value={formData.horaInicio}
+                                    onChange={(e) => setFormData({ ...formData, horaInicio: e.target.value })}
+                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-lime-500 outline-none"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-gray-600 mb-2">Motivo de la Consulta</label>
+                                <textarea
+                                    value={formData.motivoConsulta}
+                                    onChange={(e) => setFormData({ ...formData, motivoConsulta: e.target.value })}
+                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-lime-500 outline-none resize-none h-24"
+                                    placeholder="Describe el motivo de la consulta..."
+                                />
+                            </div>
+
+                            <div className="flex gap-3 pt-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCreateModal(false)}
+                                    className="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isSubmitting}
+                                    className="flex-1 px-4 py-3 rounded-xl bg-lime-500 text-white font-bold hover:bg-lime-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                                >
+                                    {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <Plus size={18} />}
+                                    {isSubmitting ? "Creando..." : "Crear Cita"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import prisma from "@/infrastructure/database/prisma/client";
 import CreateStaffButton from "@/components/admin/staff/CreateStaffButton";
 import StaffActions from "@/components/admin/staff/StaffActions";
@@ -11,7 +12,11 @@ export default async function AdminStaffPage({
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
     const resolvedParams = await searchParams;
-    const { id, search, document, role, status } = resolvedParams;
+    const { id, search, document, role, status, page: pageParam } = resolvedParams;
+
+    // Pagination
+    const page = Math.max(1, parseInt(pageParam as string) || 1);
+    const pageSize = 10;
 
     // Fetch roles
     const roles = await prisma.rol.findMany({
@@ -60,18 +65,25 @@ export default async function AdminStaffPage({
         where.estadoLaboral = status as $Enums.EmpleadoEstadoLaboral;
     }
 
-    // 1. Fetch staff with filters
-    const staff = await prisma.empleado.findMany({
-        where,
-        include: {
-            usuario: {
-                include: {
-                    rol: true
+    // Fetch total and paginated staff
+    const [total, staff] = await Promise.all([
+        prisma.empleado.count({ where }),
+        prisma.empleado.findMany({
+            where,
+            include: {
+                usuario: {
+                    include: {
+                        rol: true
+                    }
                 }
-            }
-        },
-        orderBy: { empleadoId: 'asc' }
-    });
+            },
+            orderBy: { empleadoId: 'asc' },
+            skip: (page - 1) * pageSize,
+            take: pageSize,
+        })
+    ]);
+
+    const totalPages = Math.ceil(total / pageSize);
 
     return (
         <div className="space-y-6">
@@ -173,6 +185,32 @@ export default async function AdminStaffPage({
                         )}
                     </tbody>
                 </table>
+
+                {staff.length > 0 && (
+                    <div className="bg-white/20 px-6 py-4 flex items-center justify-between border-t border-white/40">
+                        <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">
+                            Página {page} de {totalPages} ({total} total)
+                        </p>
+                        <div className="flex gap-2">
+                            {page > 1 && (
+                                <Link
+                                    href={`/admin/personal?${new URLSearchParams({ ...Object.fromEntries(Object.entries(resolvedParams).filter(([k]) => k !== 'page')), page: (page - 1).toString() }).toString()}`}
+                                    className="px-4 py-2 rounded-lg bg-white/50 border border-white/60 hover:bg-white/70 transition-colors text-sm font-bold"
+                                >
+                                    ← Anterior
+                                </Link>
+                            )}
+                            {page < totalPages && (
+                                <Link
+                                    href={`/admin/personal?${new URLSearchParams({ ...Object.fromEntries(Object.entries(resolvedParams).filter(([k]) => k !== 'page')), page: (page + 1).toString() }).toString()}`}
+                                    className="px-4 py-2 rounded-lg bg-white/50 border border-white/60 hover:bg-white/70 transition-colors text-sm font-bold"
+                                >
+                                    Siguiente →
+                                </Link>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

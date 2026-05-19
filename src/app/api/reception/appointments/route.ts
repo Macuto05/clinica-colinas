@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/infrastructure/database/prisma/client";
 import { startOfDay, endOfDay, parseISO } from "date-fns";
+import { JWTService } from "@/infrastructure/services/JWTService";
 
 export async function GET(req: Request) {
     try {
@@ -88,5 +89,76 @@ export async function GET(req: Request) {
     } catch (error) {
         console.error("Error fetching reception agenda:", error);
         return NextResponse.json({ error: "Error al obtener agenda" }, { status: 500 });
+    }
+}
+
+export async function POST(req: NextRequest) {
+    try {
+        const token = req.cookies.get("auth-token")?.value;
+        if (!token) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+        const payload = await JWTService.verifyToken(token);
+        if (!payload) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
+        const body = await req.json();
+        const { pacienteId, medicoId, fechaCita, horaInicio, horaFin, motivoConsulta } = body;
+
+        if (!pacienteId || !medicoId || !fechaCita || !horaInicio) {
+            return NextResponse.json({ error: "Campos requeridos faltantes" }, { status: 400 });
+        }
+
+        // Parse date and time
+        const cita_date = new Date(fechaCita);
+        const [hours, minutes] = horaInicio.split(':').map(Number);
+        const hora_inicio = new Date(cita_date);
+        hora_inicio.setHours(hours, minutes, 0, 0);
+
+        // Default end time (1 hour later)
+        const hora_fin = horaFin
+            ? (() => {
+                const [h, m] = horaFin.split(':').map(Number);
+                const end = new Date(cita_date);
+                end.setHours(h, m, 0, 0);
+                return end;
+            })()
+            : new Date(hora_inicio.getTime() + 60 * 60 * 1000);
+
+        // Create the appointment
+        const cita = await prisma.citaMedica.create({
+            data: {
+                pacienteId: BigInt(pacienteId),
+                medicoId: BigInt(medicoId),
+                fechaCita: cita_date,
+                horaInicio: hora_inicio,
+                horaFin: hora_fin,
+                motivoConsulta: motivoConsulta || null,
+                estadoCita: 'PROGRAMADA',
+                tipoCita: 'CONSULTA',
+                origenCita: 'RECEPCION',
+                usuarioCreacion: BigInt((payload as any).userId),
+            },
+            include: {
+                paciente: { select: { nombres: true, apellidos: true } },
+                medico: {
+                    include: {
+                        empleado: { select: { nombres: true, apellidos: true } }
+                    }
+                }
+            }
+        });
+
+        return NextResponse.json({
+            id: cita.citaId.toString(),
+            patientName: `${cita.paciente.nombres} ${cita.paciente.apellidos}`,
+            doctorName: `${cita.medico.empleado.nombres} ${cita.medico.empleado.apellidos}`,
+            date: cita.fechaCita.toISOString(),
+            startTime: cita.horaInicio.toISOString(),
+            status: cita.estadoCita,
+        }, { status: 201 });
+    } catch (error: any) {
+        console.error("Error creating appointment:", error);
+        if (error.code === 'P2002') {
+            return NextResponse.json({ error: "Ya existe una cita en este horario para el médico" }, { status: 409 });
+        }
+        return NextResponse.json({ error: "Error al crear la cita" }, { status: 500 });
     }
 }

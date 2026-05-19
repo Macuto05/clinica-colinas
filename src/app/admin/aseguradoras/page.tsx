@@ -39,6 +39,8 @@ export default function AseguradorasPage() {
     const [aseguradoras, setAseguradoras] = useState<Aseguradora[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const [page, setPage] = useState(1);
+    const pageSize = 10;
 
     // Modal
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -82,6 +84,9 @@ export default function AseguradorasPage() {
         a.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (a.rifNif && a.rifNif.toLowerCase().includes(searchTerm.toLowerCase()))
     );
+
+    const totalPages = Math.ceil(filtered.length / pageSize);
+    const paginatedData = filtered.slice((page - 1) * pageSize, page * pageSize);
 
     const openCreate = () => {
         setEditingId(null);
@@ -212,7 +217,7 @@ export default function AseguradorasPage() {
                                         {searchTerm ? "No se encontraron aseguradoras con ese criterio." : "No hay aseguradoras registradas."}
                                     </td>
                                 </tr>
-                            ) : filtered.map(a => (
+                            ) : paginatedData.map(a => (
                                 <tr key={a.aseguradoraId} className="hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
@@ -270,6 +275,31 @@ export default function AseguradorasPage() {
                     </table>
                 )}
             </div>
+
+            {/* Pagination */}
+            {filtered.length > 0 && (
+                <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 flex items-center justify-between shadow-sm">
+                    <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-widest">
+                        Página {page} de {totalPages} ({filtered.length} total)
+                    </p>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setPage(Math.max(1, page - 1))}
+                            disabled={page === 1}
+                            className="px-4 py-2 rounded-lg bg-gray-100 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-bold"
+                        >
+                            ← Anterior
+                        </button>
+                        <button
+                            onClick={() => setPage(Math.min(totalPages, page + 1))}
+                            disabled={page === totalPages}
+                            className="px-4 py-2 rounded-lg bg-gray-100 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-bold"
+                        >
+                            Siguiente →
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Create/Edit Modal */}
             <Modal

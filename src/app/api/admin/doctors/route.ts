@@ -1,177 +1,45 @@
-
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
-import bcrypt from "bcryptjs";
-import prisma from "@/infrastructure/database/prisma/client";
-import { Role, UserStatus } from "@/domain/entities/User"; // Or use Prisma Enums directly if preferred
+import { prisma } from "@/infrastructure/database/prisma/client";
+import { JWTService } from "@/infrastructure/services/JWTService";
 
-// Validation Schema
-const createDoctorSchema = z.object({
-    nombres: z.string().min(2, "El nombre es requerido"),
-    apellidos: z.string().min(2, "El apellido es requerido"),
-    documentoIdentidad: z.string().min(5, "Documento de identidad requerido"),
-    telefono: z.string().optional(),
-    correoInstitucional: z.string().email("Email inválido").optional().or(z.literal("")),
-    especialidad: z.string().min(1, "Especialidad requerida"),
-    licenciaProfesional: z.string().optional(), // Can be optional or required per business rule
-    numeroColegiatura: z.string().optional(),
-    fechaIngreso: z.string().optional(), // Date string from frontend
-    email: z.string().email("Email inválido"),
-    password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
-});
+// @ts-ignore
+BigInt.prototype.toJSON = function () { return this.toString() };
 
-export async function POST(request: NextRequest) {
+export async function GET(req: NextRequest) {
     try {
-        const body = await request.json();
+        const token = req.cookies.get("auth-token")?.value;
+        if (!token) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+        const payload = await JWTService.verifyToken(token);
+        if (!payload) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
-        // 1. Validate Input
-        const validationResult = createDoctorSchema.safeParse(body);
-        if (!validationResult.success) {
-            return NextResponse.json(
-                { error: validationResult.error.issues[0].message },
-                { status: 400 }
-            );
-        }
-
-        const data = validationResult.data;
-
-        // 2. Check if user already exists
-        const existingUser = await prisma.usuario.findUnique({
-            where: { email: data.email }
-        });
-        if (existingUser) {
-            return NextResponse.json(
-                { error: "El correo electrónico ya está registrado." },
-                { status: 409 }
-            );
-        }
-
-        // 3. Transaction
-        // We need the Role ID for Medico/DOCTOR. Assuming we can look it up or known ID.
-        // Best practice: look up role by name.
-        const doctorRole = await prisma.rol.findUnique({ where: { nombre: 'MEDICO' } }); // Or 'DOCTOR' depending on seed
-
-        // Fallback or Error if role doesn't exist? 
-        // Let's assume 'MEDICO' based on seeds or 'DOCTOR' based on domain enum. 
-        // Ideally we check what's in DB. For now let's try to find 'MEDICO' first, then 'DOCTOR'.
-
-        let finalRoleId: bigint | undefined;
-
-        if (doctorRole) {
-            finalRoleId = doctorRole.rolId;
-        } else {
-            const alternativeRole = await prisma.rol.findUnique({ where: { nombre: 'DOCTOR' } });
-            if (alternativeRole) finalRoleId = alternativeRole.rolId;
-        }
-
-        if (!finalRoleId) {
-            return NextResponse.json({ error: "Rol de MÉDICO no configurado en el sistema." }, { status: 500 });
-        }
-
-
-        const hashedPassword = await bcrypt.hash(data.password, 10);
-        const ingresoDate = data.fechaIngreso ? new Date(data.fechaIngreso) : new Date();
-
-        // Normalize optional unique fields: empty string → null
-        // (unique constraints in PostgreSQL treat multiple empty strings as duplicates)
-        const licenciaProfesional = data.licenciaProfesional?.trim() || null;
-        const numeroColegiatura   = data.numeroColegiatura?.trim()   || null;
-        const documentoIdentidad  = data.documentoIdentidad?.trim()  || null;
-        const telefono            = data.telefono?.trim()            || null;
-
-        const result = await prisma.$transaction(async (tx) => {
-            // A. Create Usuario
-            const newUser = await tx.usuario.create({
-                data: {
-                    email: data.email,
-                    passwordHash: hashedPassword,
-                    rolId: finalRoleId!,
-                    estado: 'ACTIVO', // Prisma Enum
-                }
-            });
-
-            // B. Create Empleado
-            const newEmployee = await tx.empleado.create({
-                data: {
-                    usuarioId: newUser.usuarioId,
-                    nombres: data.nombres,
-                    apellidos: data.apellidos,
-                    documentoIdentidad,
-                    telefono,
-                    correoInstitucional: data.correoInstitucional?.trim() || null,
-                    fechaIngreso: ingresoDate,
-                    estadoLaboral: 'ACTIVO',
-                }
-            });
-
-            // C. Create Medico Profile
-            const newDoctor = await tx.medico.create({
-                data: {
-                    empleadoId: newEmployee.empleadoId,
-                    especialidadId: BigInt(data.especialidad),
-                    licenciaProfesional,
-                    numeroColegiatura,
-                    activo: true
-                }
-            });
-
-            // D. Create Schedule (if provided)
-            // Expecting data.schedule to be DaySchedule[]
-            const schedule = (data as any).schedule;
-            if (Array.isArray(schedule) && schedule.length > 0) {
-                // Filter active days
-                const activeDays = schedule.filter((d: any) => d.active && d.blocks.length > 0);
-
-                if (activeDays.length > 0) {
-                    // Create Parent Schedule Record
-                    const newSchedule = await tx.medicoHorario.create({
-                        data: {
-                            medicoId: newDoctor.empleadoId,
-                            actualizadoPor: newUser.usuarioId,
-                        }
-                    });
-
-                    // Create Details
-                    for (const day of activeDays) {
-                        for (const block of day.blocks) {
-                            if (block.startTime && block.endTime) {
-                                await tx.medicoHorarioDetalle.create({
-                                    data: {
-                                        medicoHorarioId: newSchedule.medicoHorarioId,
-                                        diaSemana: day.day,
-                                        horaInicio: new Date(`1970-01-01T${block.startTime}:00Z`),
-                                        horaFin: new Date(`1970-01-01T${block.endTime}:00Z`),
-                                    }
-                                });
-                            }
-                        }
+        const doctors = await prisma.medico.findMany({
+            where: { activo: true },
+            include: {
+                empleado: {
+                    select: {
+                        empleadoId: true,
+                        nombres: true,
+                        apellidos: true,
+                    }
+                },
+                especialidad: {
+                    select: {
+                        nombre: true,
                     }
                 }
-            }
-
-            return { newUser, newEmployee, newDoctor };
+            },
+            orderBy: { empleado: { nombres: 'asc' } },
         });
 
         return NextResponse.json({
-            success: true,
-            doctor: {
-                id: result.newEmployee.empleadoId.toString(),
-                name: `${result.newEmployee.nombres} ${result.newEmployee.apellidos}`,
-                email: result.newUser.email
-            }
+            doctors: doctors.map(d => ({
+                empleadoId: d.empleadoId.toString(),
+                empleado: d.empleado,
+                especialidad: d.especialidad,
+            })),
         });
-
     } catch (error) {
-        console.error("Error creating doctor:", error);
-        if (error instanceof Error) {
-            return NextResponse.json(
-                { error: error.message },
-                { status: 500 }
-            );
-        }
-        return NextResponse.json(
-            { error: "Error interno del servidor" },
-            { status: 500 }
-        );
+        console.error("Error fetching doctors:", error);
+        return NextResponse.json({ error: "Error al cargar médicos" }, { status: 500 });
     }
 }

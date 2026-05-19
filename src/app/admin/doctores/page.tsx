@@ -11,7 +11,11 @@ export default async function AdminDoctorsPage({
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
     const resolvedParams = await searchParams;
-    const { id, doctor, specialty, active } = resolvedParams;
+    const { id, doctor, specialty, active, page: pageParam } = resolvedParams;
+
+    // Pagination
+    const page = Math.max(1, parseInt(pageParam as string) || 1);
+    const pageSize = 10;
 
     // Build WhereInput
     const where: Prisma.MedicoWhereInput = {};
@@ -45,26 +49,33 @@ export default async function AdminDoctorsPage({
         where.activo = active === 'true';
     }
 
-
-    const doctors = await prisma.medico.findMany({
-        where,
-        include: {
-            empleado: {
-                include: {
-                    usuario: true
+    // Get total count and paginated data
+    const [total, doctors] = await Promise.all([
+        prisma.medico.count({ where }),
+        prisma.medico.findMany({
+            where,
+            include: {
+                empleado: {
+                    include: {
+                        usuario: true
+                    }
+                },
+                especialidad: true,
+                horario: {
+                    include: {
+                        detalles: true
+                    }
                 }
             },
-            especialidad: true,
-            horario: {
-                include: {
-                    detalles: true
-                }
-            }
-        },
-        orderBy: {
-            empleadoId: 'asc'
-        }
-    });
+            orderBy: {
+                empleadoId: 'asc'
+            },
+            skip: (page - 1) * pageSize,
+            take: pageSize,
+        })
+    ]);
+
+    const totalPages = Math.ceil(total / pageSize);
 
     // Fetch active specialties for the dropdown and filter
     const specialtiesData = await prisma.especialidad.findMany({
@@ -161,6 +172,32 @@ export default async function AdminDoctorsPage({
                         )}
                     </tbody>
                 </table>
+
+                {doctors.length > 0 && (
+                    <div className="bg-white/20 px-6 py-4 flex items-center justify-between border-t border-white/40">
+                        <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">
+                            Página {page} de {totalPages} ({total} total)
+                        </p>
+                        <div className="flex gap-2">
+                            {page > 1 && (
+                                <Link
+                                    href={`/admin/doctores?${new URLSearchParams({ ...Object.fromEntries(Object.entries(resolvedParams).filter(([k]) => k !== 'page')), page: (page - 1).toString() }).toString()}`}
+                                    className="px-4 py-2 rounded-lg bg-white/50 border border-white/60 hover:bg-white/70 transition-colors text-sm font-bold"
+                                >
+                                    ← Anterior
+                                </Link>
+                            )}
+                            {page < totalPages && (
+                                <Link
+                                    href={`/admin/doctores?${new URLSearchParams({ ...Object.fromEntries(Object.entries(resolvedParams).filter(([k]) => k !== 'page')), page: (page + 1).toString() }).toString()}`}
+                                    className="px-4 py-2 rounded-lg bg-white/50 border border-white/60 hover:bg-white/70 transition-colors text-sm font-bold"
+                                >
+                                    Siguiente →
+                                </Link>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import CreateSpecialtyButton from "@/components/admin/specialties/CreateSpecialtyButton";
 import { SpecialtyActions } from "@/components/admin/specialties/SpecialtyActions";
 import { SpecialtyFilter } from "@/components/admin/specialties/SpecialtyFilter";
@@ -10,16 +11,16 @@ export default async function AdminSpecialtiesPage({
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
     const resolvedParams = await searchParams;
-    const { id, nombre, active } = resolvedParams;
+    const { id, nombre, active, page: pageParam } = resolvedParams;
+
+    // Pagination
+    const page = Math.max(1, parseInt(pageParam as string) || 1);
+    const pageSize = 10;
 
     // Build WhereInput
     const where: Prisma.EspecialidadWhereInput = {};
 
     if (id) {
-        // ID search (exact or verify if user wants partial match string likely partial for simple filter, but IDs are BigInt. 
-        // Usually ID filter implies exact match or "starts with" for strings. 
-        // Given BigInt, exact match is safest, or we can try to cast.
-        // Let's assume exact match if it parses to int, otherwise ignore
         const idNum = parseInt(id as string);
         if (!isNaN(idNum)) {
             where.especialidadId = BigInt(idNum);
@@ -37,11 +38,18 @@ export default async function AdminSpecialtiesPage({
         where.activa = active === 'true';
     }
 
-    // Fetch directly from DB with filters
-    const specialties = await prisma.especialidad.findMany({
-        where,
-        orderBy: { especialidadId: 'asc' },
-    });
+    // Fetch total and paginated specialties
+    const [total, specialties] = await Promise.all([
+        prisma.especialidad.count({ where }),
+        prisma.especialidad.findMany({
+            where,
+            orderBy: { especialidadId: 'asc' },
+            skip: (page - 1) * pageSize,
+            take: pageSize,
+        })
+    ]);
+
+    const totalPages = Math.ceil(total / pageSize);
 
     return (
         <div className="space-y-6">
@@ -119,6 +127,32 @@ export default async function AdminSpecialtiesPage({
                         )}
                     </tbody>
                 </table>
+
+                {specialties.length > 0 && (
+                    <div className="bg-white/20 px-6 py-4 flex items-center justify-between border-t border-white/40">
+                        <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">
+                            Página {page} de {totalPages} ({total} total)
+                        </p>
+                        <div className="flex gap-2">
+                            {page > 1 && (
+                                <Link
+                                    href={`/admin/especialidades?${new URLSearchParams({ ...Object.fromEntries(Object.entries(resolvedParams).filter(([k]) => k !== 'page')), page: (page - 1).toString() }).toString()}`}
+                                    className="px-4 py-2 rounded-lg bg-white/50 border border-white/60 hover:bg-white/70 transition-colors text-sm font-bold"
+                                >
+                                    ← Anterior
+                                </Link>
+                            )}
+                            {page < totalPages && (
+                                <Link
+                                    href={`/admin/especialidades?${new URLSearchParams({ ...Object.fromEntries(Object.entries(resolvedParams).filter(([k]) => k !== 'page')), page: (page + 1).toString() }).toString()}`}
+                                    className="px-4 py-2 rounded-lg bg-white/50 border border-white/60 hover:bg-white/70 transition-colors text-sm font-bold"
+                                >
+                                    Siguiente →
+                                </Link>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

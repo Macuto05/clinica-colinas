@@ -14,6 +14,10 @@ interface PageProps {
 export default async function AdminPatientsPage({ searchParams }: PageProps) {
     const resolvedSearchParams = await searchParams;
 
+    // Pagination
+    const page = Math.max(1, parseInt(resolvedSearchParams.page as string) || 1);
+    const pageSize = 10;
+
     // Filters
     const idFilter = resolvedSearchParams.id as string;
     const searchFilter = resolvedSearchParams.search as string; // Name search
@@ -29,7 +33,7 @@ export default async function AdminPatientsPage({ searchParams }: PageProps) {
             where.pacienteId = BigInt(idFilter);
         } catch {
             // If invalid ID format, maybe return empty or ignore.
-            // For safety let's force a no-match if ID is definitely invalid for BigInt, 
+            // For safety let's force a no-match if ID is definitely invalid for BigInt,
             // but Prisma might throw if we pass a weird string to BigInt.
             // Let's just ignore if validation fails
         }
@@ -56,16 +60,23 @@ export default async function AdminPatientsPage({ searchParams }: PageProps) {
         };
     }
 
-    // 1. Fetch patients
-    const patients = await prisma.paciente.findMany({
-        where,
-        orderBy: { pacienteId: 'asc' },
-        include: {
-            usuario: {
-                select: { email: true, estado: true }
-            }
-        }
-    });
+    // Fetch total and paginated patients
+    const [total, patients] = await Promise.all([
+        prisma.paciente.count({ where }),
+        prisma.paciente.findMany({
+            where,
+            orderBy: { pacienteId: 'asc' },
+            include: {
+                usuario: {
+                    select: { email: true, estado: true }
+                }
+            },
+            skip: (page - 1) * pageSize,
+            take: pageSize,
+        })
+    ]);
+
+    const totalPages = Math.ceil(total / pageSize);
 
     return (
         <div className="space-y-6">
@@ -168,6 +179,32 @@ export default async function AdminPatientsPage({ searchParams }: PageProps) {
                         )}
                     </tbody>
                 </table>
+
+                {patients.length > 0 && (
+                    <div className="bg-white/20 px-6 py-4 flex items-center justify-between border-t border-white/40">
+                        <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">
+                            Página {page} de {totalPages} ({total} total)
+                        </p>
+                        <div className="flex gap-2">
+                            {page > 1 && (
+                                <Link
+                                    href={`/admin/pacientes?${new URLSearchParams({ ...Object.fromEntries(Object.entries(resolvedSearchParams).filter(([k]) => k !== 'page')), page: (page - 1).toString() }).toString()}`}
+                                    className="px-4 py-2 rounded-lg bg-white/50 border border-white/60 hover:bg-white/70 transition-colors text-sm font-bold"
+                                >
+                                    ← Anterior
+                                </Link>
+                            )}
+                            {page < totalPages && (
+                                <Link
+                                    href={`/admin/pacientes?${new URLSearchParams({ ...Object.fromEntries(Object.entries(resolvedSearchParams).filter(([k]) => k !== 'page')), page: (page + 1).toString() }).toString()}`}
+                                    className="px-4 py-2 rounded-lg bg-white/50 border border-white/60 hover:bg-white/70 transition-colors text-sm font-bold"
+                                >
+                                    Siguiente →
+                                </Link>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
