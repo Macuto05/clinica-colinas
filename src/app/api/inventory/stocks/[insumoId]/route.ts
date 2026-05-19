@@ -19,9 +19,10 @@ export async function GET(
         });
 
         // 2. Fetch specific Batches (StockLote)
+        // Note: Removed 'activo: true' filter to show all batches, including inactive ones
         const stocksLote = await prisma.stockLote.findMany({
             where: {
-                lote: { insumoId, activo: true },
+                lote: { insumoId },
                 cantidadActual: { gt: 0 }
             },
             include: {
