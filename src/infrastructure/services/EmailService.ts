@@ -1,10 +1,16 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 const APP_URL = process.env.APP_URL || "http://localhost:3000";
 const FROM_EMAIL = process.env.FROM_EMAIL || "onboarding@resend.dev";
 const CLINIC_NAME = "Clínica Colinas";
+
+const getResendClient = () => {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+        throw new Error("RESEND_API_KEY environment variable is not configured");
+    }
+    return new Resend(apiKey);
+};
 
 export class EmailService {
     static async sendPasswordResetEmail(
@@ -12,6 +18,7 @@ export class EmailService {
         resetToken: string,
         userName?: string
     ): Promise<void> {
+        const resend = getResendClient();
         const resetLink = `${APP_URL}/recuperar-password/nueva?token=${resetToken}`;
         const displayName = userName || to;
 
