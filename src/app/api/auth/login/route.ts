@@ -28,11 +28,12 @@ export async function POST(request: NextRequest) {
 
         const user = await loginUseCase.execute({ email, password });
 
-        // Generar token JWT
+        // Generar token JWT incluyendo patientId si el usuario es un paciente
         const token = await JWTService.generateToken({
             userId: user.id,
             email: user.email,
             role: user.role,
+            ...(user.patientId && { patientId: Number(user.patientId) }),
         });
 
         // Establecer cookie HttpOnly para seguridad
