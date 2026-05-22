@@ -111,9 +111,18 @@ export default function PatientInsuranceSection({ pacienteId }: { pacienteId: st
     const fetchPolizas = async () => {
         try {
             const res = await fetch(`/api/patients/${pacienteId}/policies`);
-            if (res.ok) setPolizas(await res.json());
-        } catch (e) { console.error(e); }
-        finally { setIsLoading(false); }
+            if (res.ok) {
+                const data = await res.json();
+                setPolizas(data);
+                return data;
+            }
+            return [];
+        } catch (e) {
+            console.error(e);
+            return [];
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const fetchAseguradoras = async () => {
@@ -208,8 +217,8 @@ export default function PatientInsuranceSection({ pacienteId }: { pacienteId: st
                 return;
             }
 
+            await fetchPolizas();
             setIsModalOpen(false);
-            fetchPolizas();
         } catch (e) { setError("Error de conexión."); }
         finally { setIsSaving(false); }
     };
@@ -221,7 +230,7 @@ export default function PatientInsuranceSection({ pacienteId }: { pacienteId: st
             if (res.ok) {
                 const data = await res.json();
                 toast.success(data.softDeleted ? "Póliza suspendida (tiene cartas aval asociadas)" : "Póliza eliminada correctamente");
-                fetchPolizas();
+                await fetchPolizas();
             } else {
                 const data = await res.json().catch(() => ({}));
                 toast.error(data.error || "Error al eliminar la póliza");
