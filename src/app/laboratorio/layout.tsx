@@ -11,7 +11,6 @@ import {
     ChevronRight,
     Activity
 } from "lucide-react";
-import ExchangeRateWidget from "@/components/admin/ExchangeRateWidget";
 
 interface LaboratorioLayoutProps {
     children: React.ReactNode;
@@ -158,16 +157,10 @@ export default function LaboratorioLayout({ children }: LaboratorioLayoutProps) 
                     <span className="font-semibold text-gray-900 truncate max-w-[150px]">
                         {navigation.find(n => isActive(n.href))?.name || "Panel Laboratorio"}
                     </span>
-                    <div className="scale-75 origin-right">
-                        <ExchangeRateWidget />
-                    </div>
                 </header>
 
                 {/* Desktop Header */}
                 <header className="hidden lg:flex items-center justify-end sticky top-0 z-40 px-8 py-4 pointer-events-none">
-                    <div className="pointer-events-auto">
-                        <ExchangeRateWidget />
-                    </div>
                 </header>
 
                 {/* Page Content */}

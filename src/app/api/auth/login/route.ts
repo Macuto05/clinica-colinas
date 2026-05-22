@@ -8,10 +8,10 @@ import { logAuditoria } from "@/infrastructure/services/AuditService";
 
 export async function POST(request: NextRequest) {
     try {
-        // Parse request body
+        // Parsear cuerpo de la solicitud
         const body = await request.json();
 
-        // Validate input
+        // Validar entrada
         const validationResult = loginSchema.safeParse(body);
         if (!validationResult.success) {
             return NextResponse.json(
@@ -22,20 +22,20 @@ export async function POST(request: NextRequest) {
 
         const { email, password } = validationResult.data;
 
-        // Execute login use case
+        // Ejecutar caso de uso de login
         const userRepository = new PrismaUserRepository();
         const loginUseCase = new LoginUser(userRepository);
 
         const user = await loginUseCase.execute({ email, password });
 
-        // Generate JWT token
+        // Generar token JWT
         const token = await JWTService.generateToken({
             userId: user.id,
             email: user.email,
             role: user.role,
         });
 
-        // Set HttpOnly cookie for security
+        // Establecer cookie HttpOnly para seguridad
         (await cookies()).set({
             name: "auth-token",
             value: token,
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
             path: "/",
         });
 
-        // Return user data (password is already excluded in toJSON)
+        // Retornar datos del usuario (contraseña ya está excluida en toJSON)
         const userJson = user.toJSON();
 
         logAuditoria({
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
         });
 
     } catch (error) {
-        console.error("Login error:", error);
+        console.error("Error de login:", error);
 
         if (error instanceof Error) {
             return NextResponse.json(

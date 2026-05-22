@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import GestionPacientePanel from "./components/GestionPacientePanel";
 
-/* ─── Types ──────────────────────────────────────────────── */
+/* ─── Tipos ──────────────────────────────────────────────── */
 interface Emergencia {
     emergenciaId: string;
     paciente: string;
@@ -22,7 +22,7 @@ interface Emergencia {
     tieneSeguro: boolean;
 }
 
-/* ─── Config maps ─────────────────────────────────────────── */
+/* ─── Mapas de configuración ──────────────────────────────── */
 const URGENCY: Record<string, { bar: string; pill: string; label: string; glow: string }> = {
     CRITICO:  { bar: "bg-red-500",    pill: "bg-red-500 text-white",    label: "🔴 Crítico", glow: "shadow-red-100" },
     URGENTE:  { bar: "bg-orange-400", pill: "bg-orange-400 text-white", label: "🟠 Urgente", glow: "shadow-orange-100" },
@@ -44,7 +44,7 @@ function timeSince(dateStr: string) {
     return `${Math.floor(hrs / 24)}d`;
 }
 
-/* ─── Patient Card ────────────────────────────────────────── */
+/* ─── Tarjeta de paciente ─────────────────────────────────── */
 function PacienteCard({ e, onGestionar }: { e: Emergencia; onGestionar: (id: string) => void }) {
     const urg = URGENCY[e.nivelUrgencia] ?? URGENCY.MODERADO;
     const st  = STATUS_BADGE[e.estadoEmergencia] ?? STATUS_BADGE.EN_ATENCION;
@@ -52,11 +52,11 @@ function PacienteCard({ e, onGestionar }: { e: Emergencia; onGestionar: (id: str
 
     return (
         <div className={`bg-white/60 backdrop-blur-xl border border-white/80 rounded-[2rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.06)] hover:shadow-[0_16px_48px_0_rgba(0,0,0,0.10)] hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col relative group`}>
-            {/* Urgency top bar */}
+            {/* Barra de urgencia en la parte superior */}
             <div className={`absolute top-0 left-0 right-0 h-1.5 ${urg.bar} shadow-md`} />
 
             <div className="p-6 flex flex-col gap-4 pt-7">
-                {/* Header */}
+                {/* Encabezado */}
                 <div className="flex justify-between items-start gap-3">
                     <div className="min-w-0">
                         <h3 className="font-extrabold text-gray-900 text-[16px] leading-tight truncate">{e.paciente}</h3>
@@ -72,7 +72,7 @@ function PacienteCard({ e, onGestionar }: { e: Emergencia; onGestionar: (id: str
                     </div>
                 </div>
 
-                {/* Motivo + Médico */}
+                {/* Motivo + Médico asignado */}
                 <div className="bg-gradient-to-br from-gray-50/80 to-gray-100/50 rounded-2xl p-3.5 border border-gray-100/60 shadow-inner space-y-2.5">
                     <p className="text-[12px] text-gray-600 font-medium leading-snug line-clamp-2">{e.motivoIngreso}</p>
                     <div className="flex items-center gap-2 pt-2 border-t border-gray-200/50">
@@ -83,7 +83,7 @@ function PacienteCard({ e, onGestionar }: { e: Emergencia; onGestionar: (id: str
                     </div>
                 </div>
 
-                {/* Status + Warning if no citaId */}
+                {/* Estado + Advertencia si no hay cita */}
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                     <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold border shadow-sm ${st.color}`}>
                         <StIcon size={11} /> {st.label}
@@ -100,7 +100,7 @@ function PacienteCard({ e, onGestionar }: { e: Emergencia; onGestionar: (id: str
                     )}
                 </div>
 
-                {/* Action button */}
+                {/* Botón de acción */}
                 <button
                     onClick={() => onGestionar(e.emergenciaId)}
                     className="w-full flex items-center justify-center gap-2 text-[13px] font-black text-white bg-slate-900 hover:bg-slate-800 py-3 rounded-xl shadow-lg shadow-slate-900/20 hover:shadow-slate-900/30 transition-all duration-200 border border-slate-700/50 group-hover:scale-[1.01]"
@@ -112,7 +112,7 @@ function PacienteCard({ e, onGestionar }: { e: Emergencia; onGestionar: (id: str
     );
 }
 
-/* ─── Filter Tabs ─────────────────────────────────────────── */
+/* ─── Pestañas de filtro ──────────────────────────────────── */
 const FILTERS = [
     { key: "TODOS",          label: "Todos",           icon: Activity },
     { key: "EN_ATENCION",    label: "En Atención",      icon: Heart },
@@ -120,13 +120,14 @@ const FILTERS = [
     { key: "CIRUGIA_URGENTE",label: "Cirugía",          icon: Siren },
 ];
 
-/* ─── Main Page ───────────────────────────────────────────── */
+/* ─── Página principal ─────────────────────────────────────── */
 export default function EnfermeriaPage() {
     const [emergencias, setEmergencias] = useState<Emergencia[]>([]);
     const [isLoading, setIsLoading]     = useState(true);
     const [filter, setFilter]           = useState("TODOS");
     const [selectedId, setSelectedId]   = useState<string | null>(null);
 
+    // Obtener emergencias activas en piso
     const fetchData = async () => {
         setIsLoading(true);
         try {
@@ -154,7 +155,7 @@ export default function EnfermeriaPage() {
 
     return (
         <div className="space-y-6">
-            {/* ── Header ──────────────────────────────────── */}
+            {/* ── Encabezado ──────────────────────────────── */}
             <div className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl px-6 py-5 shadow-[0_4px_16px_0_rgba(0,0,0,0.04)] flex items-center justify-between gap-4 flex-wrap">
                 <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-2xl bg-lime-500/10 border border-lime-400/20 flex items-center justify-center shadow-inner">
@@ -177,7 +178,7 @@ export default function EnfermeriaPage() {
                 </button>
             </div>
 
-            {/* ── Filter Tabs ──────────────────────────────── */}
+            {/* ── Pestañas de filtro ──────────────────────── */}
             <div className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-2 shadow-[0_4px_16px_0_rgba(0,0,0,0.04)] flex gap-1.5 flex-wrap">
                 {FILTERS.map(f => {
                     const isActive = filter === f.key;

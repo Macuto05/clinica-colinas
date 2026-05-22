@@ -39,12 +39,12 @@ export default function ReceptionAgendaPage() {
     const [statusFilter, setStatusFilter] = useState("ALL");
     const [loading, setLoading] = useState(true);
 
-    // Modal State
+    // Estado del modal
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
     const [modalAction, setModalAction] = useState<'CONFIRM' | 'CANCEL' | 'RESCHEDULE' | 'NO_SHOW' | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    // Tab State
+    // Estado de las pestañas
     const [activeTab, setActiveTab] = useState<'AGENDA' | 'EMERGENCIAS'>('AGENDA');
     const [activeEmergenciesCount, setActiveEmergenciesCount] = useState(0);
 
@@ -66,7 +66,7 @@ export default function ReceptionAgendaPage() {
         setIsMounted(true);
         fetchEmergenciesCount();
         
-        // Handle return routing
+        // Manejar enrutamiento de retorno
         if (typeof window !== "undefined") {
             const params = new URLSearchParams(window.location.search);
             if (params.get("tab") === "EMERGENCIAS") {
@@ -103,11 +103,11 @@ export default function ReceptionAgendaPage() {
         }
     }, [selectedDate, isMounted]);
 
-    // Filter Logic
+    // Lógica de filtrado
     useEffect(() => {
         let filtered = appointments;
 
-        // 1. Text Search
+        // 1. Búsqueda por texto
         if (searchTerm) {
             const lowerQuery = searchTerm.toLowerCase();
             filtered = filtered.filter(apt =>
@@ -116,7 +116,7 @@ export default function ReceptionAgendaPage() {
             );
         }
 
-        // 2. Status Filter
+        // 2. Filtro por estado
         if (statusFilter !== 'ALL') {
             filtered = filtered.filter(apt => apt.status === statusFilter);
         }
@@ -130,7 +130,7 @@ export default function ReceptionAgendaPage() {
         setIsModalOpen(true);
     };
 
-    // Stats Logic
+    // Lógica de estadísticas
     const stats = {
         total: appointments.length,
         confirmed: appointments.filter(a => a.status === 'CONFIRMADA').length,
@@ -139,7 +139,7 @@ export default function ReceptionAgendaPage() {
         pending: appointments.filter(a => a.status === 'PROGRAMADA').length,
     };
 
-    // Helper for Status Badge
+    // Función auxiliar para el badge de estado
     const renderStatusBadge = (status: string) => {
         const styles: Record<string, string> = {
             'CONFIRMADA': 'bg-green-100 text-green-700 border-green-200',

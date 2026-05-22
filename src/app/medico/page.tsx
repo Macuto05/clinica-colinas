@@ -40,8 +40,8 @@ export default function DoctorDashboard() {
 
     useEffect(() => {
         if (user) {
-            // Debug User Object
-            console.log("Current UserContext:", user); // DEBUG CHECK
+            // Depuración del objeto usuario
+            console.log("Contexto de Usuario Actual:", user); // VERIFICACIÓN DE DEPURACIÓN
             const userId = (user as any).id || (user as any).userId;
 
             if (!userId) {
@@ -68,6 +68,7 @@ export default function DoctorDashboard() {
         }
     }, [user, selectedDate]);
 
+    // Calcular estadísticas de citas
     const stats = {
         total: appointments.length,
         pending: appointments.filter(a => !a.yaAtendida && a.estado !== 'CANCELADA').length,
@@ -76,7 +77,7 @@ export default function DoctorDashboard() {
 
     return (
         <div className="space-y-8">
-            {/* Header */}
+            {/* Encabezado */}
             <div className="flex justify-between items-end">
                 <div>
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Agenda del Día</h2>

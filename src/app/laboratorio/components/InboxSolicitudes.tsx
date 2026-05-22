@@ -50,7 +50,7 @@ export default function InboxSolicitudes() {
     const [expandedRequests, setExpandedRequests] = useState<Set<string>>(new Set());
     const [actionStatusMap, setActionStatusMap] = useState<Record<string, { type: 'success' | 'error', message: string } | null>>({});
 
-    // Processing State for specific exam
+    // Estado de procesamiento para examen específico
     const [processingDetalleId, setProcessingDetalleId] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadForm, setUploadForm] = useState<{ obs: string, fileName: string, file: File | null, objectUrl: string }>({ obs: "", fileName: "", file: null, objectUrl: "" });
@@ -124,7 +124,7 @@ export default function InboxSolicitudes() {
 
         setIsUploading(true);
         try {
-            // 1. Upload to Supabase Storage
+            // 1. Subir a almacenamiento Supabase
             const fileExt = uploadForm.fileName.split('.').pop() || 'pdf';
             const uniqueName = `lab_${solicitudId}_${detalleLabId}_${Date.now()}.${fileExt}`;
             
@@ -139,12 +139,12 @@ export default function InboxSolicitudes() {
                 throw new Error("Error al subir archivo a la nube: " + uploadError.message);
             }
 
-            // 2. Get Public URL
+            // 2. Obtener URL pública
             const { data: { publicUrl } } = supabase.storage
                 .from('laboratorio-resultados')
                 .getPublicUrl(uniqueName);
 
-            // 3. Save in DB
+            // 3. Guardar en base de datos
             const res = await fetch(`/api/laboratorio/solicitudes/${solicitudId}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

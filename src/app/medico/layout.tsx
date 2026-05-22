@@ -30,7 +30,7 @@ export default function DoctorLayout({ children }: DoctorLayoutProps) {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-100 via-green-50/30 to-lime-50/30 flex">
-            {/* Mobile Menu Overlay */}
+            {/* Superposición de menú móvil */}
             {isMobileMenuOpen && (
                 <div
                     className="fixed inset-0 bg-black/50 z-40 lg:hidden"
@@ -38,7 +38,7 @@ export default function DoctorLayout({ children }: DoctorLayoutProps) {
                 />
             )}
 
-            {/* Sidebar */}
+            {/* Barra lateral */}
             <aside
                 className={`
                     fixed inset-y-0 left-0 z-50 w-56 bg-white/60 backdrop-blur-xl border-r border-white/50 shadow-[2px_0_16px_0_rgba(0,0,0,0.06)] transform transition-transform duration-200 ease-in-out
@@ -46,7 +46,7 @@ export default function DoctorLayout({ children }: DoctorLayoutProps) {
                 `}
             >
                 <div className="h-full flex flex-col">
-                    {/* Logo */}
+                    {/* Logotipo */}
                     <div className="h-16 flex items-center px-6 border-b border-white/50">
                         <Link href="/" className="flex items-center gap-2">
                             <div className="relative h-8 w-32 transition-transform hover:scale-105">
@@ -59,7 +59,7 @@ export default function DoctorLayout({ children }: DoctorLayoutProps) {
                         </Link>
                     </div>
 
-                    {/* User Profile Summary */}
+                    {/* Resumen del perfil del usuario */}
                     <div className="p-4 border-b border-white/50 bg-white/30 backdrop-blur-md">
                         <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded-full bg-lime-500/10 flex items-center justify-center text-lime-700 font-black shadow-inner border border-lime-500/20 backdrop-blur-md">
@@ -76,7 +76,7 @@ export default function DoctorLayout({ children }: DoctorLayoutProps) {
                         </div>
                     </div>
 
-                    {/* Navigation */}
+                    {/* Navegación */}
                     <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
                         {navigation.map((item) => {
                             const active = isActive(item.href);
@@ -107,7 +107,7 @@ export default function DoctorLayout({ children }: DoctorLayoutProps) {
                         })}
                     </nav>
 
-                    {/* Logout */}
+                    {/* Cerrar sesión */}
                     <div className="p-4 border-t border-white/50 bg-white/30 backdrop-blur-md">
                         <button
                             onClick={() => logout()}
@@ -120,9 +120,9 @@ export default function DoctorLayout({ children }: DoctorLayoutProps) {
                 </div>
             </aside>
 
-            {/* Main Content */}
+            {/* Contenido principal */}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden lg:pl-56">
-                {/* Mobile Header */}
+                {/* Encabezado móvil */}
                 <header className="lg:hidden h-16 bg-white/60 backdrop-blur-xl border-b border-white/50 flex items-center justify-between px-4">
                     <button
                         onClick={() => setIsMobileMenuOpen(true)}
@@ -136,7 +136,7 @@ export default function DoctorLayout({ children }: DoctorLayoutProps) {
                     <div className="w-8" /> {/* Spacer for centering */}
                 </header>
 
-                {/* Page Content */}
+                {/* Contenido de la página */}
                 <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
                     <div className="max-w-7xl mx-auto">
                         {children}

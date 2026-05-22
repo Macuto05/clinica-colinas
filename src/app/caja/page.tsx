@@ -67,7 +67,7 @@ export default function CajaDashboard() {
 
     return (
         <div className="space-y-4">
-            {/* Header */}
+            {/* Encabezado */}
             <div className="bg-white/40 backdrop-blur-md p-6 rounded-3xl border border-white/50 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-lime-400/10 rounded-full blur-3xl -mr-20 -mt-20" />
                 <div className="relative z-10 flex items-start justify-between flex-wrap gap-2">
@@ -79,7 +79,7 @@ export default function CajaDashboard() {
                 </div>
             </div>
 
-            {/* KPI cards — fila 1 */}
+            {/* Tarjetas KPI — fila 1 */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <StatCard
                     title="Compras Pendientes"
@@ -107,7 +107,7 @@ export default function CajaDashboard() {
                 />
             </div>
 
-            {/* KPI cards — fila 2 */}
+            {/* Tarjetas KPI — fila 2 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <StatCard
                     title="Pagos Pendientes"

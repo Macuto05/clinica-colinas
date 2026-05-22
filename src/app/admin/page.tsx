@@ -8,7 +8,7 @@ import { JWTService } from "@/infrastructure/services/JWTService";
 import { PrismaUserRepository } from "@/infrastructure/database/prisma/repositories/PrismaUserRepository";
 
 export default async function AdminDashboardPage() {
-    // 1. Auth & User Fetch
+    // 1. Autenticación y obtención del usuario
     const cookieStore = await cookies();
     const token = cookieStore.get("auth-token")?.value;
 
@@ -22,14 +22,14 @@ export default async function AdminDashboardPage() {
 
     if (!user) redirect("/login");
 
-    // 4. Counts
+    // 2. Obtener conteos de todas las entidades del sistema
     const patientCount = await prisma.paciente.count();
     const doctorCount = await prisma.medico.count();
     const appointmentCount = await prisma.citaMedica.count();
 
-    // New counts
+    // Conteos adicionales
     const staffCount = await prisma.empleado.count({
-        where: { medico: null } // Exclude doctors from staff count
+        where: { medico: null } // Excluir médicos del conteo de personal
     });
     const roleCount = await prisma.rol.count();
     const specialtyCount = await prisma.especialidad.count({

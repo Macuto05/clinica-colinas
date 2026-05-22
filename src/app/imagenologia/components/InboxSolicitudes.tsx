@@ -124,7 +124,7 @@ export default function InboxSolicitudes() {
 
         setIsUploading(true);
         try {
-            // 1. Upload to Supabase Storage
+            // 1. Subir a almacenamiento Supabase
             const fileExt = uploadForm.fileName.split('.').pop() || 'pdf';
             const uniqueName = `img_${solicitudId}_${detalleImgId}_${Date.now()}.${fileExt}`;
             
@@ -139,12 +139,12 @@ export default function InboxSolicitudes() {
                 throw new Error("Error al subir archivo a la nube: " + uploadError.message);
             }
 
-            // 2. Get Public URL
+            // 2. Obtener URL pública
             const { data: { publicUrl } } = supabase.storage
                 .from('imagenologia-resultados')
                 .getPublicUrl(uniqueName);
 
-            // 3. Save in DB
+            // 3. Guardar en base de datos
             const res = await fetch(`/api/imagenologia/solicitudes/${solicitudId}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

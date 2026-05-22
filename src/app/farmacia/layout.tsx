@@ -6,14 +6,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import {
     ClipboardList,
-    PackageSearch,
-    History,
     LogOut,
     Menu,
     ChevronRight,
     Activity
 } from "lucide-react";
-import ExchangeRateWidget from "@/components/admin/ExchangeRateWidget";
 
 interface FarmaciaLayoutProps {
     children: React.ReactNode;
@@ -40,8 +37,6 @@ export default function FarmaciaLayout({ children }: FarmaciaLayoutProps) {
 
     const navigation = [
         { name: "Bandeja de Solicitudes", href: "/farmacia", icon: ClipboardList, section: "Operaciones" },
-        { name: "Gestión Insumos", href: "/farmacia/insumos", icon: PackageSearch, section: "Inventario Quirófano" },
-        { name: "Historial Despachos", href: "/farmacia/historial", icon: History, section: "Inventario Quirófano" },
     ];
 
     const isActive = (path: string) => pathname === path;
@@ -121,17 +116,6 @@ export default function FarmaciaLayout({ children }: FarmaciaLayoutProps) {
                     
                     <div className="my-2.5 border-t border-white/40 mx-2" />
                     
-                    <div className="mb-2">
-                        <p className="px-3 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1.5">Inventario Quirófano</p>
-                        {navigation.filter(n => n.section === "Inventario Quirófano").map(item => (
-                            <Link key={item.name} href={item.href} onClick={() => setIsMobileMenuOpen(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl border text-sm font-bold transition-all duration-200 group ${isActive(item.href) ? "border-lime-500/80 bg-lime-50/80 text-lime-700 shadow-[0_4px_12px_rgba(132,204,22,0.2)] ring-2 ring-lime-400/20 scale-[1.02] backdrop-blur-sm" : "border-transparent bg-transparent text-gray-500/80 hover:bg-white/50 hover:border-white/60 hover:text-gray-700 hover:shadow-sm"}`}>
-                                <item.icon size={20} className={`transition-colors duration-200 ${isActive(item.href) ? "text-lime-600" : "text-gray-400 group-hover:text-gray-600"}`} />
-                                {item.name}
-                                {isActive(item.href) && <ChevronRight size={16} className="ml-auto text-lime-400" />}
-                            </Link>
-                        ))}
-                    </div>
-
 
                 </nav>
 
@@ -160,16 +144,10 @@ export default function FarmaciaLayout({ children }: FarmaciaLayoutProps) {
                     <span className="font-semibold text-gray-900 truncate max-w-[150px]">
                         {navigation.find(n => isActive(n.href))?.name || "Panel Farmacia"}
                     </span>
-                    <div className="scale-75 origin-right">
-                        <ExchangeRateWidget />
-                    </div>
                 </header>
 
                 {/* Desktop Header */}
                 <header className="hidden lg:flex items-center justify-end sticky top-0 z-40 px-8 py-4 pointer-events-none">
-                    <div className="pointer-events-auto">
-                        <ExchangeRateWidget />
-                    </div>
                 </header>
 
                 {/* Page Content */}

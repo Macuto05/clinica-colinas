@@ -8,7 +8,7 @@ export default async function AlmacenDashboard() {
     const cookieStore = await cookies();
     const token = cookieStore.get("auth-token")?.value;
 
-    // Auth check (redundant if layout protects it, but safe for fetching user data)
+    // Verificación de autenticación (redundante si el layout lo protege, pero seguro para obtener datos del usuario)
     let user = null;
     if (token) {
         const payload = await JWTService.verifyToken(token);
@@ -22,13 +22,13 @@ export default async function AlmacenDashboard() {
     const lastName = user?.lastName?.split(" ")[0] || "";
     const displayName = `${firstName} ${lastName}`.trim() || user?.name || "Usuario";
 
-    // --- Stats Calculation ---
-    // 1. Total Insumos
+    // --- Cálculo de estadísticas ---
+    // 1. Total de insumos
     const totalInsumos = await prisma.insumo.count({
         where: { activo: true }
     });
 
-    // 2. Movimientos Hoy
+    // 2. Movimientos hoy
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date();
@@ -43,8 +43,8 @@ export default async function AlmacenDashboard() {
         }
     });
 
-    // 3. Stock Bajo (Per Warehouse Limit)
-    // We fetch all stocks to filter in memory, bypassing Prisma "unknown field" validation if client is stale
+    // 3. Stock bajo (por límite de almacén)
+    // Obtener todos los stocks para filtrar en memoria, evitando validación de "campo desconocido" en Prisma
     const allStocks = await prisma.stock.findMany({
         include: {
             insumo: {
@@ -64,7 +64,7 @@ export default async function AlmacenDashboard() {
         }
     });
 
-    // Filter in memory. We cast to 'any' to access stockMinimo if TS complains it doesn't exist.
+    // Filtrar en memoria. Cast a 'any' para acceder a stockMinimo si TS lo rechaza.
     const lowStockItems = allStocks
         .filter(s => {
             const min = Number((s as any).stockMinimo) || 0;
@@ -84,19 +84,19 @@ export default async function AlmacenDashboard() {
 
     const stockBajo = lowStockItems.length;
 
-    // 4. Pedidos Pendientes (Waiting for Approval)
+    // 4. Pedidos pendientes (esperando aprobación)
     const pendingApprovalCount = await prisma.pedidoCompra.count({
         where: { estado: "PENDIENTE" }
     });
 
-    // 5. Pedidos por Recibir (Approved)
+    // 5. Pedidos por recibir (aprobados)
     const pendingReceptionCount = await prisma.pedidoCompra.count({
         where: { estado: "APROBADO" }
     });
 
-    // 6. Lotes Vencidos (Expired - Urgent!)
+    // 6. Lotes vencidos (¡urgente!)
     const today = new Date();
-    // Reset time to start of day for accurate comparison (optional, but safer)
+    // Resetear hora al inicio del día para comparación precisa
     today.setHours(0, 0, 0, 0);
 
     const expiredStockLotes = await prisma.stockLote.findMany({
@@ -104,7 +104,7 @@ export default async function AlmacenDashboard() {
             cantidadActual: { gt: 0 },
             lote: {
                 fechaVencimiento: {
-                    lt: today // Strictly less than start of today
+                    lt: today // Estrictamente menor que el inicio de hoy
                 },
                 activo: true
             }
@@ -116,7 +116,7 @@ export default async function AlmacenDashboard() {
         orderBy: { lote: { fechaVencimiento: 'asc' } }
     });
 
-    // 7. Lotes Por Vencer (Next 90 Days)
+    // 7. Lotes por vencer (próximos 90 días)
     const threeMonthsFromNow = new Date();
     threeMonthsFromNow.setDate(threeMonthsFromNow.getDate() + 90);
 
@@ -125,7 +125,7 @@ export default async function AlmacenDashboard() {
             cantidadActual: { gt: 0 },
             lote: {
                 fechaVencimiento: {
-                    gte: today, // From today onwards
+                    gte: today, // A partir de hoy
                     lte: threeMonthsFromNow
                 },
                 activo: true

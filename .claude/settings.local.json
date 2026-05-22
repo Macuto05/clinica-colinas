@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit -m 'fix: lazy load Resend client to fix Vercel build *)"
+    ]
+  }
+}

@@ -4,7 +4,7 @@ import { Package2, Info } from "lucide-react";
 export default function FarmaciaPage() {
     return (
         <div className="space-y-8 max-w-7xl mx-auto">
-            {/* Page Header */}
+            {/* Encabezado de la página */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
                     <div className="flex items-center gap-3 mb-2">
@@ -16,7 +16,7 @@ export default function FarmaciaPage() {
                         </h1>
                     </div>
                     <p className="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                        Bandeja de Despacho e Insumos Quirofano
+                        Bandeja de Solicitudes
                     </p>
                 </div>
 
@@ -28,7 +28,7 @@ export default function FarmaciaPage() {
                 </div>
             </div>
 
-            {/* Inbox Component */}
+            {/* Componente de bandeja */}
             <div className="min-h-[600px]">
                 <InboxSolicitudes />
             </div>

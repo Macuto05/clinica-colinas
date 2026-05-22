@@ -14,7 +14,7 @@ export default function DashboardPage() {
     const [nextAppointment, setNextAppointment] = useState<any>(null);
     const [isLoadingNextAppt, setIsLoadingNextAppt] = useState(true);
 
-    // Billing State
+    // Estado de facturación
     const [debt, setDebt] = useState<{ total: number; totalEnRevision: number; totalDeudaBs: number; invoices: any[] }>({ total: 0, totalEnRevision: 0, totalDeudaBs: 0, invoices: [] });
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [selectedInvoiceId, setSelectedInvoiceId] = useState("");
@@ -39,7 +39,7 @@ export default function DashboardPage() {
         }
     };
 
-    // Fetch both next appointment and debt in parallel
+    // Obtener la próxima cita y la deuda en paralelo
     useEffect(() => {
         if (!user || (user as any).role !== 'PACIENTE') {
             setIsLoadingNextAppt(false);
@@ -73,22 +73,22 @@ export default function DashboardPage() {
             setSelectedInvoiceId(invoiceId);
             setPaymentAmount(amount || 0);
         } else if (debt.invoices.length > 0) {
-            // Default to oldest invoice if global pay
+            // Usar la factura más antigua si es pago global
             const oldest = debt.invoices[0]; // Assumes sorted by DB (usually ID asc or Date asc)
             setSelectedInvoiceId(oldest.facturaId);
             setPaymentAmount(oldest.saldoPendiente);
         } else {
-            return; // No debt
+            return; // Sin deuda
         }
         setIsPaymentModalOpen(true);
     };
 
-    // ... existing loading check ...
+    // Verificación de carga existente
     if (loading) {
         return <PageLoader message="Cargando resumen..." minHeight="min-h-screen" />;
     }
 
-    // ... displayName logic ...
+    // Lógica del nombre para mostrar
     const firstName = user?.firstName?.split(" ")[0] || "";
     const lastName = user?.lastName?.split(" ")[0] || "";
     const displayName = `${firstName} ${lastName}`.trim() || user?.firstName || "Usuario";
@@ -96,7 +96,7 @@ export default function DashboardPage() {
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row gap-6">
-                {/* Welcome Card */}
+                {/* Tarjeta de bienvenida */}
                 <div className="flex-1 bg-white/40 backdrop-blur-md rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] border border-white/50">
                     <h1 className="text-2xl font-bold text-gray-900">
                         Hola, {displayName} 👋
@@ -106,7 +106,7 @@ export default function DashboardPage() {
                     </p>
                 </div>
 
-                {/* Billing Summary Card */}
+                {/* Tarjeta resumen de facturación */}
                 <div className="bg-blue-600/90 backdrop-blur-xl rounded-[2.5rem] p-6 text-white shadow-[0_8px_32px_0_rgba(37,99,235,0.2)] border border-blue-400/50 w-full md:w-80 flex flex-col justify-between relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-4 opacity-10">
                         <CreditCard size={80} />

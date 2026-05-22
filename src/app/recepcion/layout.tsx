@@ -61,7 +61,7 @@ export default function RecepcionLayout({ children }: RecepcionLayoutProps) {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-100 via-green-50/30 to-lime-50/30 flex">
-            {/* Mobile Menu Overlay */}
+            {/* Superposición de menú móvil */}
             {isMobileMenuOpen && (
                 <div
                     className="fixed inset-0 bg-black/50 z-40 lg:hidden"
@@ -69,14 +69,14 @@ export default function RecepcionLayout({ children }: RecepcionLayoutProps) {
                 />
             )}
 
-            {/* Sidebar */}
+            {/* Barra lateral */}
             <aside
                 className={`
                     fixed inset-y-0 left-0 z-50 w-56 bg-white/60 backdrop-blur-xl border-r border-white/50 shadow-[2px_0_16px_0_rgba(0,0,0,0.06)] transform transition-transform duration-200 ease-in-out flex flex-col
                     ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
                 `}
             >
-                {/* Logo */}
+                {/* Logotipo */}
                 <div className="h-16 flex items-center px-6 border-b border-white/50 shrink-0">
                     <Link href="/" className="flex items-center gap-2">
                         <div className="relative h-8 w-32 transition-transform hover:scale-105">
@@ -89,7 +89,7 @@ export default function RecepcionLayout({ children }: RecepcionLayoutProps) {
                     </Link>
                 </div>
 
-                {/* User Profile Summary */}
+                {/* Resumen del perfil del usuario */}
                 <div className="p-4 border-b border-white/50 bg-white/30 backdrop-blur-md shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-full bg-lime-500/10 flex items-center justify-center text-lime-700 font-black shadow-inner border border-lime-500/20 backdrop-blur-md">
@@ -106,7 +106,7 @@ export default function RecepcionLayout({ children }: RecepcionLayoutProps) {
                     </div>
                 </div>
 
-                {/* Navigation */}
+                {/* Navegación */}
                 <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
                     <div className="mb-2">
                         <p className="px-3 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1.5 mt-2">Recepción</p>
@@ -133,7 +133,7 @@ export default function RecepcionLayout({ children }: RecepcionLayoutProps) {
                     </div>
                 </nav>
 
-                {/* Logout */}
+                {/* Cerrar sesión */}
                 <div className="p-4 border-t border-white/50 bg-white/30 backdrop-blur-md shrink-0">
                     <button
                         onClick={() => logout()}
@@ -145,9 +145,9 @@ export default function RecepcionLayout({ children }: RecepcionLayoutProps) {
                 </div>
             </aside>
 
-            {/* Main Content */}
+            {/* Contenido principal */}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden lg:pl-56">
-                {/* Mobile Header */}
+                {/* Encabezado móvil */}
                 <header className="lg:hidden h-16 bg-white/60 backdrop-blur-xl border-b border-white/50 flex items-center justify-between px-4">
                     <button
                         onClick={() => setIsMobileMenuOpen(true)}
@@ -163,14 +163,14 @@ export default function RecepcionLayout({ children }: RecepcionLayoutProps) {
                     </div>
                 </header>
 
-                {/* Desktop Header */}
+                {/* Encabezado de escritorio */}
                 <header className="hidden lg:flex items-center justify-end sticky top-0 z-40 px-8 py-4 pointer-events-none">
                     <div className="pointer-events-auto">
                         <ExchangeRateWidget />
                     </div>
                 </header>
 
-                {/* Page Content */}
+                {/* Contenido de la página */}
                 <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
                     <div className="max-w-7xl mx-auto">
                         {children}

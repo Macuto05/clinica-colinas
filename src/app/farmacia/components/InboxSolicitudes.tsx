@@ -63,6 +63,7 @@ export default function InboxSolicitudes() {
         });
     };
 
+    // Obtener solicitudes de insumos de farmacia
     const fetchSolicitudes = async (mode: "nuevas" | "en-piso" | "historial") => {
         setIsLoading(true);
         try {
@@ -77,12 +78,13 @@ export default function InboxSolicitudes() {
                 setGroups(data);
             }
         } catch (error) {
-            console.error("Error fetching solicitudes:", error);
+            console.error("Error al obtener solicitudes:", error);
         } finally {
             setIsLoading(false);
         }
     };
 
+    // Obtener lista de almacenes disponibles
     const fetchAlmacenes = async () => {
         try {
             const res = await fetch("/api/almacen/list");
@@ -94,10 +96,11 @@ export default function InboxSolicitudes() {
                 }
             }
         } catch (error) {
-            console.error("Error fetching almacenes:", error);
+            console.error("Error al obtener almacenes:", error);
         }
     };
 
+    // Obtener stock disponible de un almacén específico
     const fetchStock = async (warehouseId: string) => {
         if (!warehouseId || warehouseStockMap[warehouseId]) return;
         try {
@@ -111,7 +114,7 @@ export default function InboxSolicitudes() {
                 setWarehouseStockMap(prev => ({ ...prev, [warehouseId]: map }));
             }
         } catch (error) {
-            console.error("Error fetching warehouse stock:", error);
+            console.error("Error al obtener stock del almacén:", error);
         }
     };
 
