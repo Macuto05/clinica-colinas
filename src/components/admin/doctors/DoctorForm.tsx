@@ -4,9 +4,8 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Save, Edit, User, CalendarClock } from "lucide-react";
+import { Save, Edit } from "lucide-react";
 import { FormInput } from "@/components/auth/FormInput";
-import { ScheduleEditor } from "./ScheduleEditor";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
@@ -88,8 +87,6 @@ export function DoctorForm({ initialData, onSuccess, onCancel, specialties }: Do
     const [isLoading, setIsLoading] = useState(false);
     const [serverError, setServerError] = useState<string | null>(null);
     const isEditing = !!initialData;
-    const [activeTab, setActiveTab] = useState<'data' | 'schedule'>('data');
-    const [schedule, setSchedule] = useState<any[]>([]);
 
     const schema = isEditing ? editSchema : createSchema;
     type FormValues = z.infer<typeof schema>;
@@ -164,8 +161,7 @@ export function DoctorForm({ initialData, onSuccess, onCancel, specialties }: Do
             const payload = {
                 ...data,
                 documentoIdentidad: `${data.idType}${data.idNumber}`,
-                telefono: `${data.phoneCode}${data.phoneNumber}`,
-                schedule: schedule
+                telefono: `${data.phoneCode}${data.phoneNumber}`
             };
 
             const url = isEditing
@@ -198,27 +194,8 @@ export function DoctorForm({ initialData, onSuccess, onCancel, specialties }: Do
         }
     };
 
-    // Tab Button Helper
-    const TabButton = ({ id, label, icon: Icon }: { id: 'data' | 'schedule', label: string, icon: any }) => (
-        <button
-            type="button"
-            onClick={() => setActiveTab(id)}
-            className={`flex-1 flex items-center justify-center gap-2 py-3.5 text-xs font-black uppercase tracking-widest transition-all duration-300 border-b-2 ${activeTab === id
-                ? "border-lime-500 text-lime-700 bg-white/20"
-                : "border-transparent text-gray-400 hover:text-gray-600 hover:bg-white/10"
-                }`}
-        >
-            <Icon size={16} />
-            {label}
-        </button>
-    );
-
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div className="flex bg-white/30 backdrop-blur-md rounded-2xl overflow-hidden border border-white/40 mb-8">
-                <TabButton id="data" label="Datos Personales" icon={User} />
-                <TabButton id="schedule" label="Horario Base" icon={CalendarClock} />
-            </div>
 
             {serverError && (
                 <div className="p-4 bg-red-50/50 backdrop-blur-md text-red-700 rounded-2xl text-sm border border-red-200/50 font-bold flex items-center gap-2">
@@ -227,8 +204,8 @@ export function DoctorForm({ initialData, onSuccess, onCancel, specialties }: Do
                 </div>
             )}
 
-            {/* TAB 1: DATA */}
-            <div className={activeTab === 'data' ? 'block space-y-8' : 'hidden'}>
+            {/* DATOS PERSONALES */}
+            <div className="space-y-8">
                 <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <FormInput
@@ -424,16 +401,6 @@ export function DoctorForm({ initialData, onSuccess, onCancel, specialties }: Do
                 </section>
             </div>
 
-            {/* TAB 2: SCHEDULE */}
-            <div className={activeTab === 'schedule' ? 'block' : 'hidden'}>
-                <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
-                    <ScheduleEditor
-                        value={schedule}
-                        onChange={setSchedule}
-                    />
-                </section>
-            </div>
-
             <div className="flex justify-end gap-4 p-6 border-t border-white/40 mt-8 bg-white/30 backdrop-blur-md">
                 <Button
                     type="button"
@@ -448,7 +415,7 @@ export function DoctorForm({ initialData, onSuccess, onCancel, specialties }: Do
                     disabled={isLoading}
                     leftIcon={isEditing ? <Edit className="w-5 h-5" /> : <Save className="w-5 h-5" />}
                 >
-                    {isEditing ? "Actualizar Todos los Datos" : "Guardar Médico y Horario"}
+                    {isEditing ? "Actualizar Perfil" : "Guardar Médico"}
                 </Button>
             </div>
         </form >
