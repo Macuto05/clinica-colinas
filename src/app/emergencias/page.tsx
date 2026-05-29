@@ -295,13 +295,13 @@ function NewAdmissionModal({ onClose, onSuccess }: NewAdmissionModalProps) {
     ];
 
     return (
-        <div className="fixed inset-0 bg-slate-900/30 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-md transition-all">
-            <div className="bg-white/70 backdrop-blur-2xl backdrop-saturate-[1.2] w-full sm:max-w-2xl rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.12)] border border-white/60 max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="fixed inset-0 bg-slate-900/30 z-50 flex items-center justify-center p-4 backdrop-blur-md transition-all">
+            <div className="bg-white/70 backdrop-blur-2xl backdrop-saturate-[1.2] w-full max-w-5xl rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.12)] border border-white/60 flex flex-col overflow-hidden" style={{ maxHeight: "92vh" }}>
 
                 {/* Header */}
-                <div className="p-6 border-b border-white/40 flex justify-between items-center shrink-0 bg-white/30">
+                <div className="px-8 py-5 border-b border-white/40 flex justify-between items-center shrink-0 bg-white/30">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-red-500/10 border border-red-500/20 shadow-inner flex items-center justify-center backdrop-blur-md">
+                        <div className="w-10 h-10 rounded-full bg-red-500/10 border border-red-500/20 shadow-inner flex items-center justify-center">
                             <Siren size={18} className="text-red-600" />
                         </div>
                         <div>
@@ -314,145 +314,195 @@ function NewAdmissionModal({ onClose, onSuccess }: NewAdmissionModalProps) {
                     </button>
                 </div>
 
-                <div className="overflow-y-auto flex-1 p-6 space-y-6">
-                    {error && (
-                        <div className="p-4 bg-red-50/80 backdrop-blur-md border border-red-200/50 text-red-700 rounded-2xl text-sm flex items-center gap-2 shadow-sm">
-                            <AlertTriangle size={18} className="shrink-0" /> {error}
+                {/* Error */}
+                {error && (
+                    <div className="px-8 pt-4 shrink-0">
+                        <div className="p-3.5 bg-red-50/80 border border-red-200/50 text-red-700 rounded-2xl text-sm flex items-center gap-2">
+                            <AlertTriangle size={16} className="shrink-0" /> {error}
                         </div>
-                    )}
+                    </div>
+                )}
 
-                    {/* ── SECCIÓN 1: Paciente ── */}
-                    <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-5 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
-                        <div className="flex items-center gap-3 mb-4">
-                            <span className="w-7 h-7 rounded-full bg-gray-900/90 text-white shadow-md text-xs font-black flex items-center justify-center">1</span>
-                            <h4 className="font-bold text-gray-800 text-base">Identificar Paciente</h4>
-                        </div>
+                {/* Body — izquierda: pasos 1, 3, 4 / derecha: paso 2 */}
+                <div className="flex-1 min-h-0 grid grid-cols-[5fr_7fr] divide-x divide-white/40">
 
-                        {mode === "search" && (
-                            <div className="space-y-3">
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        placeholder="Buscar por nombre o cédula..."
-                                        value={search}
-                                        onChange={e => setSearch(e.target.value)}
-                                        autoFocus
-                                        className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-red-400/50 outline-none text-sm shadow-inner transition-all placeholder:text-gray-400 font-medium"
-                                    />
-                                    {loadingSearch && <Loader2 size={18} className="animate-spin absolute right-4 top-3.5 text-gray-400" />}
+                    {/* ── Left: Pasos 1 + 3 + 4 ── */}
+                    <div className="p-5 flex flex-col gap-4 overflow-hidden">
+
+                        {/* Sección 1: Identificar Paciente */}
+                        <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl p-4 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
+                            <div className="flex items-center gap-2.5 mb-3">
+                                <span className="w-6 h-6 rounded-full bg-gray-900/90 text-white shadow-md text-[11px] font-black flex items-center justify-center">1</span>
+                                <h4 className="font-bold text-gray-800 text-sm">Identificar Paciente</h4>
+                            </div>
+
+                            {mode === "search" && (
+                                <div className="space-y-3">
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            placeholder="Buscar por nombre o cédula..."
+                                            value={search}
+                                            onChange={e => setSearch(e.target.value)}
+                                            autoFocus
+                                            className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-red-400/50 outline-none text-sm shadow-inner transition-all placeholder:text-gray-400 font-medium"
+                                        />
+                                        {loadingSearch && <Loader2 size={18} className="animate-spin absolute right-4 top-3.5 text-gray-400" />}
+                                    </div>
+
+                                    {searchResults.length > 0 && (
+                                        <div className="bg-white/50 backdrop-blur-lg border border-white/60 rounded-2xl overflow-hidden shadow-sm">
+                                            {searchResults.map((p: any) => (
+                                                <button key={p.id} onClick={() => selectPatient(p)}
+                                                    className="w-full text-left px-5 py-3 hover:bg-white/70 transition-colors flex items-center justify-between border-b border-white/40 last:border-0">
+                                                    <div>
+                                                        <p className="font-bold text-gray-800 text-sm">{p.nombres} {p.apellidos}</p>
+                                                        <p className="text-xs text-gray-500 font-mono mt-0.5">{p.documento} {p.telefono ? `· ${p.telefono}` : ""}</p>
+                                                    </div>
+                                                    <ChevronRight size={16} className="text-gray-400" />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    <button onClick={() => setMode("new-patient")}
+                                        className="w-full py-3 border-2 border-dashed border-gray-300/60 rounded-2xl text-sm font-semibold text-gray-500 hover:border-red-400/60 hover:text-red-600 transition-colors flex items-center justify-center gap-2 bg-white/20 hover:bg-white/40">
+                                        <Plus size={16} /> Paciente no registrado — crear perfil
+                                    </button>
                                 </div>
+                            )}
 
-                                {searchResults.length > 0 && (
-                                    <div className="bg-white/50 backdrop-blur-lg border border-white/60 rounded-2xl overflow-hidden shadow-sm">
-                                        {searchResults.map((p: any) => (
-                                            <button key={p.id} onClick={() => selectPatient(p)}
-                                                className="w-full text-left px-5 py-3.5 hover:bg-white/70 transition-colors flex items-center justify-between border-b border-white/40 last:border-0">
-                                                <div>
-                                                    <p className="font-bold text-gray-800 text-sm">{p.nombres} {p.apellidos}</p>
-                                                    <p className="text-xs text-gray-500 font-mono font-medium mt-0.5">{p.documento} {p.telefono ? `· ${p.telefono}` : ""}</p>
+                            {mode === "selected" && selectedPatient && (
+                                <div className="rounded-2xl border border-green-400/30 bg-green-50/50 shadow-sm p-4 flex items-start justify-between gap-3">
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-green-200/50 border border-green-300/50 shadow-inner flex items-center justify-center shrink-0">
+                                            <User size={18} className="text-green-700" />
+                                        </div>
+                                        <div className="pt-0.5">
+                                            <p className="font-bold text-gray-900 text-sm">{selectedPatient.nombres} {selectedPatient.apellidos}</p>
+                                            <p className="text-xs text-gray-500 font-mono mt-0.5">{selectedPatient.documento}</p>
+                                            {selectedPatient.telefono && (
+                                                <p className="text-xs text-gray-500 flex items-center gap-1 mt-1"><Phone size={11} />{selectedPatient.telefono}</p>
+                                            )}
+                                            {patientPolicies.length > 0 && (
+                                                <div className="mt-2 flex flex-wrap gap-1.5">
+                                                    {patientPolicies.map((pol: any) => (
+                                                        <span key={pol.polizaId} className="inline-flex items-center gap-1 text-[11px] bg-blue-100/70 text-blue-800 border border-blue-200/60 rounded-full px-2.5 py-1 font-bold shadow-sm">
+                                                            <Shield size={11} /> {pol.aseguradora} — {pol.numeroPoliza}
+                                                        </span>
+                                                    ))}
                                                 </div>
-                                                <ChevronRight size={18} className="text-gray-400" />
-                                            </button>
-                                        ))}
+                                            )}
+                                        </div>
                                     </div>
+                                    <button onClick={() => { setSelectedPatient(null); setPatientPolicies([]); setTipoPago("PENDIENTE"); setMode("search"); }}
+                                        className="text-xs font-bold text-gray-400 hover:text-red-500 transition-colors shrink-0 underline decoration-gray-300 underline-offset-2">
+                                        Cambiar
+                                    </button>
+                                </div>
+                            )}
+
+                            {mode === "new-patient" && (
+                                <div className="space-y-3 p-4 border-2 border-dashed border-red-300/50 rounded-2xl bg-red-50/40">
+                                    <p className="text-xs font-bold text-red-600/80 uppercase tracking-wider flex items-center gap-1.5"><Heart size={13}/> Perfil de emergencia</p>
+                                    <div className="grid grid-cols-2 gap-2.5">
+                                        <input placeholder="Nombres *" value={newPatient.nombres} onChange={e => setNewPatient({ ...newPatient, nombres: e.target.value })}
+                                            className="px-4 py-2.5 rounded-xl bg-white/60 border border-white/80 text-sm focus:bg-white focus:ring-2 focus:ring-red-300 outline-none shadow-sm transition-all font-medium placeholder:text-gray-400" />
+                                        <input placeholder="Apellidos *" value={newPatient.apellidos} onChange={e => setNewPatient({ ...newPatient, apellidos: e.target.value })}
+                                            className="px-4 py-2.5 rounded-xl bg-white/60 border border-white/80 text-sm focus:bg-white focus:ring-2 focus:ring-red-300 outline-none shadow-sm transition-all font-medium placeholder:text-gray-400" />
+                                        <input placeholder="Cédula / Documento *" value={newPatient.documento} onChange={e => setNewPatient({ ...newPatient, documento: e.target.value })}
+                                            className="px-4 py-2.5 rounded-xl bg-white/60 border border-white/80 text-sm focus:bg-white focus:ring-2 focus:ring-red-300 outline-none shadow-sm transition-all font-medium placeholder:text-gray-400" />
+                                        <input placeholder="Teléfono" value={newPatient.telefono} onChange={e => setNewPatient({ ...newPatient, telefono: e.target.value })}
+                                            className="px-4 py-2.5 rounded-xl bg-white/60 border border-white/80 text-sm focus:bg-white focus:ring-2 focus:ring-red-300 outline-none shadow-sm transition-all font-medium placeholder:text-gray-400" />
+                                    </div>
+                                    <button onClick={() => { setMode("search"); setNewPatient({ nombres: "", apellidos: "", documento: "", telefono: "" }); }}
+                                        className="text-xs font-bold text-gray-500 underline decoration-gray-300 hover:text-gray-800 transition-colors underline-offset-2">← Buscar paciente existente</button>
+                                </div>
+                            )}
+                        </section>
+
+                        {/* Sección 3: Situación de Pago */}
+                        <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl p-4 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
+                            <div className="flex items-center gap-2.5 mb-3">
+                                <span className="w-6 h-6 rounded-full bg-gray-900/90 text-white shadow-md text-[11px] font-black flex items-center justify-center">3</span>
+                                <h4 className="font-bold text-gray-800 text-sm">Situación de Pago</h4>
+                                {patientPolicies.length > 0 && (
+                                    <span className="text-[10px] font-bold bg-blue-100/70 text-blue-800 border border-blue-200/50 px-2 py-0.5 rounded-full">Auto</span>
                                 )}
-
-                                <button onClick={() => setMode("new-patient")}
-                                    className="w-full py-3 border-2 border-dashed border-gray-300/60 rounded-2xl text-sm font-semibold text-gray-500 hover:border-red-400/60 hover:text-red-600 transition-colors flex items-center justify-center gap-2 bg-white/20 hover:bg-white/40">
-                                    <Plus size={18} /> Paciente no registrado — crear perfil
-                                </button>
                             </div>
-                        )}
-
-                        {mode === "selected" && selectedPatient && (
-                            <div className="rounded-2xl border border-green-400/30 bg-green-50/50 backdrop-blur-sm shadow-sm p-4 flex items-start justify-between gap-3">
-                                <div className="flex items-start gap-4">
-                                    <div className="w-12 h-12 rounded-full bg-green-200/50 border border-green-300/50 shadow-inner flex items-center justify-center shrink-0">
-                                        <User size={20} className="text-green-700" />
-                                    </div>
-                                    <div className="pt-0.5">
-                                        <p className="font-bold text-gray-900 text-[15px]">{selectedPatient.nombres} {selectedPatient.apellidos}</p>
-                                        <p className="text-xs text-gray-500 font-mono font-medium mt-0.5">{selectedPatient.documento}</p>
-                                        {selectedPatient.telefono && (
-                                            <p className="text-xs text-gray-500 flex items-center gap-1 mt-1 font-medium"><Phone size={12} />{selectedPatient.telefono}</p>
-                                        )}
-                                        {patientPolicies.length > 0 && (
-                                            <div className="mt-2.5 flex flex-wrap gap-1.5">
-                                                {patientPolicies.map((pol: any) => (
-                                                    <span key={pol.polizaId} className="inline-flex items-center gap-1 text-[11px] bg-blue-100/70 text-blue-800 border border-blue-200/60 rounded-full px-2.5 py-1 font-bold shadow-sm">
-                                                        <Shield size={12} /> {pol.aseguradora} — {pol.numeroPoliza}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                                <button onClick={() => { setSelectedPatient(null); setPatientPolicies([]); setTipoPago("PENDIENTE"); setMode("search"); }}
-                                    className="text-xs font-bold text-gray-400 hover:text-red-500 transition-colors shrink-0 underline decoration-gray-300 hover:decoration-red-300 underline-offset-2">
-                                    Cambiar
-                                </button>
+                            <div className="flex gap-2 flex-wrap">
+                                {[
+                                    { key: "ASEGURADO", label: "Asegurado", emoji: "🛡️" },
+                                    { key: "PARTICULAR", label: "Particular", emoji: "💵" },
+                                    { key: "PENDIENTE",  label: "Pendiente",  emoji: "⏳" },
+                                ].map(o => (
+                                    <button key={o.key} type="button" onClick={() => setTipoPago(o.key)}
+                                        className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold border transition-all shadow-sm ${
+                                            tipoPago === o.key
+                                                ? "bg-lime-500 text-white border-lime-500"
+                                                : "border-white/60 bg-white/50 text-gray-500 hover:bg-white/80"
+                                        }`}>
+                                        {o.emoji} {o.label}
+                                    </button>
+                                ))}
                             </div>
-                        )}
+                        </section>
 
-                        {mode === "new-patient" && (
-                            <div className="space-y-4 p-5 border-2 border-dashed border-red-300/50 rounded-2xl bg-red-50/40 backdrop-blur-sm">
-                                <p className="text-xs font-bold text-red-600/80 uppercase tracking-wider flex items-center gap-1.5"><Heart size={14}/> Perfil de emergencia</p>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <input placeholder="Nombres *" value={newPatient.nombres} onChange={e => setNewPatient({ ...newPatient, nombres: e.target.value })}
-                                        className="px-4 py-3 rounded-xl bg-white/60 border border-white/80 text-sm focus:bg-white focus:ring-2 focus:ring-red-300 outline-none shadow-sm transition-all font-medium placeholder:text-gray-400" />
-                                    <input placeholder="Apellidos *" value={newPatient.apellidos} onChange={e => setNewPatient({ ...newPatient, apellidos: e.target.value })}
-                                        className="px-4 py-3 rounded-xl bg-white/60 border border-white/80 text-sm focus:bg-white focus:ring-2 focus:ring-red-300 outline-none shadow-sm transition-all font-medium placeholder:text-gray-400" />
-                                    <input placeholder="Cédula / Documento *" value={newPatient.documento} onChange={e => setNewPatient({ ...newPatient, documento: e.target.value })}
-                                        className="px-4 py-3 rounded-xl bg-white/60 border border-white/80 text-sm focus:bg-white focus:ring-2 focus:ring-red-300 outline-none shadow-sm transition-all font-medium placeholder:text-gray-400" />
-                                    <input placeholder="Teléfono" value={newPatient.telefono} onChange={e => setNewPatient({ ...newPatient, telefono: e.target.value })}
-                                        className="px-4 py-3 rounded-xl bg-white/60 border border-white/80 text-sm focus:bg-white focus:ring-2 focus:ring-red-300 outline-none shadow-sm transition-all font-medium placeholder:text-gray-400" />
-                                </div>
-                                <button onClick={() => { setMode("search"); setNewPatient({ nombres: "", apellidos: "", documento: "", telefono: "" }); }}
-                                    className="text-xs font-bold text-gray-500 underline decoration-gray-300 hover:text-gray-800 transition-colors underline-offset-2">← Buscar paciente existente</button>
+                        {/* Sección 4: Notas Internas */}
+                        <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl p-4 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
+                            <div className="flex items-center gap-2.5 mb-3">
+                                <span className="w-6 h-6 rounded-full bg-gray-900/90 text-white shadow-md text-[11px] font-black flex items-center justify-center">4</span>
+                                <h4 className="font-bold text-gray-800 text-sm">Notas Internas</h4>
+                                <span className="text-xs text-gray-400/80">Opcional</span>
                             </div>
-                        )}
-                    </section>
+                            <input type="text" value={observaciones} onChange={e => setObservaciones(e.target.value)}
+                                placeholder="Ej: vino con familiar, notas relevantes..."
+                                className="w-full px-4 py-3 rounded-xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-red-400/50 outline-none text-sm shadow-inner transition-all placeholder:text-gray-400 font-medium" />
+                        </section>
+                    </div>
 
-                    {/* ── SECCIÓN 2: Emergencia ── */}
-                    <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-5 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
-                        <div className="flex items-center gap-3 mb-4">
-                            <span className="w-7 h-7 rounded-full bg-gray-900/90 text-white shadow-md text-xs font-black flex items-center justify-center">2</span>
-                            <h4 className="font-bold text-gray-800 text-base">Datos de la Emergencia</h4>
-                        </div>
+                    {/* ── Right: Solo Paso 2 (Datos de la Emergencia) ── */}
+                    <div className="p-6 flex flex-col overflow-hidden">
 
-                        <div className="space-y-5">
+                        {/* Sección 2: Datos de la Emergencia */}
+                        <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-5 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] flex flex-col gap-4 h-full">
+                            <div className="flex items-center gap-3">
+                                <span className="w-7 h-7 rounded-full bg-gray-900/90 text-white shadow-md text-xs font-black flex items-center justify-center">2</span>
+                                <h4 className="font-bold text-gray-800 text-base">Datos de la Emergencia</h4>
+                            </div>
+
                             <div>
-                                <label className="text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2.5 block">Motivo de Ingreso *</label>
+                                <label className="text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2 block">Motivo de Ingreso *</label>
                                 <textarea value={motivo} onChange={e => setMotivo(e.target.value)} rows={3}
                                     placeholder="Describe la situación: síntomas, lesión, circunstancias..."
                                     className="w-full px-5 py-4 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-red-400/50 outline-none resize-none text-sm shadow-inner transition-all placeholder:text-gray-400 font-medium" />
                             </div>
 
                             <div>
-                                <label className="text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2.5 block">Nivel de Urgencia *</label>
-                                <div className="grid grid-cols-4 gap-2.5">
+                                <label className="text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2 block">Nivel de Urgencia *</label>
+                                <div className="grid grid-cols-4 gap-2">
                                     {urgencyOptions.map(opt => (
-                                        <button key={opt.key} onClick={() => setUrgencia(opt.key)}
-                                            className={`py-3.5 rounded-2xl border flex flex-col items-center gap-1.5 transition-all outline-none font-bold ${
+                                        <button key={opt.key} type="button" onClick={() => setUrgencia(opt.key)}
+                                            className={`py-2.5 rounded-xl border flex flex-col items-center gap-1 transition-all outline-none font-bold ${
                                                 urgencia === opt.key ? opt.sel : opt.bg
                                             }`}>
                                             <span className="text-xl drop-shadow-sm">{opt.emoji}</span>
-                                            <span className="text-[13px]">{opt.label}</span>
+                                            <span className="text-[11px]">{opt.label}</span>
                                         </button>
                                     ))}
                                 </div>
                             </div>
 
                             <div>
-                                <label className="text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2.5 block">¿Cómo llegó?</label>
-                                <div className="grid grid-cols-3 gap-2.5">
+                                <label className="text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2 block">¿Cómo llegó?</label>
+                                <div className="grid grid-cols-3 gap-2">
                                     {[
-                                        { key: "CUENTA_PROPIA", label: "Cuenta propia", emoji: "🚶" },
+                                        { key: "CUENTA_PROPIA",     label: "Cuenta propia",     emoji: "🚶" },
                                         { key: "AMBULANCIA_PROPIA", label: "Ambulancia clínica", emoji: "🚑" },
-                                        { key: "AMBULANCIA_EXTERNA", label: "Ambulancia externa", emoji: "🚒" },
+                                        { key: "AMBULANCIA_EXTERNA",label: "Ambulancia externa", emoji: "🚒" },
                                     ].map(o => (
-                                        <button key={o.key} onClick={() => setLlegada(o.key)}
-                                            className={`py-3.5 px-3 rounded-2xl border text-[13px] font-bold transition-all flex flex-col items-center gap-1.5 outline-none ${
+                                        <button key={o.key} type="button" onClick={() => setLlegada(o.key)}
+                                            className={`py-2.5 px-2 rounded-xl border text-[11px] font-bold transition-all flex flex-col items-center gap-1 outline-none ${
                                                 llegada === o.key
                                                     ? "border-lime-500/80 bg-lime-50 text-lime-700 shadow-[0_4px_12px_rgba(132,204,22,0.2)] ring-2 ring-lime-400/20 scale-[1.02]"
                                                     : "border-white/60 bg-white/40 text-gray-500 opacity-80 hover:opacity-100 hover:bg-white/60 shadow-sm"
@@ -463,61 +513,17 @@ function NewAdmissionModal({ onClose, onSuccess }: NewAdmissionModalProps) {
                                     ))}
                                 </div>
                             </div>
-                        </div>
-                    </section>
-
-                    {/* ── SECCIÓN 3: Pago ── */}
-                    <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-5 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
-                        <div className="flex items-center gap-3 mb-4">
-                            <span className="w-7 h-7 rounded-full bg-gray-900/90 text-white shadow-md text-xs font-black flex items-center justify-center">3</span>
-                            <h4 className="font-bold text-gray-800 text-base">Situación de Pago</h4>
-                            {patientPolicies.length > 0 && (
-                                <span className="text-[10px] uppercase tracking-wider font-bold bg-blue-100/70 text-blue-800 border border-blue-200/50 px-2.5 py-1 rounded-full shadow-sm">Auto-completado</span>
-                            )}
-                        </div>
-
-                        <div className="w-full">
-                            <label className="text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2.5 block">Selecciona quién asume el costo inicial</label>
-                            <div className="grid grid-cols-3 gap-2.5">
-                                {[
-                                    { key: "ASEGURADO", label: "Asegurado", emoji: "🛡️" },
-                                    { key: "PARTICULAR", label: "Particular", emoji: "💵" },
-                                    { key: "PENDIENTE", label: "Pendiente", emoji: "⏳" },
-                                ].map(o => (
-                                    <button key={o.key} onClick={() => setTipoPago(o.key)}
-                                        className={`py-3.5 px-3 rounded-2xl border text-sm font-bold transition-all flex flex-col items-center gap-1.5 outline-none ${
-                                            tipoPago === o.key 
-                                                ? "border-lime-500/80 bg-lime-50 text-lime-700 shadow-[0_4px_12px_rgba(132,204,22,0.2)] ring-2 ring-lime-400/20 scale-[1.02]" 
-                                                : "border-white/60 bg-white/40 text-gray-500 opacity-80 hover:opacity-100 hover:bg-white/60 shadow-sm"
-                                        }`}>
-                                        <span className="text-xl drop-shadow-sm">{o.emoji}</span>
-                                        {o.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    </section>
-
-                    {/* ── SECCIÓN 4: Observaciones ── */}
-                    <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-5 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
-                        <div className="flex items-center gap-3 mb-3.5">
-                            <span className="w-7 h-7 rounded-full bg-gray-900/90 text-white shadow-md text-xs font-black flex items-center justify-center">4</span>
-                            <h4 className="font-bold text-gray-800 text-base">Notas Internas</h4>
-                            <span className="text-xs font-semibold text-gray-400/80">Opcional</span>
-                        </div>
-                        <input type="text" value={observaciones} onChange={e => setObservaciones(e.target.value)}
-                            placeholder="Ej: vino con familiar, notas relevantes..."
-                            className="w-full px-5 py-4 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-red-400/50 outline-none text-sm shadow-inner transition-all placeholder:text-gray-400 font-medium" />
-                    </section>
+                        </section>
+                    </div>
                 </div>
 
                 {/* Footer */}
-                <div className="p-6 border-t border-white/40 flex gap-3 shrink-0 bg-white/30 backdrop-blur-md">
-                    <button onClick={onClose} className="flex-1 py-3.5 rounded-2xl bg-white/50 border border-white/60 text-gray-700 font-bold hover:bg-white/80 transition-colors text-sm shadow-sm backdrop-blur-sm outline-none focus:ring-2 focus:ring-gray-300">
+                <div className="px-8 py-5 border-t border-white/40 flex gap-3 shrink-0 bg-white/30 backdrop-blur-md">
+                    <button onClick={onClose} className="flex-1 py-3 rounded-2xl bg-white/50 border border-white/60 text-gray-700 font-bold hover:bg-white/80 transition-colors text-sm shadow-sm outline-none focus:ring-2 focus:ring-gray-300">
                         Cancelar
                     </button>
                     <button onClick={createAndSubmit} disabled={saving}
-                        className="flex-1 py-3.5 rounded-2xl bg-red-500/95 hover:bg-red-500 text-white font-bold disabled:opacity-50 transition-colors text-sm flex items-center justify-center gap-2 shadow-[0_8px_20px_rgba(239,68,68,0.3)] backdrop-blur-md border border-red-400/50 outline-none focus:ring-2 focus:ring-red-300">
+                        className="flex-1 py-3 rounded-2xl bg-red-500/95 hover:bg-red-500 text-white font-bold disabled:opacity-50 transition-colors text-sm flex items-center justify-center gap-2 shadow-[0_8px_20px_rgba(239,68,68,0.3)] border border-red-400/50 outline-none focus:ring-2 focus:ring-red-300">
                         {saving ? <Loader2 size={18} className="animate-spin" /> : <Siren size={18} />}
                         {saving ? "Ingresando..." : "Ingresar Paciente"}
                     </button>
