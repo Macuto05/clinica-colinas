@@ -29,6 +29,8 @@ export default function CreatePatientButton() {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 title="Registrar Nuevo Paciente"
+                className="max-w-5xl"
+                bodyClassName="p-0"
             >
                 <PatientForm
                     onSuccess={handleSuccess}

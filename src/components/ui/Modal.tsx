@@ -12,9 +12,10 @@ interface ModalProps {
     title: string;
     children: React.ReactNode;
     className?: string;
+    bodyClassName?: string;
 }
 
-export function Modal({ isOpen, onClose, title, children, className = "max-w-2xl" }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, className = "max-w-2xl", bodyClassName = "p-6" }: ModalProps) {
     // Prevent scrolling when modal is open
     useEffect(() => {
         if (isOpen) {
@@ -68,7 +69,7 @@ export function Modal({ isOpen, onClose, title, children, className = "max-w-2xl
                             </div>
 
                             {/* Body (Scrollable) */}
-                            <div className="flex-1 overflow-y-auto p-6">
+                            <div className={`flex-1 overflow-y-auto ${bodyClassName}`}>
                                 {children}
                             </div>
                         </motion.div>

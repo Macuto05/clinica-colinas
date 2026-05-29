@@ -306,162 +306,162 @@ export default function AseguradorasPage() {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 title={editingId ? "Editar Aseguradora" : "Nueva Aseguradora"}
-                className="max-w-3xl"
+                className="max-w-5xl"
+                bodyClassName="p-0"
             >
-                <div className="flex flex-col h-full bg-transparent overflow-hidden">
-                    <div className="flex-1 overflow-y-auto p-2 sm:p-4">
-                        <div className="space-y-8">
-                            {error && (
-                                <div className="p-4 bg-red-50/50 backdrop-blur-md border border-red-200/50 text-red-700 rounded-2xl text-sm font-bold flex items-center gap-2 animate-pulse">
-                                    <span className="w-2 h-2 rounded-full bg-red-500" />
-                                    {error}
+                <div className="flex flex-col">
+                    {error && (
+                        <div className="mx-6 mt-6 p-3 bg-red-50/50 backdrop-blur-md border border-red-200/50 text-red-700 rounded-2xl text-sm font-bold flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
+                            {error}
+                        </div>
+                    )}
+
+                    <div className="flex p-6 gap-0">
+                        {/* ─── Left panel: Datos Principales ─── */}
+                        <div className="flex-1 pr-8 space-y-5 min-w-0">
+                            <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-lime-500" />
+                                Datos Principales
+                            </h3>
+
+                            <FormInput
+                                label="Nombre de la Aseguradora"
+                                value={form.nombre}
+                                onChange={e => setForm({ ...form, nombre: e.target.value })}
+                                placeholder="Ej: Mercantil Seguros"
+                                required
+                            />
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormInput
+                                    label="RIF / NIF"
+                                    value={form.rifNif}
+                                    onChange={e => setForm({ ...form, rifNif: e.target.value })}
+                                    placeholder="J-12345678-9"
+                                />
+                                <FormInput
+                                    label="Teléfono"
+                                    value={form.telefono}
+                                    onChange={e => setForm({ ...form, telefono: e.target.value })}
+                                    placeholder="0212-1234567"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormInput
+                                    label="Correo Electrónico"
+                                    type="email"
+                                    value={form.correo}
+                                    onChange={e => setForm({ ...form, correo: e.target.value })}
+                                    placeholder="contacto@aseguradora.com"
+                                />
+                                <FormInput
+                                    label="Dirección Fiscal"
+                                    value={form.direccion}
+                                    onChange={e => setForm({ ...form, direccion: e.target.value })}
+                                    placeholder="Av. Principal, Caracas"
+                                />
+                            </div>
+
+                            <div className="flex items-center justify-between p-4 bg-white/50 backdrop-blur-sm rounded-2xl border border-white/60">
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-bold text-gray-700 uppercase tracking-tight">Estado Operativo</span>
+                                    <span className="text-xs text-gray-400">{form.activa ? "La aseguradora está activa" : "La aseguradora está inactiva"}</span>
+                                </div>
+                                <div
+                                    className={`w-12 h-7 rounded-full p-1 cursor-pointer transition-all duration-300 ${form.activa ? 'bg-lime-500 shadow-[0_0_12px_rgba(132,204,22,0.4)]' : 'bg-gray-200'}`}
+                                    onClick={() => setForm({ ...form, activa: !form.activa })}
+                                >
+                                    <div className={`w-5 h-5 rounded-full bg-white shadow-lg transform transition-transform duration-300 ${form.activa ? 'translate-x-5' : 'translate-x-0'}`} />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Divider */}
+                        <div className="w-px bg-white/40 self-stretch" />
+
+                        {/* ─── Right panel: Planes de Cobertura ─── */}
+                        <div className="flex-1 pl-8 space-y-4 min-w-0">
+                            <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-lime-500" />
+                                Planes de Cobertura
+                            </h3>
+                            <p className="text-xs text-gray-400">
+                                Define los planes disponibles. Cada plan tiene un nombre y una <strong>suma asegurada máxima</strong> en USD.
+                            </p>
+
+                            {/* Plans list */}
+                            {form.planesCobertura.length > 0 && (
+                                <div className="space-y-2">
+                                    {form.planesCobertura.map(plan => (
+                                        <div
+                                            key={plan.nombre}
+                                            className="flex items-center justify-between bg-lime-50/60 border border-lime-300/40 rounded-2xl px-4 py-3"
+                                        >
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <Tag size={14} className="text-lime-600 flex-shrink-0" />
+                                                <span className="font-bold text-gray-800 text-sm truncate">{plan.nombre}</span>
+                                            </div>
+                                            <div className="flex items-center gap-3 flex-shrink-0">
+                                                <span className="flex items-center gap-1 text-sm font-black text-lime-700 bg-lime-100/60 border border-lime-300/40 rounded-full px-3 py-0.5">
+                                                    <DollarSign size={12} />
+                                                    {Number(plan.montoMaximo).toLocaleString("es-VE")}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removePlan(plan.nombre)}
+                                                    className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all"
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             )}
 
-                            <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] space-y-6">
-                                <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-lime-500" />
-                                    Datos Principales
-                                </h3>
-                                
-                                <FormInput
-                                    label="Nombre de la Aseguradora"
-                                    value={form.nombre}
-                                    onChange={e => setForm({ ...form, nombre: e.target.value })}
-                                    placeholder="Ej: Mercantil Seguros"
-                                    required
+                            {form.planesCobertura.length === 0 && (
+                                <p className="text-xs text-gray-300 italic">Aún no hay planes definidos.</p>
+                            )}
+
+                            {/* Add plan inputs */}
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={planNombreInput}
+                                    onChange={e => setPlanNombreInput(e.target.value)}
+                                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPlan(); } }}
+                                    placeholder="Nombre del plan"
+                                    className="flex-[2] min-w-0 px-4 py-2.5 rounded-2xl border border-white/60 bg-white/50 backdrop-blur-sm text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lime-400/50 transition-all"
                                 />
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <FormInput
-                                        label="RIF / NIF"
-                                        value={form.rifNif}
-                                        onChange={e => setForm({ ...form, rifNif: e.target.value })}
-                                        placeholder="J-12345678-9"
-                                    />
-                                    <FormInput
-                                        label="Teléfono"
-                                        value={form.telefono}
-                                        onChange={e => setForm({ ...form, telefono: e.target.value })}
-                                        placeholder="0212-1234567"
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <FormInput
-                                        label="Correo Electrónico"
-                                        type="email"
-                                        value={form.correo}
-                                        onChange={e => setForm({ ...form, correo: e.target.value })}
-                                        placeholder="contacto@aseguradora.com"
-                                    />
-                                    <FormInput
-                                        label="Dirección Fiscal"
-                                        value={form.direccion}
-                                        onChange={e => setForm({ ...form, direccion: e.target.value })}
-                                        placeholder="Av. Principal, Caracas"
-                                    />
-                                </div>
-
-                                <div className="flex items-center justify-between p-4 bg-white/50 backdrop-blur-sm rounded-2xl border border-white/60 mt-4">
-                                    <div className="flex flex-col">
-                                        <span className="text-sm font-bold text-gray-700 uppercase tracking-tight">Estado Operativo</span>
-                                        <span className="text-xs text-gray-400">{form.activa ? "La aseguradora está activa" : "La aseguradora está inactiva"}</span>
-                                    </div>
-                                    <div
-                                        className={`w-12 h-7 rounded-full p-1 cursor-pointer transition-all duration-300 ${form.activa ? 'bg-lime-500 shadow-[0_0_12px_rgba(132,204,22,0.4)]' : 'bg-gray-200'}`}
-                                        onClick={() => setForm({ ...form, activa: !form.activa })}
-                                    >
-                                        <div className={`w-5 h-5 rounded-full bg-white shadow-lg transform transition-transform duration-300 ${form.activa ? 'translate-x-5' : 'translate-x-0'}`} />
-                                    </div>
-                                </div>
-                            </section>
-
-                            {/* Planes de Cobertura */}
-                            <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] space-y-4">
-                                <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-lime-500" />
-                                    Planes de Cobertura
-                                </h3>
-                                <p className="text-xs text-gray-400 -mt-2">
-                                    Define los planes disponibles. Cada plan tiene un nombre y una <strong>suma asegurada máxima</strong> en USD.
-                                </p>
-
-                                {/* Plans list */}
-                                {form.planesCobertura.length > 0 && (
-                                    <div className="space-y-2">
-                                        {form.planesCobertura.map(plan => (
-                                            <div
-                                                key={plan.nombre}
-                                                className="flex items-center justify-between bg-lime-50/60 border border-lime-300/40 rounded-2xl px-4 py-3"
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <Tag size={14} className="text-lime-600" />
-                                                    <span className="font-bold text-gray-800 text-sm">{plan.nombre}</span>
-                                                </div>
-                                                <div className="flex items-center gap-3">
-                                                    <span className="flex items-center gap-1 text-sm font-black text-lime-700 bg-lime-100/60 border border-lime-300/40 rounded-full px-3 py-0.5">
-                                                        <DollarSign size={12} />
-                                                        {Number(plan.montoMaximo).toLocaleString("es-VE")}
-                                                    </span>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => removePlan(plan.nombre)}
-                                                        className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all"
-                                                        title="Eliminar plan"
-                                                    >
-                                                        <X size={14} />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-
-                                {/* Add plan inputs */}
-                                <div className="flex gap-2 flex-col sm:flex-row">
+                                <div className="relative flex-1 min-w-0">
+                                    <DollarSign size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                     <input
-                                        type="text"
-                                        value={planNombreInput}
-                                        onChange={e => setPlanNombreInput(e.target.value)}
+                                        type="number"
+                                        min="0"
+                                        step="1000"
+                                        value={planMontoInput}
+                                        onChange={e => setPlanMontoInput(e.target.value)}
                                         onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPlan(); } }}
-                                        placeholder="Nombre del plan (ej: Global Benefits Classic)"
-                                        className="flex-[2] px-4 py-2.5 rounded-2xl border border-white/60 bg-white/50 backdrop-blur-sm text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lime-400/50 transition-all"
+                                        placeholder="Monto USD"
+                                        className="w-full pl-8 pr-4 py-2.5 rounded-2xl border border-white/60 bg-white/50 backdrop-blur-sm text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lime-400/50 transition-all"
                                     />
-                                    <div className="relative flex-1">
-                                        <DollarSign size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            step="1000"
-                                            value={planMontoInput}
-                                            onChange={e => setPlanMontoInput(e.target.value)}
-                                            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPlan(); } }}
-                                            placeholder="Monto máx. USD"
-                                            className="w-full pl-8 pr-4 py-2.5 rounded-2xl border border-white/60 bg-white/50 backdrop-blur-sm text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lime-400/50 transition-all"
-                                        />
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={addPlan}
-                                        className="px-4 py-2.5 bg-lime-500 hover:bg-lime-600 text-white text-sm font-bold rounded-2xl transition-all flex items-center gap-1.5 shadow-sm shrink-0"
-                                    >
-                                        <Plus size={14} /> Agregar
-                                    </button>
                                 </div>
-                                {form.planesCobertura.length === 0 && (
-                                    <p className="text-xs text-gray-300 italic">Aún no hay planes definidos.</p>
-                                )}
-                            </section>
+                                <button
+                                    type="button"
+                                    onClick={addPlan}
+                                    className="px-4 py-2.5 bg-lime-500 hover:bg-lime-600 text-white text-sm font-bold rounded-2xl transition-all flex items-center gap-1.5 shadow-sm shrink-0"
+                                >
+                                    <Plus size={14} /> Agregar
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Modal Footer */}
-                    <div className="bg-white/30 backdrop-blur-md px-6 py-6 flex items-center justify-end gap-3 border-t border-white/40 mt-4 rounded-b-[2.5rem]">
-                        <Button
-                            variant="outline"
-                            onClick={() => setIsModalOpen(false)}
-                        >
+                    {/* Footer */}
+                    <div className="border-t border-white/40 bg-white/20 backdrop-blur-md px-6 py-4 flex items-center justify-end gap-3">
+                        <Button variant="outline" onClick={() => setIsModalOpen(false)}>
                             Cancelar
                         </Button>
                         <Button

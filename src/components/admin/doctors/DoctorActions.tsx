@@ -164,7 +164,7 @@ export function DoctorActions({ doctor, specialties }: DoctorActionsProps) {
             {dropdown}
 
             {/* Edit modal */}
-            <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Editar Médico">
+            <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Editar Médico" className="max-w-5xl" bodyClassName="p-0">
                 <DoctorForm
                     initialData={initialFormData}
                     specialties={specialties}

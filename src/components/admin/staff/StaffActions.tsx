@@ -57,6 +57,8 @@ export default function StaffActions({ employee, roles }: StaffActionsProps) {
                 isOpen={showEditModal}
                 onClose={() => setShowEditModal(false)}
                 title="Editar Empleado"
+                className="max-w-5xl"
+                bodyClassName="p-0"
             >
                 <StaffForm
                     roles={roles}

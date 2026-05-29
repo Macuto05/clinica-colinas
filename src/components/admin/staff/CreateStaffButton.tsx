@@ -33,6 +33,8 @@ export default function CreateStaffButton({ roles }: CreateStaffButtonProps) {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 title="Registrar Nuevo Empleado"
+                className="max-w-5xl"
+                bodyClassName="p-0"
             >
                 <StaffForm
                     onSuccess={handleSuccess}

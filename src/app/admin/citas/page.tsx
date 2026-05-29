@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Calendar, User, Stethoscope, Search, Loader2, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, Search, Loader2, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { AppointmentStatus } from "@/domain/entities/Appointment";
 
 interface AppointmentWithDetails {
@@ -24,40 +25,19 @@ interface PaginationData {
     appointments: AppointmentWithDetails[];
 }
 
-interface CreateFormData {
-    pacienteId: string;
-    medicoId: string;
-    fechaCita: string;
-    horaInicio: string;
-    motivoConsulta: string;
-}
 
 export default function AdminAppointmentsPage() {
+    const router = useRouter();
     const [appointments, setAppointments] = useState<AppointmentWithDetails[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [page, setPage] = useState(1);
     const [pageSize] = useState(10);
     const [totalPages, setTotalPages] = useState(1);
-    const [showCreateModal, setShowCreateModal] = useState(false);
-    const [formData, setFormData] = useState<CreateFormData>({
-        pacienteId: "",
-        medicoId: "",
-        fechaCita: "",
-        horaInicio: "",
-        motivoConsulta: "",
-    });
-    const [patients, setPatients] = useState<any[]>([]);
-    const [doctors, setDoctors] = useState<any[]>([]);
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         fetchAppointments();
-        if (showCreateModal) {
-            fetchPatients();
-            fetchDoctors();
-        }
-    }, [page, searchTerm, showCreateModal]);
+    }, [page, searchTerm]);
 
     const fetchAppointments = async () => {
         setIsLoading(true);
@@ -81,67 +61,14 @@ export default function AdminAppointmentsPage() {
         }
     };
 
-    const fetchPatients = async () => {
-        try {
-            const res = await fetch("/api/admin/patients");
-            if (res.ok) {
-                const data = await res.json();
-                setPatients(data.patients || []);
-            }
-        } catch (error) {
-            console.error("Error fetching patients:", error);
-        }
-    };
 
-    const fetchDoctors = async () => {
-        try {
-            const res = await fetch("/api/admin/doctors");
-            if (res.ok) {
-                const data = await res.json();
-                setDoctors(data.doctors || []);
-            }
-        } catch (error) {
-            console.error("Error fetching doctors:", error);
-        }
-    };
-
-    const handleCreateCita = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!formData.pacienteId || !formData.medicoId || !formData.fechaCita || !formData.horaInicio) {
-            alert("Por favor completa todos los campos requeridos");
-            return;
-        }
-
-        setIsSubmitting(true);
-        try {
-            const res = await fetch("/api/reception/appointments", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    pacienteId: formData.pacienteId,
-                    medicoId: formData.medicoId,
-                    fechaCita: formData.fechaCita,
-                    horaInicio: formData.horaInicio,
-                    motivoConsulta: formData.motivoConsulta || null,
-                }),
-            });
-
-            if (res.ok) {
-                alert("Cita creada exitosamente");
-                setShowCreateModal(false);
-                setFormData({ pacienteId: "", medicoId: "", fechaCita: "", horaInicio: "", motivoConsulta: "" });
-                setPage(1);
-                await fetchAppointments();
-            } else {
-                const err = await res.json();
-                alert(`Error: ${err.error || "No se pudo crear la cita"}`);
-            }
-        } catch (error) {
-            console.error("Error creating cita:", error);
-            alert("Error al crear la cita");
-        } finally {
-            setIsSubmitting(false);
-        }
+    // The DB stores Venezuela local time as a UTC-naive timestamp.
+    // Prisma tags it with Z (UTC), so new Date() would subtract 4h for VEN browsers.
+    // We read the UTC components directly (they represent VEN local time) and
+    // rebuild a local Date so format() shows the correct stored time.
+    const parseApptDate = (isoStr: string): Date => {
+        const d = new Date(isoStr);
+        return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), d.getUTCHours(), d.getUTCMinutes());
     };
 
     const StatusBadge = ({ status }: { status: string }) => {
@@ -182,7 +109,7 @@ export default function AdminAppointmentsPage() {
                     </div>
                 </div>
                 <button
-                    onClick={() => setShowCreateModal(true)}
+                    onClick={() => router.push("/admin/citas/nueva")}
                     className="flex items-center gap-2 px-6 py-3 bg-lime-500 text-white rounded-2xl font-bold shadow-lg hover:bg-lime-600 transition-colors"
                 >
                     <Plus size={20} />
@@ -243,10 +170,10 @@ export default function AdminAppointmentsPage() {
                                             <td className="px-6 py-5 whitespace-nowrap">
                                                 <div className="flex flex-col">
                                                     <span className="text-sm font-black text-gray-900 tracking-tight">
-                                                        {format(new Date(appointment.datetime), "dd 'de' MMMM", { locale: es })}
+                                                        {format(parseApptDate(appointment.datetime), "dd 'de' MMMM", { locale: es })}
                                                     </span>
                                                     <span className="text-[10px] font-black text-lime-600 uppercase tracking-widest mt-0.5">
-                                                        {format(new Date(appointment.datetime), "h:mm a")}
+                                                        {format(parseApptDate(appointment.datetime), "h:mm a")}
                                                     </span>
                                                 </div>
                                             </td>
@@ -299,99 +226,6 @@ export default function AdminAppointmentsPage() {
                 )}
             </div>
 
-            {/* Create Cita Modal */}
-            {showCreateModal && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 space-y-6">
-                        <h2 className="text-2xl font-black text-gray-900">Nueva Cita Médica</h2>
-                        <form onSubmit={handleCreateCita} className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold text-gray-600 mb-2">Paciente</label>
-                                <select
-                                    value={formData.pacienteId}
-                                    onChange={(e) => setFormData({ ...formData, pacienteId: e.target.value })}
-                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-lime-500 outline-none"
-                                    required
-                                >
-                                    <option value="">Seleccionar paciente...</option>
-                                    {patients.map(p => (
-                                        <option key={p.pacienteId} value={p.pacienteId}>
-                                            {p.nombres} {p.apellidos}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-bold text-gray-600 mb-2">Médico</label>
-                                <select
-                                    value={formData.medicoId}
-                                    onChange={(e) => setFormData({ ...formData, medicoId: e.target.value })}
-                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-lime-500 outline-none"
-                                    required
-                                >
-                                    <option value="">Seleccionar médico...</option>
-                                    {doctors.map(d => (
-                                        <option key={d.empleadoId} value={d.empleadoId}>
-                                            Dr. {d.empleado.nombres} {d.empleado.apellidos} ({d.especialidad.nombre})
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-bold text-gray-600 mb-2">Fecha</label>
-                                <input
-                                    type="date"
-                                    value={formData.fechaCita}
-                                    onChange={(e) => setFormData({ ...formData, fechaCita: e.target.value })}
-                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-lime-500 outline-none"
-                                    required
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-bold text-gray-600 mb-2">Hora</label>
-                                <input
-                                    type="time"
-                                    value={formData.horaInicio}
-                                    onChange={(e) => setFormData({ ...formData, horaInicio: e.target.value })}
-                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-lime-500 outline-none"
-                                    required
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-bold text-gray-600 mb-2">Motivo de la Consulta</label>
-                                <textarea
-                                    value={formData.motivoConsulta}
-                                    onChange={(e) => setFormData({ ...formData, motivoConsulta: e.target.value })}
-                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-lime-500 outline-none resize-none h-24"
-                                    placeholder="Describe el motivo de la consulta..."
-                                />
-                            </div>
-
-                            <div className="flex gap-3 pt-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowCreateModal(false)}
-                                    className="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 transition-colors"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={isSubmitting}
-                                    className="flex-1 px-4 py-3 rounded-xl bg-lime-500 text-white font-bold hover:bg-lime-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
-                                >
-                                    {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <Plus size={18} />}
-                                    {isSubmitting ? "Creando..." : "Crear Cita"}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

@@ -35,6 +35,8 @@ export function CreateDoctorButton({ specialties }: CreateDoctorButtonProps) {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 title="Registrar Nuevo Médico"
+                className="max-w-5xl"
+                bodyClassName="p-0"
             >
                 <DoctorForm
                     onSuccess={handleSuccess}

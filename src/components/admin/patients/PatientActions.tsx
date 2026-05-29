@@ -97,7 +97,7 @@ export default function PatientActions({ patient }: PatientActionsProps) {
             {dropdown}
 
             {/* Edit Modal */}
-            <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Editar Paciente">
+            <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Editar Paciente" className="max-w-5xl" bodyClassName="p-0">
                 <PatientForm initialData={patient} onClose={() => setShowEditModal(false)} />
             </Modal>
 

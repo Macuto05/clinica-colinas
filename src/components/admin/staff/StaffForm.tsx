@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
 
-// Schema
 const staffSchema = z.object({
     nombres: z.string()
         .min(2, "Nombre debe tener al menos 2 caracteres")
@@ -18,27 +17,20 @@ const staffSchema = z.object({
         .min(2, "Apellido debe tener al menos 2 caracteres")
         .max(50, "Apellido muy largo")
         .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "El apellido solo puede contener letras"),
-
-    // Split ID Card
     idType: z.enum(["V-", "E-", "J-"]),
     idNumber: z
         .string()
         .min(6, "Mínimo 6 dígitos")
         .max(12, "Máximo 12 dígitos")
         .regex(/^\d+$/, "Solo números"),
-
-    // Split Phone
     phoneCode: z.enum(["0412-", "0414-", "0416-", "0424-", "0426-", "0422-"]),
     phoneNumber: z
         .string()
         .min(7, "Mínimo 7 dígitos")
         .max(7, "Máximo 7 dígitos")
         .regex(/^\d+$/, "Solo números"),
-
     correoInstitucional: z.string().email("Email inválido").optional().or(z.literal("")),
     fechaIngreso: z.string().optional(),
-
-    // User / Role
     rolId: z.string().min(1, "El rol es requerido"),
     email: z.string().email("Email de usuario requerido"),
     password: z.string().optional(),
@@ -60,17 +52,18 @@ export default function StaffForm({ onSuccess, onCancel, roles, initialData }: S
     const [serverError, setServerError] = useState<string | null>(null);
     const isEditing = !!initialData;
 
-    // Helper to split valid ID/Phone if editing
-    const splitId = (fullId: string = "") => {
-        if (!fullId) return { type: "V-", number: "" };
-        const match = fullId.match(/^([VEJ]-)(.*)$/);
-        return match ? { type: match[1], number: match[2] } : { type: "V-", number: fullId };
+    const splitId = (fullId: string | null | undefined) => {
+        const id = fullId ?? "";
+        if (!id) return { type: "V-", number: "" };
+        const match = id.match(/^([VEJ]-)(.*)$/);
+        return match ? { type: match[1], number: match[2] } : { type: "V-", number: id };
     };
 
-    const splitPhone = (fullPhone: string = "") => {
+    const splitPhone = (fullPhone: string | null | undefined) => {
+        const phone = fullPhone ?? "";
         const prefixes = ["0412-", "0414-", "0416-", "0424-", "0426-", "0422-"];
-        const found = prefixes.find(p => fullPhone.startsWith(p));
-        return found ? { code: found, number: fullPhone.replace(found, "") } : { code: "0412-", number: "" };
+        const found = prefixes.find(p => phone.startsWith(p));
+        return found ? { code: found, number: phone.replace(found, "") } : { code: "0412-", number: "" };
     };
 
     const initialId = splitId(initialData?.documentoIdentidad);
@@ -106,9 +99,10 @@ export default function StaffForm({ onSuccess, onCancel, roles, initialData }: S
 
     const password = watch("password", "");
 
-    // Effect to reset if initialData changes (vital for modals)
     useEffect(() => {
         if (initialData) {
+            const id = splitId(initialData.documentoIdentidad);
+            const phone = splitPhone(initialData.telefono);
             reset({
                 ...initialData,
                 password: "",
@@ -116,10 +110,10 @@ export default function StaffForm({ onSuccess, onCancel, roles, initialData }: S
                 usuarioEstado: initialData.usuario?.estado || "ACTIVO",
                 email: initialData.usuario?.email || "",
                 fechaIngreso: initialData.fechaIngreso ? new Date(initialData.fechaIngreso).toISOString().split('T')[0] : "",
-                idType: splitId(initialData.documentoIdentidad).type,
-                idNumber: splitId(initialData.documentoIdentidad).number,
-                phoneCode: splitPhone(initialData.telefono).code,
-                phoneNumber: splitPhone(initialData.telefono).number,
+                idType: id.type,
+                idNumber: id.number,
+                phoneCode: phone.code,
+                phoneNumber: phone.number,
             });
         }
     }, [initialData, reset]);
@@ -128,7 +122,6 @@ export default function StaffForm({ onSuccess, onCancel, roles, initialData }: S
         setIsLoading(true);
         setServerError(null);
 
-        // Client-side validation for password on CREATE
         if (!isEditing && (!data.password || data.password.length < 6)) {
             setServerError("La contraseña es requerida y debe tener al menos 6 caracteres");
             setIsLoading(false);
@@ -140,8 +133,6 @@ export default function StaffForm({ onSuccess, onCancel, roles, initialData }: S
                 ? `/api/admin/staff/${initialData.empleadoId}`
                 : "/api/admin/staff";
 
-            const method = isEditing ? "PUT" : "POST";
-
             const payload = {
                 ...data,
                 documentoIdentidad: `${data.idType}${data.idNumber}`,
@@ -149,17 +140,13 @@ export default function StaffForm({ onSuccess, onCancel, roles, initialData }: S
             };
 
             const response = await fetch(url, {
-                method: method,
+                method: isEditing ? "PUT" : "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
             });
 
             const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error || "Error al guardar empleado");
-            }
-
+            if (!response.ok) throw new Error(result.error || "Error al guardar empleado");
 
             onSuccess();
         } catch (error: any) {
@@ -170,23 +157,24 @@ export default function StaffForm({ onSuccess, onCancel, roles, initialData }: S
     };
 
     return (
-        <div className="flex flex-col h-full bg-transparent overflow-hidden">
-            <div className="flex-1 overflow-y-auto p-2 sm:p-4">
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-                    {serverError && (
-                        <div className="p-4 bg-red-50/50 backdrop-blur-md text-red-700 rounded-2xl text-sm border border-red-200/50 font-bold flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                            {serverError}
-                        </div>
-                    )}
+        <div className="flex flex-col">
+            {serverError && (
+                <div className="mx-6 mt-6 p-3 bg-red-50/50 backdrop-blur-md text-red-700 rounded-2xl text-sm border border-red-200/50 font-bold flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
+                    {serverError}
+                </div>
+            )}
 
-                    <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
-                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+            <form onSubmit={handleSubmit(onSubmit)}>
+                <div className="flex p-6 gap-0">
+                    {/* ─── Left panel: Personal Info ─── */}
+                    <div className="flex-1 pr-8 space-y-5 min-w-0">
+                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
                             <span className="w-1.5 h-1.5 rounded-full bg-lime-500" />
                             Información Personal
                         </h3>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-2 gap-4">
                             <FormInput
                                 label="Nombres"
                                 placeholder="Ej: Juan Carlos"
@@ -201,14 +189,13 @@ export default function StaffForm({ onSuccess, onCancel, roles, initialData }: S
                             />
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                            {/* ID Card Split */}
+                        <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider ml-1">
                                     Documento de Identidad
                                 </label>
-                                <div className="flex gap-3">
-                                    <div className="w-28">
+                                <div className="flex gap-2">
+                                    <div className="w-24 flex-shrink-0">
                                         <Select
                                             options={[
                                                 { value: "V-", label: "V-" },
@@ -219,7 +206,7 @@ export default function StaffForm({ onSuccess, onCancel, roles, initialData }: S
                                             {...register("idType")}
                                         />
                                     </div>
-                                    <div className="flex-1">
+                                    <div className="flex-1 min-w-0">
                                         <FormInput
                                             {...register("idNumber")}
                                             placeholder="12345678"
@@ -229,13 +216,12 @@ export default function StaffForm({ onSuccess, onCancel, roles, initialData }: S
                                 </div>
                             </div>
 
-                            {/* Phone Split */}
                             <div className="space-y-2">
                                 <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider ml-1">
                                     Teléfono
                                 </label>
-                                <div className="flex gap-3">
-                                    <div className="w-32">
+                                <div className="flex gap-2">
+                                    <div className="w-24 flex-shrink-0">
                                         <Select
                                             options={[
                                                 { value: "0412-", label: "0412" },
@@ -249,7 +235,7 @@ export default function StaffForm({ onSuccess, onCancel, roles, initialData }: S
                                             {...register("phoneCode")}
                                         />
                                     </div>
-                                    <div className="flex-1">
+                                    <div className="flex-1 min-w-0">
                                         <FormInput
                                             {...register("phoneNumber")}
                                             placeholder="1234567"
@@ -260,7 +246,7 @@ export default function StaffForm({ onSuccess, onCancel, roles, initialData }: S
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        <div className="grid grid-cols-2 gap-4">
                             <FormInput
                                 label="Correo de Contacto"
                                 type="email"
@@ -275,59 +261,27 @@ export default function StaffForm({ onSuccess, onCancel, roles, initialData }: S
                                 {...register("fechaIngreso")}
                             />
                         </div>
-                    </section>
+                    </div>
 
-                    {isEditing && (
-                        <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
-                            <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-lime-500" />
-                                Estados Laborales
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <Select
-                                    label="Estado Laboral"
-                                    {...register("estadoLaboral")}
-                                    options={[
-                                        { value: "ACTIVO", label: "ACTIVO" },
-                                        { value: "VACACIONES", label: "VACACIONES" },
-                                        { value: "LICENCIA", label: "LICENCIA" },
-                                        { value: "SUSPENDIDO", label: "SUSPENDIDO" },
-                                        { value: "RETIRADO", label: "RETIRADO" }
-                                    ]}
-                                    error={errors.estadoLaboral?.message}
-                                />
+                    {/* Divider */}
+                    <div className="w-px bg-white/40 self-stretch mx-0" />
 
-                                <Select
-                                    label="Estado de Usuario"
-                                    {...register("usuarioEstado")}
-                                    options={[
-                                        { value: "ACTIVO", label: "ACTIVO" },
-                                        { value: "INACTIVO", label: "INACTIVO" },
-                                        { value: "BLOQUEADO", label: "BLOQUEADO" }
-                                    ]}
-                                    error={errors.usuarioEstado?.message}
-                                />
-                            </div>
-                        </section>
-                    )}
-
-                    <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
-                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                    {/* ─── Right panel: Credentials ─── */}
+                    <div className="flex-1 pl-8 space-y-5 min-w-0">
+                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
                             <span className="w-1.5 h-1.5 rounded-full bg-lime-500" />
                             Credenciales de Acceso
                         </h3>
 
-                        <div className="grid grid-cols-1 gap-6 mb-6">
-                            <Select
-                                label="Rol del Empleado"
-                                {...register("rolId")}
-                                placeholder="Seleccione un rol..."
-                                options={roles.map((rol) => ({ value: rol.id, label: rol.nombre }))}
-                                error={errors.rolId?.message}
-                            />
-                        </div>
+                        <Select
+                            label="Rol del Empleado"
+                            {...register("rolId")}
+                            placeholder="Seleccione un rol..."
+                            options={roles.map((rol) => ({ value: rol.id, label: rol.nombre }))}
+                            error={errors.rolId?.message}
+                        />
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-2 gap-4">
                             <FormInput
                                 label="Correo de Acceso (Usuario)"
                                 type="email"
@@ -346,16 +300,45 @@ export default function StaffForm({ onSuccess, onCancel, roles, initialData }: S
                                 {password && <PasswordStrengthIndicator password={password} />}
                             </div>
                         </div>
-                    </section>
-                </form>
-            </div>
 
-            <div className="bg-white/30 backdrop-blur-md px-6 py-6 flex items-center justify-end gap-3 border-t border-white/40 mt-4 rounded-b-[2.5rem]">
-                <Button
-                    type="button"
-                    variant="outline"
-                    onClick={onCancel}
-                >
+                        {isEditing && (
+                            <div className="border-t border-white/40 pt-5 space-y-4">
+                                <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                                    Estados
+                                </h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Select
+                                        label="Estado Laboral"
+                                        {...register("estadoLaboral")}
+                                        options={[
+                                            { value: "ACTIVO", label: "ACTIVO" },
+                                            { value: "VACACIONES", label: "VACACIONES" },
+                                            { value: "LICENCIA", label: "LICENCIA" },
+                                            { value: "SUSPENDIDO", label: "SUSPENDIDO" },
+                                            { value: "RETIRADO", label: "RETIRADO" }
+                                        ]}
+                                        error={errors.estadoLaboral?.message}
+                                    />
+                                    <Select
+                                        label="Estado de Usuario"
+                                        {...register("usuarioEstado")}
+                                        options={[
+                                            { value: "ACTIVO", label: "ACTIVO" },
+                                            { value: "INACTIVO", label: "INACTIVO" },
+                                            { value: "BLOQUEADO", label: "BLOQUEADO" }
+                                        ]}
+                                        error={errors.usuarioEstado?.message}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </form>
+
+            <div className="border-t border-white/40 bg-white/20 backdrop-blur-md px-6 py-4 flex items-center justify-end gap-3">
+                <Button type="button" variant="outline" onClick={onCancel}>
                     Cancelar
                 </Button>
                 <Button
