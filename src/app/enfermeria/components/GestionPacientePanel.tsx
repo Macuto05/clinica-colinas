@@ -3,9 +3,17 @@
 import { useEffect, useState, useCallback } from "react";
 import {
     X, Loader2, Activity, Package, FlaskConical, Stethoscope,
-    Search, Check, AlertTriangle, Heart, Clock, Siren, UserCheck, CheckCircle,
-    Plus, Trash2, Warehouse, ChevronDown, Send
+    Search, Check, AlertTriangle, Siren,
+    Trash2, Warehouse, ChevronDown, Send
 } from "lucide-react";
+
+/* ─── Helpers ────────────────────────────────────────────── */
+function fmtFecha(iso: string) {
+    const d = new Date(iso);
+    const hora = d.toLocaleTimeString("es-VE", { hour: "numeric", minute: "2-digit", hour12: true });
+    const fecha = d.toLocaleDateString("es-VE", { day: "2-digit", month: "2-digit", year: "numeric" });
+    return `${hora} · ${fecha}`;
+}
 
 /* ─── Urgency / Status helpers ───────────────────────────── */
 const URGENCY_PILL: Record<string, string> = {
@@ -14,14 +22,6 @@ const URGENCY_PILL: Record<string, string> = {
     MODERADO: "bg-yellow-400 text-gray-900",
     LEVE:     "bg-green-400 text-white",
 };
-
-const STATUS_STEPS = [
-    { key: "EN_ATENCION",     label: "En Atención",    Icon: Heart },
-    { key: "HOSPITALIZADO",   label: "Hospitalizado",  Icon: Clock },
-    { key: "CIRUGIA_URGENTE", label: "Cirugía Urgente",Icon: Siren },
-    { key: "ALTA",            label: "Alta Médica",    Icon: UserCheck },
-    { key: "ATENDIDO",        label: "Atendido",       Icon: CheckCircle },
-];
 
 /* ─── Tab Button ─────────────────────────────────────────── */
 function TabBtn({ active, onClick, icon: Icon, label }: { active: boolean; onClick: () => void; icon: any; label: string }) {
@@ -252,7 +252,7 @@ function TabSolicitudQuirofano({ emergenciaId }: { emergenciaId: string }) {
                                     <span className={`text-[11px] font-black px-2.5 py-1 rounded-full border ${statusColor[s.estadoSolicitud] || "bg-gray-100 text-gray-600 border-gray-200"}`}>
                                         {s.estadoSolicitud}
                                     </span>
-                                    <span className="text-xs text-gray-400">{new Date(s.fechaSolicitud).toLocaleString("es-VE", { hour: '2-digit', minute: '2-digit', hour12: false, day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+                                    <span className="text-xs text-gray-400">{fmtFecha(s.fechaSolicitud)}</span>
                                 </div>
                                 <div className="space-y-1.5">
                                     {s.insumos.map((d: any) => (
@@ -504,7 +504,7 @@ function TabInsumos({ emergenciaId, estado }: { emergenciaId: string; estado: st
                         {retiros.map((r: any) => (
                             <div key={r.movimientoId} className="bg-white/50 border border-white/60 rounded-2xl p-3.5">
                                 <div className="flex justify-between items-start mb-2">
-                                    <p className="text-xs font-bold text-gray-500">{r.almacen} · {new Date(r.fechaMovimiento).toLocaleString("es-VE", { hour: '2-digit', minute: '2-digit', hour12: false, day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
+                                    <p className="text-xs font-bold text-gray-500">{r.almacen} · {fmtFecha(r.fechaMovimiento)}</p>
                                     <p className="text-xs text-gray-400">{r.enfermera}</p>
                                 </div>
                                 {r.detalles.map((d: any) => (
@@ -750,7 +750,7 @@ function TabExamenes({ emergenciaId, citaId }: { emergenciaId: string; citaId: s
                                             {s.estadoSolicitud}
                                         </span>
                                     </div>
-                                    <span className="text-[10px] uppercase font-black text-gray-400">{new Date(s.fechaSolicitud).toLocaleString("es-VE")}</span>
+                                    <span className="text-[10px] uppercase font-black text-gray-400">{fmtFecha(s.fechaSolicitud)}</span>
                                 </div>
                                 <div className="flex flex-wrap gap-1.5 mt-2">
                                     {s.examenes.map((ex: any) => (
@@ -770,99 +770,6 @@ function TabExamenes({ emergenciaId, citaId }: { emergenciaId: string; citaId: s
     );
 }
 
-/* ─── Tab 3: Semáforo Clínico ────────────────────────────── */
-function TabSemaforo({
-    emergenciaId, estadoActual, onStatusChange, onClose,
-}: {
-    emergenciaId: string; estadoActual: string; onStatusChange: () => void; onClose: () => void;
-}) {
-    const [nuevoEstado, setNuevoEstado] = useState(estadoActual);
-    const [obs, setObs]                 = useState("");
-    const [saving, setSaving]           = useState(false);
-    const [confirm, setConfirm]         = useState(false);
-
-    const changed = nuevoEstado !== estadoActual;
-
-    const handleGuardar = async () => {
-        if (!changed) return;
-        if ((nuevoEstado === "ALTA" || nuevoEstado === "CIRUGIA_URGENTE") && !confirm) {
-            setConfirm(true); return;
-        }
-        setSaving(true);
-        try {
-            const res = await fetch(`/api/emergency/${emergenciaId}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ estadoEmergencia: nuevoEstado, observaciones: obs || undefined }),
-            });
-            if (res.ok) { onStatusChange(); onClose(); }
-        } catch {}
-        finally { setSaving(false); setConfirm(false); }
-    };
-
-    return (
-        <div className="space-y-5">
-            {/* Status selector */}
-            <section className="bg-white/60 backdrop-blur-md border border-white/80 rounded-3xl p-5 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
-                <div className="flex items-center gap-3 mb-5">
-                    <span className="w-7 h-7 rounded-full bg-gray-900/90 text-white shadow-md text-xs font-black flex items-center justify-center shrink-0">1</span>
-                    <h4 className="font-bold text-gray-800">Nuevo Estado Clínico</h4>
-                </div>
-                <div className="grid grid-cols-1 gap-2">
-                    {STATUS_STEPS.map(step => {
-                        const isActive = nuevoEstado === step.key;
-                        const isCurrent = estadoActual === step.key;
-                        const SIcon = step.Icon;
-                        return (
-                            <button
-                                key={step.key}
-                                onClick={() => { setNuevoEstado(step.key); setConfirm(false); }}
-                                className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl border text-sm font-bold transition-all text-left ${
-                                    isActive
-                                        ? "bg-lime-50/80 border-lime-400/50 text-lime-700 shadow-[0_4px_12px_rgba(239,68,68,0.12)] ring-1 ring-lime-300/30 scale-[1.01]"
-                                        : "bg-white/40 border-white/50 text-gray-600 hover:bg-white/60"
-                                }`}
-                            >
-                                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                                    isActive ? "bg-lime-500 text-white shadow-sm shadow-lime-200" : "bg-gray-100 text-gray-400"
-                                }`}>
-                                    <SIcon size={15} />
-                                </div>
-                                <span>{step.label}</span>
-                                {isCurrent && (
-                                    <span className="ml-auto text-[10px] font-black bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">ACTUAL</span>
-                                )}
-                            </button>
-                        );
-                    })}
-                </div>
-            </section>
-
-
-
-            {/* Confirmation warning */}
-            {confirm && (
-                <div className="bg-amber-50/80 border border-amber-200/60 rounded-2xl p-4 flex items-start gap-3">
-                    <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
-                    <div>
-                        <p className="text-sm font-black text-amber-800">¿Confirmar cambio a "{STATUS_STEPS.find(s => s.key === nuevoEstado)?.label}"?</p>
-                        <p className="text-xs text-amber-700 mt-1">Esta acción enviará una notificación al sistema y actualizará el semáforo en recepción. Presiona de nuevo para confirmar.</p>
-                    </div>
-                </div>
-            )}
-
-            {/* Save button */}
-            <button
-                onClick={handleGuardar} disabled={saving || !changed}
-                className="w-full flex items-center justify-center gap-2 font-black text-white bg-lime-500/95 hover:bg-lime-500 py-3.5 rounded-2xl shadow-[0_8px_20px_rgba(239,68,68,0.25)] border border-lime-400/50 transition-all disabled:opacity-50 text-sm"
-            >
-                {saving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-                {saving ? "Guardando…" : confirm ? "Confirmar cambio" : "Guardar Estado Clínico"}
-            </button>
-        </div>
-    );
-}
-
 /* ─── Main Panel Component ───────────────────────────────── */
 export default function GestionPacientePanel({
     emergenciaId, onClose, onStatusChange,
@@ -871,7 +778,7 @@ export default function GestionPacientePanel({
 }) {
     const [emergencia, setEmergencia] = useState<any>(null);
     const [isLoading, setIsLoading]   = useState(true);
-    const [activeTab, setActiveTab]   = useState<"insumos" | "lab" | "semaforo">("insumos");
+    const [activeTab, setActiveTab]   = useState<"insumos" | "lab">("insumos");
 
     useEffect(() => {
         setIsLoading(true);
@@ -923,9 +830,8 @@ export default function GestionPacientePanel({
                 {/* Tabs */}
                 {!isLoading && emergencia && (
                     <div className="px-4 pt-4 pb-0 flex gap-1.5 shrink-0 border-b border-white/40 flex-wrap">
-                        <TabBtn active={activeTab === "insumos"}  onClick={() => setActiveTab("insumos")}  icon={Package}      label="Insumos"     />
-                        <TabBtn active={activeTab === "lab"}      onClick={() => setActiveTab("lab")}      icon={FlaskConical} label="Exámenes" />
-                        <TabBtn active={activeTab === "semaforo"} onClick={() => setActiveTab("semaforo")} icon={Activity}     label="Semáforo"    />
+                        <TabBtn active={activeTab === "insumos"} onClick={() => setActiveTab("insumos")} icon={Package}      label="Insumos"  />
+                        <TabBtn active={activeTab === "lab"}     onClick={() => setActiveTab("lab")}     icon={FlaskConical} label="Exámenes" />
                     </div>
                 )}
 
@@ -945,14 +851,6 @@ export default function GestionPacientePanel({
                             )}
                             {activeTab === "lab" && (
                                 <TabExamenes emergenciaId={emergenciaId} citaId={emergencia.citaId || null} />
-                            )}
-                            {activeTab === "semaforo" && (
-                                <TabSemaforo
-                                    emergenciaId={emergenciaId}
-                                    estadoActual={emergencia.estadoEmergencia}
-                                    onStatusChange={onStatusChange}
-                                    onClose={onClose}
-                                />
                             )}
                         </>
                     )}
