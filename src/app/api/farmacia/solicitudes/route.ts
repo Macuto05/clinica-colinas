@@ -116,7 +116,13 @@ export async function GET(req: NextRequest) {
             groups[pid].solicitudes.push(s);
         });
 
-        return NextResponse.json(Object.values(groups));
+        const sortedGroups = Object.values(groups).sort((a: any, b: any) => {
+            const dateA = new Date(a.solicitudes[0]?.fechaSolicitud ?? 0).getTime();
+            const dateB = new Date(b.solicitudes[0]?.fechaSolicitud ?? 0).getTime();
+            return dateB - dateA;
+        });
+
+        return NextResponse.json(sortedGroups);
 
     } catch (error) {
         console.error("Error fetching farmacia solicitudes:", error);
