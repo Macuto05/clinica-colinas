@@ -23,6 +23,7 @@ import {
     Heart,
     Menu,
     ChevronRight,
+    FlaskConical,
 } from "lucide-react";
 import ExchangeRateWidget from "@/components/admin/ExchangeRateWidget";
 
@@ -56,6 +57,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         { name: "Roles", href: "/admin/roles", icon: Shield, section: "Gestión de Usuarios" },
         { name: "Citas Médicas", href: "/admin/citas", icon: Calendar, section: "Clínica" },
         { name: "Especialidades", href: "/admin/especialidades", icon: Activity, section: "Clínica" },
+        { name: "Servicios", href: "/admin/servicios", icon: FlaskConical, section: "Clínica" },
         { name: "Aseguradoras", href: "/admin/aseguradoras", icon: Shield, section: "Clínica" },
         { name: "Emergencias", href: "/admin/emergencias", icon: Siren, section: "Clínica" },
         { name: "Enfermería", href: "/admin/enfermeria", icon: Heart, section: "Clínica" },

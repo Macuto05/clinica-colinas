@@ -14,9 +14,12 @@ const createExamenSchema = z.object({
 /* GET /api/imagenologia/examenes — Catálogo de estudios disponibles */
 export async function GET(req: NextRequest) {
     try {
+        const { searchParams } = new URL(req.url);
+        const todos = searchParams.get("todos") === "true";
+
         const examenes = await (prisma as any).examenImagenologia.findMany({
-            where: { activo: true },
-            select: { examenId: true, nombre: true, descripcion: true, precio: true },
+            where: todos ? undefined : { activo: true },
+            select: { examenId: true, nombre: true, descripcion: true, precio: true, activo: true },
             orderBy: { nombre: "asc" },
         });
 
@@ -24,8 +27,9 @@ export async function GET(req: NextRequest) {
             examenes.map((e: any) => ({
                 examenId:    e.examenId.toString(),
                 nombre:      e.nombre,
-                descripcion: e.descripcion,
-                precio:      Number(e.precio || 0)
+                descripcion: e.descripcion ?? null,
+                precio:      Number(e.precio || 0),
+                activo:      e.activo,
             }))
         );
     } catch (error) {
