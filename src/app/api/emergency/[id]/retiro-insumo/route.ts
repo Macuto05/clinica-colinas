@@ -63,7 +63,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
    POST /api/emergency/[id]/retiro-insumo
    Body: { almacenId, insumoId, cantidad, observaciones? }
    Applies FEFO, creates MovimientoInventario SALIDA (with
-   lote_id), decrements Stock + StockLote, and records
+   lote_id), decrements Stock + StockLote(s) por FEFO multi-lote, and records
    CargoCuentaPaciente linked to insumo via FK.
 ───────────────────────────────────────────────────────── */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -133,7 +133,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
                 remaining -= toTake;
             }
 
-            // Fallback: si hay stock sin lotes asignados cubre el resto
+            // Fallback: el stock agregado se valida arriba pero los lotes pueden no
+            // cubrir todo (stock sin lote asignado o desfase lote/agregado). Registramos
+            // el remanente sin lote; el decremento agregado abajo cubre el book-value.
             if (remaining > 0) {
                 movimientoDetalles.push({ loteId: null, cantidad: remaining });
             }
