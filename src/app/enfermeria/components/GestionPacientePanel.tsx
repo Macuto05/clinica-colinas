@@ -81,7 +81,7 @@ function TabSolicitudQuirofano({ emergenciaId }: { emergenciaId: string }) {
         
         // Simple check
         const hasErrors = cart.some(c => {
-            const cant = parseInt(c.cantidad);
+            const cant = parseFloat(c.cantidad);
             return !cant || cant <= 0;
         });
         if (hasErrors) return;
@@ -91,8 +91,8 @@ function TabSolicitudQuirofano({ emergenciaId }: { emergenciaId: string }) {
             const res = await fetch(`/api/emergency/${emergenciaId}/solicitud-insumo`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ 
-                    insumos: cart.map(item => ({ insumoId: item.insumo.insumoId, cantidad: parseInt(item.cantidad) })) 
+                body: JSON.stringify({
+                    insumos: cart.map(item => ({ insumoId: item.insumo.insumoId, cantidad: parseFloat(item.cantidad) }))
                 }),
             });
             if (res.ok) {
@@ -182,7 +182,7 @@ function TabSolicitudQuirofano({ emergenciaId }: { emergenciaId: string }) {
                     
                     <div className="space-y-2">
                         {cart.map((item, index) => {
-                            const cant = parseInt(item.cantidad);
+                            const cant = parseFloat(item.cantidad);
                             const isInvalid = !item.cantidad || cant <= 0;
 
                             return (
@@ -196,11 +196,11 @@ function TabSolicitudQuirofano({ emergenciaId }: { emergenciaId: string }) {
                                     </div>
                                     <div className="w-24 shrink-0">
                                         <input
-                                            type="number" step="1"
+                                            type="number" step="any"
                                             value={item.cantidad}
                                             onChange={e => {
                                                 const val = e.target.value;
-                                                if (/^\d*$/.test(val)) {
+                                                if (/^\d*\.?\d{0,2}$/.test(val)) {
                                                     const newCart = [...cart];
                                                     newCart[index].cantidad = val;
                                                     setCart(newCart);
@@ -225,7 +225,7 @@ function TabSolicitudQuirofano({ emergenciaId }: { emergenciaId: string }) {
                     <div className="pt-2">
                         <button
                             onClick={handleEnviar} 
-                            disabled={saving || cart.length === 0 || cart.some(c => !parseInt(c.cantidad) || parseInt(c.cantidad) <= 0)}
+                            disabled={saving || cart.length === 0 || cart.some(c => !parseFloat(c.cantidad) || parseFloat(c.cantidad) <= 0)}
                             className="w-full flex items-center justify-center gap-2 font-black text-white bg-amber-500/95 hover:bg-amber-500 py-4 rounded-2xl shadow-[0_8px_20px_rgba(245,158,11,0.25)] border border-amber-400/50 transition-all disabled:opacity-50 disabled:grayscale disabled:scale-[0.98] text-sm"
                         >
                             {saving ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
