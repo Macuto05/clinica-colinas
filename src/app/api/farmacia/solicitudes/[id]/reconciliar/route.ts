@@ -64,7 +64,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
                         emergenciaId:     solicitud.cita?.emergencia?.emergenciaId,
                         tipoCargo:        'INSUMO',
                         referenciaId:     originalDet.insumoId,
-                        cantidad:         consumedQty,
+                        cantidad:         Math.ceil(consumedQty),
                         usuarioGenerador: usuarioId,
                         observaciones:    `Consumo Farmacia (Reconciliación) - Solicitud #${solicitudId}`,
                         movimientoId:     dispatchMovement.movimientoId
