@@ -5,12 +5,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { ClipboardList, User, CheckCircle2, AlertCircle, ArrowRight, X, Loader2, RefreshCcw, FlaskConical, Filter, UploadCloud, Eye, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { createClient } from "@supabase/supabase-js";
 import { toast } from "sonner";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder";
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 interface Examen {
     detalleLabId: string;
@@ -124,27 +119,22 @@ export default function InboxSolicitudes() {
 
         setIsUploading(true);
         try {
-            // 1. Subir a almacenamiento Supabase
+            // 1. Subir al servidor (que usa service role key para bypasear RLS)
             const fileExt = uploadForm.fileName.split('.').pop() || 'pdf';
             const uniqueName = `lab_${solicitudId}_${detalleLabId}_${Date.now()}.${fileExt}`;
-            
-            const { data: uploadData, error: uploadError } = await supabase.storage
-                .from('laboratorio-resultados')
-                .upload(uniqueName, uploadForm.file, {
-                    cacheControl: '3600',
-                    upsert: false
-                });
 
-            if (uploadError) {
-                throw new Error("Error al subir archivo a la nube: " + uploadError.message);
+            const fd = new FormData();
+            fd.append("file", uploadForm.file);
+            fd.append("fileName", uniqueName);
+
+            const uploadRes = await fetch("/api/laboratorio/upload", { method: "POST", body: fd });
+            if (!uploadRes.ok) {
+                const err = await uploadRes.json();
+                throw new Error("Error al subir archivo a la nube: " + (err.error || "Error desconocido"));
             }
+            const { publicUrl } = await uploadRes.json();
 
-            // 2. Obtener URL pública
-            const { data: { publicUrl } } = supabase.storage
-                .from('laboratorio-resultados')
-                .getPublicUrl(uniqueName);
-
-            // 3. Guardar en base de datos
+            // 2. Guardar en base de datos
             const res = await fetch(`/api/laboratorio/solicitudes/${solicitudId}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

@@ -110,7 +110,13 @@ export async function GET(req: NextRequest) {
             groups[pid].solicitudes.push(s);
         });
 
-        return NextResponse.json(Object.values(groups));
+        const sortedGroups = Object.values(groups).sort((a: any, b: any) => {
+            const aLatest = Math.max(...a.solicitudes.map((s: any) => new Date(s.fechaSolicitud).getTime()));
+            const bLatest = Math.max(...b.solicitudes.map((s: any) => new Date(s.fechaSolicitud).getTime()));
+            return bLatest - aLatest;
+        });
+
+        return NextResponse.json(sortedGroups);
 
     } catch (error) {
         console.error("Error fetching lab solicitudes:", error);
