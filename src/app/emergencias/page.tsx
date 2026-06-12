@@ -314,20 +314,23 @@ function NewAdmissionModal({ onClose, onSuccess }: NewAdmissionModalProps) {
                     </button>
                 </div>
 
-                {/* Error */}
-                {error && (
-                    <div className="px-8 pt-4 shrink-0">
-                        <div className="p-3.5 bg-red-50/80 border border-red-200/50 text-red-700 rounded-2xl text-sm flex items-center gap-2">
-                            <AlertTriangle size={16} className="shrink-0" /> {error}
+                {/* Scrollable body — error + dos columnas */}
+                <div className="flex-1 overflow-y-auto">
+
+                    {/* Error */}
+                    {error && (
+                        <div className="px-8 pt-4">
+                            <div className="p-3.5 bg-red-50/80 border border-red-200/50 text-red-700 rounded-2xl text-sm flex items-center gap-2">
+                                <AlertTriangle size={16} className="shrink-0" /> {error}
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
                 {/* Body — izquierda: pasos 1, 3, 4 / derecha: paso 2 */}
-                <div className="flex-1 min-h-0 grid grid-cols-[5fr_7fr] divide-x divide-white/40">
+                <div className="grid grid-cols-[5fr_7fr] divide-x divide-white/40">
 
                     {/* ── Left: Pasos 1 + 3 + 4 ── */}
-                    <div className="p-5 flex flex-col gap-4 overflow-hidden">
+                    <div className="p-5 flex flex-col gap-4">
 
                         {/* Sección 1: Identificar Paciente */}
                         <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl p-4 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
@@ -462,10 +465,10 @@ function NewAdmissionModal({ onClose, onSuccess }: NewAdmissionModalProps) {
                     </div>
 
                     {/* ── Right: Solo Paso 2 (Datos de la Emergencia) ── */}
-                    <div className="p-6 flex flex-col overflow-hidden">
+                    <div className="p-6 flex flex-col">
 
                         {/* Sección 2: Datos de la Emergencia */}
-                        <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-5 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] flex flex-col gap-4 h-full">
+                        <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-5 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] flex flex-col gap-4">
                             <div className="flex items-center gap-3">
                                 <span className="w-7 h-7 rounded-full bg-gray-900/90 text-white shadow-md text-xs font-black flex items-center justify-center">2</span>
                                 <h4 className="font-bold text-gray-800 text-base">Datos de la Emergencia</h4>
@@ -516,6 +519,7 @@ function NewAdmissionModal({ onClose, onSuccess }: NewAdmissionModalProps) {
                         </section>
                     </div>
                 </div>
+                </div>{/* end scrollable body */}
 
                 {/* Footer */}
                 <div className="px-8 py-5 border-t border-white/40 flex gap-3 shrink-0 bg-white/30 backdrop-blur-md">
