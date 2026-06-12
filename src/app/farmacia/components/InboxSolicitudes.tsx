@@ -601,8 +601,9 @@ export default function InboxSolicitudes() {
                                                                                         </div>
                                                                                     ) : (
                                                                                         <div className="flex items-center bg-white/80 border border-white/60 rounded-xl overflow-hidden shadow-inner focus-within:ring-2 focus-within:ring-lime-500/20 transition-all">
-                                                                                            <input 
+                                                                                            <input
                                                                                                 type="number"
+                                                                                                step="any"
                                                                                                 max={insumo.cantidad}
                                                                                                 value={reconcileQuantities[insumo.solicitudDetalleId] ?? insumo.cantidad}
                                                                                                 onChange={(e) => {
