@@ -11,6 +11,7 @@ const nextConfig = {
   turbopack: {
     root: __dirname,
   },
+  serverExternalPackages: ['pg', '@prisma/client', '@prisma/adapter-pg', 'bcryptjs'],
 };
 
 export default nextConfig;

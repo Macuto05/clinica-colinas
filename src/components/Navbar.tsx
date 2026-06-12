@@ -89,6 +89,7 @@ export default function Navbar() {
                                 src="/logo-clinicas-colina.jpg"
                                 alt="Clínicas Colina"
                                 fill
+                                sizes="176px"
                                 className="object-contain"
                                 priority
                             />

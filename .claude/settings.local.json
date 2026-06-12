@@ -1,7 +1,38 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git commit -m 'fix: lazy load Resend client to fix Vercel build *)"
+      "Bash(git commit -m 'fix: lazy load Resend client to fix Vercel build *)",
+      "Bash(git commit -m 'refactor: translate comments to Spanish and clean module layouts *)",
+      "Bash(git commit -m 'fix: wait for polizas to refresh before closing modal *)",
+      "Bash(git commit -m 'fix: include patientId in JWT token during login *)",
+      "Bash(git commit -m 'refactor: remove schedule tab from doctor edit form *)",
+      "Bash(git commit -m 'fix: remove reactCompiler from next.config to fix Vercel build *)",
+      "Bash(npm uninstall *)",
+      "Bash(git commit -m 'fix: remove babel-plugin-react-compiler to fix Vercel build *)",
+      "Bash(git rm *)",
+      "Bash(git commit -m 'fix: replace next.config.ts with next.config.mjs for Vercel compatibility *)",
+      "WebSearch",
+      "WebFetch(domain:www.vercel-status.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(npx vercel *)",
+      "Bash(git commit -m 'fix: force dynamic rendering on all layouts for Vercel CLI 54.x *)",
+      "WebFetch(domain:unpkg.com)",
+      "WebFetch(domain:registry.npmjs.org)",
+      "Bash(node -e ' *)",
+      "Bash(gh api *)",
+      "Bash(git commit -m ' *)",
+      "Bash(Remove-Item -Recurse -Force \"c:\\\\Users\\\\Marcu\\\\clinica-colinas\\\\.next\" -ErrorAction SilentlyContinue)",
+      "Bash(Write-Host \"Cache limpiada\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Marcu\\\\clinica-colinas\\\\src\\\\app\\\\admin\" -Recurse)",
+      "Bash(Select-Object FullName)",
+      "Bash(Sort-Object)",
+      "Bash(mkdir -p \"c:/Users/Marcu/clinica-colinas/docs/superpowers/plans\")",
+      "Bash(git checkout *)",
+      "Bash(git commit -m 'docs: add decimal supply tracking implementation plan *)",
+      "Bash(git commit -m 'feat\\(pharmacy\\): allow decimal quantities in reconciliation input *)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\Marcu\\clinica-colinas\\docs\\superpowers"
     ]
   }
 }
