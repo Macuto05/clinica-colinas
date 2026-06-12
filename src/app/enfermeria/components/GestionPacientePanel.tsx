@@ -318,7 +318,7 @@ function TabInsumos({ emergenciaId, estado }: { emergenciaId: string; estado: st
         // Final validation check before submitting
         const hasErrors = cart.some(c => {
             const max = c.insumo.stock.find((s: any) => s.almacenId === almacenId)?.cantidadActual ?? 0;
-            const cant = parseInt(c.cantidad);
+            const cant = parseFloat(c.cantidad);
             return !cant || cant <= 0 || cant > max;
         });
         if (hasErrors) return;
@@ -329,7 +329,7 @@ function TabInsumos({ emergenciaId, estado }: { emergenciaId: string; estado: st
                 fetch(`/api/emergency/${emergenciaId}/retiro-insumo`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ almacenId, insumoId: item.insumo.insumoId, cantidad: parseInt(item.cantidad) }),
+                    body: JSON.stringify({ almacenId, insumoId: item.insumo.insumoId, cantidad: parseFloat(item.cantidad) }),
                 })
             ));
             setCart([]); setQuery(""); setResults([]);
@@ -427,7 +427,7 @@ function TabInsumos({ emergenciaId, estado }: { emergenciaId: string; estado: st
                     <div className="space-y-2">
                         {cart.map((item, index) => {
                             const maxStock = item.insumo.stock.find((s: any) => s.almacenId === almacenId)?.cantidadActual ?? 0;
-                            const cant = parseInt(item.cantidad);
+                            const cant = parseFloat(item.cantidad);
                             const isInvalid = !item.cantidad || cant <= 0 || cant > maxStock;
 
                             return (
@@ -446,12 +446,12 @@ function TabInsumos({ emergenciaId, estado }: { emergenciaId: string; estado: st
                                     </div>
                                     <div className="w-24 shrink-0">
                                         <input
-                                            type="number" step="1"
+                                            type="number" step="any"
                                             value={item.cantidad}
                                             onChange={e => {
                                                 const val = e.target.value;
-                                                // Live sanitization: allow only digits (avoiding decimals or symbols)
-                                                if (/^\d*$/.test(val)) {
+                                                // Live sanitization: allow digits with up to 2 decimals
+                                                if (/^\d*\.?\d{0,2}$/.test(val)) {
                                                     const newCart = [...cart];
                                                     newCart[index].cantidad = val;
                                                     setCart(newCart);
@@ -478,7 +478,7 @@ function TabInsumos({ emergenciaId, estado }: { emergenciaId: string; estado: st
                             onClick={handleRetirar} 
                             disabled={saving || cart.length === 0 || cart.some(c => {
                                 const max = c.insumo.stock.find((s: any) => s.almacenId === almacenId)?.cantidadActual ?? 0;
-                                const val = parseInt(c.cantidad);
+                                const val = parseFloat(c.cantidad);
                                 return !val || val <= 0 || val > max;
                             })}
                             className="w-full flex items-center justify-center gap-2 font-black text-white bg-lime-500/95 hover:bg-lime-500 py-4 rounded-2xl shadow-[0_8px_20px_rgba(132,204,22,0.25)] border border-lime-400/50 transition-all disabled:opacity-50 disabled:grayscale disabled:scale-[0.98] text-sm"
