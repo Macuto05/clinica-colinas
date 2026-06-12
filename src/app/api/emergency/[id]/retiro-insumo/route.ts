@@ -104,25 +104,41 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         const citaIdForCargo: bigint | null = emergencia?.citaId ? BigInt(emergencia.citaId.toString()) : null;
 
         await (prisma as any).$transaction(async (tx: any) => {
-            // ── FEFO: select lot expiring soonest with available stock ─────────
-            const stockLoteFefo = await tx.stockLote.findFirst({
+            // ── FEFO multi-lote: consume de varios lotes si hace falta ────
+            const stockLotesFefo = await tx.stockLote.findMany({
                 where: {
                     almacenId: almacenIdBig,
                     cantidadActual: { gt: 0 },
-                    lote: {
-                        insumoId: insumoIdBig,
-                        activo: true,
-                    },
+                    lote: { insumoId: insumoIdBig, activo: true },
                 },
-                include: { lote: { select: { loteId: true, fechaVencimiento: true } } },
+                include: { lote: { select: { loteId: true } } },
                 orderBy: { lote: { fechaVencimiento: "asc" } },
             });
 
-            const loteIdSeleccionado: bigint | null = stockLoteFefo?.lote?.loteId
-                ? BigInt(stockLoteFefo.lote.loteId.toString())
-                : null;
+            const movimientoDetalles: { loteId: bigint | null; cantidad: number }[] = [];
+            let remaining = cantidadNum;
 
-            // ── 1. Generate sequential reference (SAL-ENF-N) ──────────────────
+            for (const sl of stockLotesFefo) {
+                if (remaining <= 0) break;
+                const available = parseFloat(sl.cantidadActual.toString());
+                const toTake = Math.min(available, remaining);
+                await tx.stockLote.update({
+                    where: { stockLoteId: sl.stockLoteId },
+                    data:  { cantidadActual: available - toTake },
+                });
+                movimientoDetalles.push({
+                    loteId:   sl.lote?.loteId ? BigInt(sl.lote.loteId.toString()) : null,
+                    cantidad: toTake,
+                });
+                remaining -= toTake;
+            }
+
+            // Fallback: si hay stock sin lotes asignados cubre el resto
+            if (remaining > 0) {
+                movimientoDetalles.push({ loteId: null, cantidad: remaining });
+            }
+
+            // ── Referencia secuencial ─────────────────────────────────────
             const countSalidas = await tx.movimientoInventario.count({
                 where: { tipoMovimiento: "SALIDA", almacenId: almacenIdBig },
             });
@@ -132,7 +148,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
                 ? observaciones.trim()
                 : `Retiro de insumo por enfermeria #${numSalida}`;
 
-            // ── 2. Create MovimientoInventario SALIDA ─────────────────────────
+            // ── Movimiento de inventario ──────────────────────────────────
             const movimiento = await tx.movimientoInventario.create({
                 data: {
                     almacenId:      almacenIdBig,
@@ -143,38 +159,32 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
                 },
             });
 
-            // ── 3. Create MovimientoDetalle WITH lote_id (FEFO) ───────────────
-            await tx.movimientoDetalle.create({
-                data: {
-                    movimientoId: movimiento.movimientoId,
-                    insumoId:     insumoIdBig,
-                    cantidad:     cantidadNum,
-                    loteId:       loteIdSeleccionado,
-                },
-            });
+            // ── Detalles del movimiento (uno por lote consumido) ─────────
+            for (const det of movimientoDetalles) {
+                await tx.movimientoDetalle.create({
+                    data: {
+                        movimientoId: movimiento.movimientoId,
+                        insumoId:     insumoIdBig,
+                        loteId:       det.loteId,
+                        cantidad:     det.cantidad,
+                    },
+                });
+            }
 
-            // ── 4. Decrement aggregate Stock ──────────────────────────────────
+            // ── Decremento del stock agregado (una sola vez) ──────────────
             await tx.stock.update({
                 where: { uq_stock: { almacenId: almacenIdBig, insumoId: insumoIdBig } },
                 data:  { cantidadActual: { decrement: cantidadNum } },
             });
 
-            // ── 5. Decrement StockLote (lot-level) if FEFO found a lot ────────
-            if (loteIdSeleccionado) {
-                await tx.stockLote.update({
-                    where: { uq_stock_lote: { almacenId: almacenIdBig, loteId: loteIdSeleccionado } },
-                    data:  { cantidadActual: { decrement: cantidadNum } },
-                });
-            }
-
-            // ── 6. Create CargoCuentaPaciente (with both emergenciaId AND citaId) ──
+            // ── Cargo al paciente: techo para facturación correcta ────────
             await tx.cargoCuentaPaciente.create({
                 data: {
                     emergenciaId:     BigInt(resolvedParams.id),
-                    citaId:           citaIdForCargo,   // Fix Bug #5: now populated
+                    citaId:           citaIdForCargo,
                     tipoCargo:        "INSUMO",
                     referenciaId:     insumoIdBig,
-                    cantidad:         cantidadNum,
+                    cantidad:         Math.ceil(cantidadNum),
                     movimientoId:     movimiento.movimientoId,
                     usuarioGenerador: usuarioId,
                     observaciones:    observacionAuto,
