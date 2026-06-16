@@ -93,13 +93,13 @@ export async function GET(req: NextRequest) {
         if (!payload) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
         const patients = await prisma.paciente.findMany({
-            where: { estado: 'ACTIVO' },
+            where: { estado: "ACTIVO" },
             select: {
                 pacienteId: true,
                 nombres: true,
                 apellidos: true,
             },
-            orderBy: { nombres: 'asc' },
+            orderBy: { nombres: "asc" },
         });
 
         return NextResponse.json({
