@@ -44,6 +44,12 @@ function ServicioModal({ isOpen, onClose, onSaved, servicio }: ModalProps) {
     useEffect(() => {
         if (isOpen) {
             document.body.style.overflow = "hidden";
+            setNombre(servicio?.nombre ?? "");
+            setDescripcion(servicio?.descripcion ?? "");
+            setPrecio(servicio?.precio?.toString() ?? "0");
+            setActivo(servicio?.activo ?? true);
+            setTipo(servicio?.tipo ?? "laboratorio");
+            setError(null);
         }
         return () => { document.body.style.overflow = ""; };
     }, [isOpen]);
