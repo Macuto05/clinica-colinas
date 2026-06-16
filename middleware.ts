@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { JWTService } from "@/infrastructure/services/JWTService";
 
 /**
- * CAJA role variants — kept inline here because middleware runs in Edge Runtime
+ * Role variants — kept inline here because middleware runs in Edge Runtime
  * and cannot import from barrel files that use Node.js APIs.
  */
 const CAJA_ROLES = [
@@ -13,6 +13,9 @@ const CAJA_ROLES = [
     "CAJA/FACTURACION",
     "CAJA/FACTURACIÓN",
 ];
+
+// Handles DB inconsistency where the role may be stored with or without accent
+const ALMACEN_ROLES = ["ALMACEN", "ALMACÉN"];
 
 export async function middleware(req: NextRequest) {
     const token = req.cookies.get("auth-token")?.value;
@@ -60,7 +63,7 @@ export async function middleware(req: NextRequest) {
     if (pathname === "/dashboard") {
         if (role === "RECEPCION") return NextResponse.redirect(new URL("/recepcion", req.url));
         if (role === "MEDICO") return NextResponse.redirect(new URL("/medico", req.url));
-        if (role === "ALMACEN") return NextResponse.redirect(new URL("/almacen", req.url));
+        if (ALMACEN_ROLES.includes(role)) return NextResponse.redirect(new URL("/almacen", req.url));
         if (CAJA_ROLES.includes(role)) return NextResponse.redirect(new URL("/caja", req.url));
         if (role === "ADMIN") return NextResponse.redirect(new URL("/admin", req.url));
         if (role === "LABORATORIO") return NextResponse.redirect(new URL("/laboratorio", req.url));
@@ -87,7 +90,7 @@ export async function middleware(req: NextRequest) {
     }
 
     // Inventory API routes (Almacen + Admin)
-    if (pathname.startsWith("/api/inventory") && role !== "ALMACEN" && role !== "ADMIN") {
+    if (pathname.startsWith("/api/inventory") && !ALMACEN_ROLES.includes(role) && role !== "ADMIN") {
         return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
     }
 
@@ -139,7 +142,7 @@ export async function middleware(req: NextRequest) {
     }
 
     // Protect Storekeeper Routes
-    if (pathname.startsWith("/almacen") && role !== "ALMACEN" && role !== "ADMIN") {
+    if (pathname.startsWith("/almacen") && !ALMACEN_ROLES.includes(role) && role !== "ADMIN") {
         return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 

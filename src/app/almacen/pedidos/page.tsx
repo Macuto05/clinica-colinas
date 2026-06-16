@@ -482,38 +482,38 @@ function PedidosContent() {
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="relative w-full max-w-lg bg-white/70 backdrop-blur-2xl backdrop-saturate-[1.2] rounded-[3rem] border border-white/60 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] overflow-hidden"
+                            className="relative w-full max-w-3xl bg-white/70 backdrop-blur-2xl backdrop-saturate-[1.2] rounded-[2.5rem] border border-white/60 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] overflow-hidden"
                         >
-                            <div className="p-10 border-b border-white/60 flex justify-between items-center bg-white/50">
+                            <div className="px-7 py-4 border-b border-white/60 flex justify-between items-center bg-white/50">
                                 <div>
-                                    <h3 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-3 uppercase tracking-widest">
+                                    <h3 className="text-base font-black text-gray-900 uppercase tracking-widest">
                                         Detalle del Pedido
                                     </h3>
-                                    <p className="text-[10px] font-mono text-gray-500 font-black uppercase mt-1">ORDEN #{viewingDetails.pedidoId}</p>
+                                    <p className="text-[10px] font-mono text-gray-500 font-black uppercase mt-0.5">ORDEN #{viewingDetails.pedidoId}</p>
                                 </div>
                                 <button onClick={() => setViewingDetails(null)} className="p-2 hover:bg-gray-200/50 rounded-full transition-colors group active:scale-90">
-                                    <X size={20} className="text-gray-400 group-hover:text-gray-900" />
+                                    <X size={18} className="text-gray-400 group-hover:text-gray-900" />
                                 </button>
                             </div>
-                            <div className="p-10 space-y-8 overflow-y-auto max-h-[60vh] custom-scrollbar">
-                                <div className="space-y-4">
+                            <div className="p-6 overflow-y-auto max-h-[60vh] custom-scrollbar">
+                                <div className="grid grid-cols-2 gap-3">
                                     {viewingDetails.detalles.map(d => (
-                                        <div key={d.detalleId} className="flex justify-between items-center p-5 bg-white/50 rounded-[2rem] border border-white/80 transition-all hover:bg-white/80 group">
-                                            <div>
-                                                <p className="font-black text-gray-900 uppercase tracking-tight">{d.insumo.nombre}</p>
-                                                <p className="text-[10px] font-mono text-gray-400 mt-1">{d.insumo.codigo}</p>
+                                        <div key={d.detalleId} className="flex justify-between items-center px-5 py-4 bg-white/50 rounded-2xl border border-white/80 transition-all hover:bg-white/80 group">
+                                            <div className="min-w-0 mr-3">
+                                                <p className="font-black text-gray-900 uppercase tracking-tight text-sm leading-tight truncate">{d.insumo.nombre}</p>
+                                                <p className="text-[10px] font-mono text-gray-400 mt-0.5">{d.insumo.codigo}</p>
                                             </div>
-                                            <div className="text-right">
-                                                <div className="text-2xl font-black text-lime-600 transition-transform group-hover:scale-110">{d.cantidad}</div>
+                                            <div className="text-right shrink-0">
+                                                <div className="text-xl font-black text-lime-600 transition-transform group-hover:scale-110">{d.cantidad}</div>
                                                 <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{d.insumo.unidadMedida}</div>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                                 {viewingDetails.observaciones && (
-                                    <div className="p-6 bg-[#1e293b]/5 backdrop-blur-md border border-white shadow-inner rounded-[2rem] relative overflow-hidden">
+                                    <div className="mt-4 p-4 bg-[#1e293b]/5 backdrop-blur-md border border-white shadow-inner rounded-2xl relative overflow-hidden">
                                         <div className="absolute top-0 left-0 w-1.5 h-full bg-amber-500/20" />
-                                        <p className="text-[9px] font-black text-amber-700 uppercase tracking-widest mb-2 flex items-center gap-2">
+                                        <p className="text-[9px] font-black text-amber-700 uppercase tracking-widest mb-1.5 flex items-center gap-2">
                                             <AlertCircle size={12} />
                                             Observaciones
                                         </p>
@@ -521,10 +521,10 @@ function PedidosContent() {
                                     </div>
                                 )}
                             </div>
-                            <div className="p-8 border-t border-white/60 bg-white/50 flex justify-end">
-                                <button 
-                                    onClick={() => setViewingDetails(null)} 
-                                    className="px-10 py-4 bg-gray-900 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-gray-900/10 active:scale-95 transition-all"
+                            <div className="px-7 py-4 border-t border-white/60 bg-white/50 flex justify-end">
+                                <button
+                                    onClick={() => setViewingDetails(null)}
+                                    className="px-6 py-2.5 bg-gray-900 text-white rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-gray-900/10 active:scale-95 transition-all"
                                 >
                                     Cerrar Vista
                                 </button>

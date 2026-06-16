@@ -47,6 +47,8 @@ const createPatientSchema = patientBaseSchema.extend({
 });
 
 const editPatientSchema = patientBaseSchema.extend({
+    // email is optional in edit mode (NO REGISTRADO patients have no user account yet)
+    email: z.union([z.string().email("Email de acceso inválido"), z.literal("")]).optional(),
     estado: z.enum(["ACTIVO", "INACTIVO", "BLOQUEADO", "FALLECIDO"]),
     usuarioEstado: z.enum(["ACTIVO", "INACTIVO", "BLOQUEADO"]),
     password: z.string().optional(),

@@ -354,6 +354,7 @@ function BankAccountsCard() {
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
+    const [numeroCuentaError, setNumeroCuentaError] = useState<string | null>(null);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -393,11 +394,13 @@ function BankAccountsCard() {
     const handleCancel = () => {
         setShowForm(false);
         setEditingId(null);
+        setNumeroCuentaError(null);
         setFormData({ banco: "", numeroCuenta: "", titular: "", rifTitular: "", tipo: "CORRIENTE", activa: true });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setNumeroCuentaError(null);
         try {
             const url = "/api/billing/accounts";
             const method = editingId ? "PUT" : "POST";
@@ -415,7 +418,11 @@ function BankAccountsCard() {
                 loadAccounts();
             } else {
                 const err = await res.json();
-                toast.error(err.error || "Error al guardar cuenta");
+                if (res.status === 409) {
+                    setNumeroCuentaError(err.error || "Este número de cuenta ya está registrado.");
+                } else {
+                    toast.error(err.error || "Error al guardar cuenta");
+                }
             }
         } catch (error) {
             toast.error("Error de conexión");
@@ -491,10 +498,10 @@ function BankAccountsCard() {
             }
         </div>
 
-        {/* Add Form */}
+        {/* Add/Edit Form */}
             {showForm && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md transition-all animate-in fade-in duration-200">
-                    <div className="bg-white/70 backdrop-blur-2xl w-full max-w-2xl rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.12)] border border-white/60 max-h-[90vh] flex flex-col overflow-hidden">
+                    <div className="bg-white/70 backdrop-blur-2xl w-full max-w-3xl rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.12)] border border-white/60 flex flex-col overflow-hidden">
 
                         {/* Header */}
                         <div className="p-6 border-b border-white/40 flex justify-between items-center shrink-0 bg-white/30">
@@ -514,85 +521,100 @@ function BankAccountsCard() {
                             </button>
                         </div>
 
-                        {/* Scrollable body */}
-                        <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 flex flex-col">
-                            <div className="p-6 space-y-5 flex-1">
-
-                                {/* Sección: Datos de la cuenta */}
-                                <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-5 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] space-y-4">
-                                    <div className="flex items-center gap-3 mb-1">
-                                        <span className="w-7 h-7 rounded-full bg-gray-900/90 text-white shadow-md text-xs font-black flex items-center justify-center">1</span>
-                                        <h4 className="font-bold text-gray-800 text-base">Datos del Banco</h4>
-                                    </div>
-
-                                    <div>
-                                        <label className="text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2 block">Banco *</label>
-                                        <input required
-                                            className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400"
-                                            value={formData.banco} onChange={e => setFormData({ ...formData, banco: e.target.value })} placeholder="Ej. Banco Mercantil" />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2 block">Nro. Cuenta *</label>
-                                        <input required
-                                            className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none font-mono text-sm tracking-widest shadow-inner transition-all placeholder:text-gray-400"
-                                            value={formData.numeroCuenta} onChange={e => setFormData({ ...formData, numeroCuenta: e.target.value })} placeholder="0105-1234-5678-9012" />
-                                    </div>
-                                </section>
-
-                                {/* Sección: Titular */}
-                                <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-5 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] space-y-4">
-                                    <div className="flex items-center gap-3 mb-1">
-                                        <span className="w-7 h-7 rounded-full bg-gray-900/90 text-white shadow-md text-xs font-black flex items-center justify-center">2</span>
-                                        <h4 className="font-bold text-gray-800 text-base">Datos del Titular</h4>
-                                    </div>
-
-                                    <div>
-                                        <label className="text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2 block">Nombre del Titular *</label>
-                                        <input required
-                                            className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400"
-                                            value={formData.titular} onChange={e => setFormData({ ...formData, titular: e.target.value })} placeholder="Clínica Colinas C.A." />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2 block">RIF *</label>
+                        <form onSubmit={handleSubmit}>
+                            <div className="p-6">
+                                <div className="grid grid-cols-2 gap-5">
+                                    {/* Sección izq: Datos del Banco */}
+                                    <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-5 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] space-y-4">
+                                        <div className="flex items-center gap-3">
+                                            <span className="w-7 h-7 rounded-full bg-gray-900/90 text-white shadow-md text-xs font-black flex items-center justify-center">1</span>
+                                            <h4 className="font-bold text-gray-800 text-base">Datos del Banco</h4>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black text-gray-500/80 uppercase tracking-widest px-1">Banco</label>
                                             <input required
                                                 className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400"
-                                                value={formData.rifTitular} onChange={e => setFormData({ ...formData, rifTitular: e.target.value })} placeholder="J-12345678" />
+                                                value={formData.banco}
+                                                onChange={e => setFormData({ ...formData, banco: e.target.value })}
+                                                placeholder="Ej. Banco Mercantil" />
                                         </div>
-                                        <div>
-                                            <label className="text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2 block">Tipo de Cuenta</label>
-                                            <select
-                                                className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-bold text-gray-800 shadow-inner transition-all"
-                                                value={formData.tipo} onChange={e => setFormData({ ...formData, tipo: e.target.value })}>
-                                                <option value="CORRIENTE">Corriente</option>
-                                                <option value="AHORRO">Ahorro</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </section>
-
-                                {/* Toggle Switch (only on edit) */}
-                                {editingId && (
-                                    <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-5 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <h4 className="font-bold text-gray-800 text-base">{formData.activa ? 'Cuenta Activa' : 'Cuenta Inactiva'}</h4>
-                                                <p className="text-sm text-gray-500 font-medium mt-0.5">{formData.activa ? 'Los pacientes verán esta cuenta en los métodos de pago.' : 'Esta cuenta estará oculta.'}</p>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                onClick={() => setFormData({ ...formData, activa: !formData.activa })}
-                                                className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${formData.activa ? 'bg-emerald-500/90 shadow-[0_4px_12px_rgba(16,185,129,0.3)]' : 'bg-gray-300 shadow-inner'}`}
-                                            >
-                                                <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-md border border-gray-100 ${formData.activa ? 'translate-x-6' : 'translate-x-1'}`} />
-                                            </button>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black text-gray-500/80 uppercase tracking-widest px-1">Nro. Cuenta</label>
+                                            <input required
+                                                className={`w-full px-5 py-3.5 rounded-2xl focus:bg-white/80 focus:ring-2 outline-none font-mono text-sm tracking-widest shadow-inner transition-all placeholder:text-gray-400 ${numeroCuentaError ? "border border-red-400 bg-red-50/30 focus:ring-red-400/50" : "border border-white/60 bg-white/50 focus:ring-lime-500/50"}`}
+                                                value={formData.numeroCuenta}
+                                                onChange={e => {
+                                                    const digits = e.target.value.replace(/\D/g, '').slice(0, 16);
+                                                    const formatted = digits.replace(/(\d{4})(?=\d)/g, '$1-');
+                                                    setFormData({ ...formData, numeroCuenta: formatted });
+                                                    setNumeroCuentaError(null);
+                                                }}
+                                                maxLength={19}
+                                                placeholder="0105-1234-5678-9012" />
+                                            {numeroCuentaError && <p className="text-xs text-red-500 font-medium px-1">{numeroCuentaError}</p>}
                                         </div>
                                     </section>
-                                )}
+
+                                    {/* Sección der: Datos del Titular */}
+                                    <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-5 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] space-y-4">
+                                        <div className="flex items-center gap-3">
+                                            <span className="w-7 h-7 rounded-full bg-gray-900/90 text-white shadow-md text-xs font-black flex items-center justify-center">2</span>
+                                            <h4 className="font-bold text-gray-800 text-base">Datos del Titular</h4>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black text-gray-500/80 uppercase tracking-widest px-1">Nombre del Titular</label>
+                                            <input required
+                                                className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400"
+                                                value={formData.titular}
+                                                onChange={e => setFormData({ ...formData, titular: e.target.value })}
+                                                placeholder="Clínica Colinas C.A." />
+                                        </div>
+                                        <div className="flex gap-4">
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-black text-gray-500/80 uppercase tracking-widest px-1">RIF</label>
+                                                <div className="flex gap-2">
+                                                    <span className="flex items-center px-3 py-2.5 rounded-xl bg-white/30 border border-white/60 text-sm font-black text-gray-600 select-none">
+                                                        J-
+                                                    </span>
+                                                    <input required
+                                                        className="w-28 px-3 py-2.5 rounded-xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400"
+                                                        value={formData.rifTitular.replace(/^J-/, '')}
+                                                        onChange={e => setFormData({ ...formData, rifTitular: `J-${e.target.value.replace(/\D/g, '')}` })}
+                                                        placeholder="12345678" />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-black text-gray-500/80 uppercase tracking-widest px-1">Tipo de Cuenta</label>
+                                                <select required
+                                                    className="w-32 px-3 py-2.5 rounded-xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-bold text-gray-800 shadow-inner transition-all appearance-none cursor-pointer"
+                                                    value={formData.tipo}
+                                                    onChange={e => setFormData({ ...formData, tipo: e.target.value })}>
+                                                    <option value="CORRIENTE">Corriente</option>
+                                                    <option value="AHORRO">Ahorro</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        {/* Toggle activa (solo edición) */}
+                                        {editingId && (
+                                            <div className="flex items-center justify-between pt-1">
+                                                <div>
+                                                    <p className="font-bold text-gray-800 text-sm">{formData.activa ? "Cuenta Activa" : "Cuenta Inactiva"}</p>
+                                                    <p className="text-xs text-gray-500 font-medium mt-0.5">{formData.activa ? "Visible en métodos de pago." : "Oculta en métodos de pago."}</p>
+                                                </div>
+                                                <div
+                                                    className={`w-12 h-7 rounded-full p-1 cursor-pointer transition-all duration-300 ${formData.activa ? "bg-lime-500 shadow-[0_0_12px_rgba(132,204,22,0.4)]" : "bg-gray-200"}`}
+                                                    onClick={() => setFormData({ ...formData, activa: !formData.activa })}
+                                                >
+                                                    <div className={`w-5 h-5 rounded-full bg-white shadow-lg transform transition-transform duration-300 ${formData.activa ? "translate-x-5" : "translate-x-0"}`} />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </section>
+                                </div>
                             </div>
 
                             {/* Footer */}
-                            <div className="p-6 border-t border-white/40 flex gap-3 shrink-0 bg-white/30 backdrop-blur-md">
+                            <div className="px-6 pb-6 flex gap-3">
                                 <button type="button" onClick={handleCancel} className="flex-1 py-3.5 rounded-2xl bg-white/50 border border-white/60 text-gray-700 font-bold hover:bg-white/80 transition-colors text-sm shadow-sm backdrop-blur-sm outline-none focus:ring-2 focus:ring-gray-300">
                                     Cancelar
                                 </button>

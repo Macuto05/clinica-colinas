@@ -4,12 +4,13 @@ import { PrismaUserRepository } from "@/infrastructure/database/prisma/repositor
 import { UpdateUserProfile } from "@/application/use-cases/user/UpdateUserProfile";
 import { z } from "zod";
 import { JWTService } from "@/infrastructure/services/JWTService";
+import { prisma } from "@/infrastructure/database/prisma/client";
 
 const updateProfileSchema = z.object({
     // Empty string means "no change" — treated as undefined downstream
     contactEmail: z.string().email("Email de contacto inválido").optional().or(z.literal('')),
     accessEmail: z.string().email("Email de acceso inválido").optional(),
-    password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres").optional().or(z.literal('')),
+    password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres").optional().or(z.literal('')),
     phone: z.string().optional(),
     address: z.string().optional(),
 });
@@ -36,6 +37,33 @@ export async function PUT(req: NextRequest) {
         }
 
         const { contactEmail, accessEmail, password, phone, address } = validation.data;
+
+        // Uniqueness checks for phone and contactEmail (excluding current patient)
+        if (phone || contactEmail) {
+            const currentPatient = await (prisma.paciente as any).findFirst({
+                where: { usuarioId: BigInt(payload.userId) }
+            });
+
+            if (currentPatient) {
+                if (phone) {
+                    const dupPhone = await (prisma.paciente as any).findFirst({
+                        where: { telefono: phone, pacienteId: { not: currentPatient.pacienteId } }
+                    });
+                    if (dupPhone) {
+                        return NextResponse.json({ error: "El número de teléfono ya está registrado por otro paciente." }, { status: 409 });
+                    }
+                }
+
+                if (contactEmail) {
+                    const dupContact = await (prisma.paciente as any).findFirst({
+                        where: { correo: contactEmail, pacienteId: { not: currentPatient.pacienteId } }
+                    });
+                    if (dupContact) {
+                        return NextResponse.json({ error: "El correo de contacto ya está registrado por otro paciente." }, { status: 409 });
+                    }
+                }
+            }
+        }
 
         const userRepository = new PrismaUserRepository();
         const updateUserProfile = new UpdateUserProfile(userRepository);

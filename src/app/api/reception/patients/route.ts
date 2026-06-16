@@ -92,6 +92,16 @@ export async function POST(req: Request) {
             }
         }
 
+        // Check Duplicates for Correo de Contacto
+        if (correo) {
+            const existingCorrElectoral = await (prisma.paciente as any).findFirst({
+                where: { correo }
+            });
+            if (existingCorrElectoral) {
+                return NextResponse.json({ error: "Ya existe un paciente con ese correo de contacto." }, { status: 409 });
+            }
+        }
+
         let newUsuarioId: bigint | null = null;
 
         // Create User Account if requested

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { ALMACEN_ROLES } from "@/lib/constants/roles";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -34,8 +35,8 @@ export default function AlmacenLayout({ children }: AlmacenLayoutProps) {
                 router.push("/login");
                 return;
             }
-            const roleName = user.role?.toString().toUpperCase();
-            if (roleName !== "ADMIN" && roleName !== "ALMACEN") {
+            const roleName = user.role?.toString().toUpperCase() || "";
+            if (roleName !== "ADMIN" && !(ALMACEN_ROLES as readonly string[]).includes(roleName)) {
                 router.push("/dashboard");
             }
         }

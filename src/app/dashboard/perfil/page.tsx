@@ -11,20 +11,26 @@ import { toast } from "sonner";
 import PatientInsuranceSection from "@/components/insurance/PatientInsuranceSection";
 
 const editProfileSchema = z.object({
-    contactEmail: z.string().email("Email inválido").optional().or(z.literal('')),
-    accessEmail: z.string().email("Email inválido").optional(),
-    password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres").optional().or(z.literal('')),
+    contactEmail: z.string().min(1, "El correo de contacto es requerido").email("Email de contacto inválido"),
+    accessEmail: z.string().min(1, "El correo de acceso es requerido").email("Email de acceso inválido"),
+    address: z.string().min(1, "La dirección es requerida"),
+    password: z.string().optional().or(z.literal('')),
     confirmPassword: z.string().optional().or(z.literal('')),
-    phone: z.string().optional(),
-    address: z.string().optional(),
-}).refine((data) => {
-    if (data.password && data.password !== data.confirmPassword) {
-        return false;
+}).superRefine((data, ctx) => {
+    if (data.password && data.password.trim() !== '') {
+        if (data.password.length < 8) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "La contraseña debe tener al menos 8 caracteres", path: ["password"] });
+        }
+        if (!/[A-Z]/.test(data.password)) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "La contraseña debe contener al menos una mayúscula", path: ["password"] });
+        }
+        if (!/[0-9]/.test(data.password)) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "La contraseña debe contener al menos un número", path: ["password"] });
+        }
+        if (data.password !== data.confirmPassword) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Las contraseñas no coinciden", path: ["confirmPassword"] });
+        }
     }
-    return true;
-}, {
-    message: "Las contraseñas no coinciden",
-    path: ["confirmPassword"],
 });
 
 type EditProfileForm = z.infer<typeof editProfileSchema>;
@@ -42,14 +48,18 @@ export default function ProfilePage() {
     // Phone split state
     const [phonePrefix, setPhonePrefix] = useState('0412');
     const [phoneNumber, setPhoneNumber] = useState('');
+    const [phoneError, setPhoneError] = useState<string | null>(null);
 
     const { register, handleSubmit, formState: { errors }, reset } = useForm<EditProfileForm>({
         resolver: zodResolver(editProfileSchema),
+        mode: "onSubmit",
+        reValidateMode: "onChange",
         defaultValues: {
             contactEmail: user?.contactEmail || "",
             accessEmail: user?.email || "",
-            phone: user?.phone || "",
             address: user?.address || "",
+            password: "",
+            confirmPassword: "",
         }
     });
 
@@ -140,14 +150,23 @@ export default function ProfilePage() {
         }
     };
 
+    const handleFormSubmit = (e: React.FormEvent) => {
+        const isPhoneValid = phoneNumber.length === 7;
+        if (!isPhoneValid) setPhoneError("El número de teléfono debe tener 7 dígitos");
+        else setPhoneError(null);
+        handleSubmit(onSubmit)(e);
+    };
+
     const onSubmit = async (data: EditProfileForm) => {
+        if (!phoneNumber || phoneNumber.length !== 7) {
+            setPhoneError("El número de teléfono debe tener 7 dígitos");
+            return;
+        }
+
         setIsLoading(true);
         setError(null);
 
-        // Combine phone parts
-        const fullPhone = phoneNumber.trim()
-            ? `${phonePrefix}-${phoneNumber.trim()}`
-            : '';
+        const fullPhone = `${phonePrefix}-${phoneNumber}`;
 
         try {
             const res = await fetch("/api/user/profile", {
@@ -156,7 +175,7 @@ export default function ProfilePage() {
                 body: JSON.stringify({
                     contactEmail: data.contactEmail,
                     accessEmail: data.accessEmail,
-                    password: data.password,
+                    password: data.password || undefined,
                     phone: fullPhone,
                     address: data.address,
                 }),
@@ -221,11 +240,14 @@ export default function ProfilePage() {
                                 setPhonePrefix('0412');
                                 setPhoneNumber(existing);
                             }
+                            setPhoneError(null);
                             setIsEditing(true);
                             reset({
                                 contactEmail: user.contactEmail || "",
                                 accessEmail: user.email || "",
                                 address: user.address || "",
+                                password: "",
+                                confirmPassword: "",
                             });
                         }}
                         className="flex items-center gap-2 px-5 py-2.5 bg-lime-500/95 backdrop-blur-md text-white font-bold rounded-2xl border border-lime-400/50 hover:bg-lime-600 shadow-[0_4px_12px_rgba(132,204,22,0.3)] transition-all focus:ring-2 focus:ring-lime-300"
@@ -330,14 +352,14 @@ export default function ProfilePage() {
                                 <h2 className="text-xl font-bold text-gray-900 tracking-tight">Editar Perfil</h2>
                                 <p className="text-xs font-medium text-gray-500 mt-0.5">Actualiza tus datos personales y de cuenta.</p>
                             </div>
-                            <button onClick={() => setIsEditing(false)} className="w-9 h-9 bg-white/50 hover:bg-white rounded-full flex items-center justify-center border border-white/60 shadow-sm transition-all text-gray-500 hover:text-gray-800">
+                            <button onClick={() => { setIsEditing(false); setPhoneError(null); }} className="w-9 h-9 bg-white/50 hover:bg-white rounded-full flex items-center justify-center border border-white/60 shadow-sm transition-all text-gray-500 hover:text-gray-800">
                                 <X size={18} />
                             </button>
                         </div>
 
                         {/* Scrolling Body */}
                         <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 space-y-6 custom-scrollbar">
-                            <form id="editProfileForm" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                            <form id="editProfileForm" onSubmit={handleFormSubmit} className="space-y-5">
 
                                 {error && (
                                     <div className="p-4 bg-red-50 text-red-700/90 rounded-2xl flex items-center gap-2 border border-red-200/50 shadow-sm backdrop-blur-md">
@@ -369,26 +391,33 @@ export default function ProfilePage() {
                                                 <input
                                                     type="tel"
                                                     value={phoneNumber}
-                                                    onChange={e => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                                                    onChange={e => {
+                                                        const val = e.target.value.replace(/\D/g, '').slice(0, 7);
+                                                        setPhoneNumber(val);
+                                                        if (phoneError && val.length === 7) setPhoneError(null);
+                                                    }}
                                                     placeholder="1234567"
                                                     maxLength={7}
-                                                    className="flex-1 min-w-0 px-4 py-3 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all text-gray-800 placeholder:text-gray-400"
+                                                    className={`flex-1 min-w-0 px-4 py-3 rounded-2xl focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all text-gray-800 placeholder:text-gray-400 ${phoneError ? "border border-red-400 bg-red-50/30" : "border border-white/60 bg-white/50 focus:bg-white/80"}`}
                                                 />
                                             </div>
+                                            {phoneError && <p className="text-red-500 text-xs font-bold mt-1">{phoneError}</p>}
                                         </div>
                                         <div className="space-y-1">
                                             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Dirección</label>
                                             <input
                                                 {...register("address")}
-                                                className="w-full px-4 py-3 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all text-gray-800"
+                                                className={`w-full px-4 py-3 rounded-2xl focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all text-gray-800 ${errors.address ? "border border-red-400 bg-red-50/30" : "border border-white/60 bg-white/50 focus:bg-white/80"}`}
                                             />
+                                            {errors.address && <p className="text-red-500 text-xs font-bold mt-1">{errors.address.message}</p>}
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Correo de Contacto</label>
                                             <input
                                                 {...register("contactEmail")}
-                                                className="w-full px-4 py-3 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all text-gray-800"
+                                                className={`w-full px-4 py-3 rounded-2xl focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all text-gray-800 ${errors.contactEmail ? "border border-red-400 bg-red-50/30" : "border border-white/60 bg-white/50 focus:bg-white/80"}`}
                                             />
+                                            {errors.contactEmail && <p className="text-red-500 text-xs font-bold">{errors.contactEmail.message}</p>}
                                             <p className="text-xs font-medium text-gray-400/80 italic ml-1">Utilizado para notificaciones y envío de resultados médicos.</p>
                                         </div>
                                     </div>
@@ -405,8 +434,9 @@ export default function ProfilePage() {
                                             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Correo de Acceso (Login)</label>
                                             <input
                                                 {...register("accessEmail")}
-                                                className="w-full px-4 py-3 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all text-gray-800"
+                                                className={`w-full px-4 py-3 rounded-2xl focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all text-gray-800 ${errors.accessEmail ? "border border-red-400 bg-red-50/30" : "border border-white/60 bg-white/50 focus:bg-white/80"}`}
                                             />
+                                            {errors.accessEmail && <p className="text-red-500 text-xs font-bold">{errors.accessEmail.message}</p>}
                                         </div>
                                         <div className="space-y-2 border-t border-white/50 pt-4">
                                             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Nueva Contraseña</label>
@@ -414,7 +444,7 @@ export default function ProfilePage() {
                                                 type="password"
                                                 {...register("password")}
                                                 placeholder="Dejar vacía para no cambiar"
-                                                className="w-full px-4 py-3 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all text-gray-800 placeholder:text-gray-400"
+                                                className={`w-full px-4 py-3 rounded-2xl focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all text-gray-800 placeholder:text-gray-400 ${errors.password ? "border border-red-400 bg-red-50/30" : "border border-white/60 bg-white/50 focus:bg-white/80"}`}
                                             />
                                             {errors.password && <p className="text-red-500 text-xs font-bold">{errors.password.message}</p>}
                                         </div>
@@ -424,7 +454,7 @@ export default function ProfilePage() {
                                                 type="password"
                                                 {...register("confirmPassword")}
                                                 placeholder="Confirmar nueva contraseña"
-                                                className="w-full px-4 py-3 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all text-gray-800 placeholder:text-gray-400"
+                                                className={`w-full px-4 py-3 rounded-2xl focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all text-gray-800 placeholder:text-gray-400 ${errors.confirmPassword ? "border border-red-400 bg-red-50/30" : "border border-white/60 bg-white/50 focus:bg-white/80"}`}
                                             />
                                             {errors.confirmPassword && <p className="text-red-500 text-xs font-bold">{errors.confirmPassword.message}</p>}
                                         </div>
@@ -438,7 +468,7 @@ export default function ProfilePage() {
                         <div className="px-6 py-4 border-t border-white/40 flex justify-end gap-3 shrink-0 bg-white/30 backdrop-blur-md">
                             <button
                                 type="button"
-                                onClick={() => setIsEditing(false)}
+                                onClick={() => { setIsEditing(false); setPhoneError(null); }}
                                 className="px-6 py-3.5 rounded-2xl bg-white/50 border border-white/60 text-gray-700 font-bold hover:bg-white transition-colors text-sm shadow-sm backdrop-blur-sm outline-none focus:ring-2 focus:ring-gray-300"
                             >
                                 Cancelar

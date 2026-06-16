@@ -12,12 +12,23 @@ export const CAJA_ROLES = [
     "CAJA/FACTURACIÓN",
 ] as const;
 
+/** All valid role variants for almacen/warehouse access (handles DB accent inconsistency) */
+export const ALMACEN_ROLES = [
+    "ALMACEN",
+    "ALMACÉN",
+] as const;
+
 /** Roles that get ADMIN-level access */
 export const ADMIN_ROLES = ["ADMIN"] as const;
 
 /** Check if a role string matches one of the CAJA variants */
 export function isCajaRole(role: string): boolean {
     return (CAJA_ROLES as readonly string[]).includes(role);
+}
+
+/** Check if a role string matches one of the ALMACEN variants */
+export function isAlmacenRole(role: string): boolean {
+    return (ALMACEN_ROLES as readonly string[]).includes(role);
 }
 
 /** Check if a role string matches ADMIN */

@@ -11,13 +11,30 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         // 1. Check Duplicate Patient Document
         if (documentoIdentidad) {
             const existing = await prisma.paciente.findFirst({
-                where: {
-                    documentoIdentidad,
-                    pacienteId: { not: id }
-                }
+                where: { documentoIdentidad, pacienteId: { not: id } }
             });
             if (existing) {
                 return NextResponse.json({ error: "Ya existe otro paciente con este documento" }, { status: 400 });
+            }
+        }
+
+        // Check Duplicate Telefono
+        if (telefono) {
+            const existingTel = await (prisma.paciente as any).findFirst({
+                where: { telefono, pacienteId: { not: id } }
+            });
+            if (existingTel) {
+                return NextResponse.json({ error: "Ya existe otro paciente con ese número de teléfono." }, { status: 409 });
+            }
+        }
+
+        // Check Duplicate Correo de Contacto
+        if (correo) {
+            const existingCorrElectoral = await (prisma.paciente as any).findFirst({
+                where: { correo, pacienteId: { not: id } }
+            });
+            if (existingCorrElectoral) {
+                return NextResponse.json({ error: "Ya existe otro paciente con ese correo de contacto." }, { status: 409 });
             }
         }
 

@@ -18,7 +18,7 @@ export class RegisterUser {
     async execute(data: RegisterUserDTO): Promise<User> {
         // 1. Check if email exists
         const emailExists = await this.userRepository.emailExists(data.email);
-        if (emailExists) throw new Error('Email already registered');
+        if (emailExists) throw new Error('El correo de acceso ya está registrado en el sistema');
 
         // 1b. Check if ID Card exists
         if (data.idCard) {

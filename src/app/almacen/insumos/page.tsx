@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Package, Search, Plus, Loader2, AlertCircle, RefreshCw, MoreVertical, Edit, ClipboardList } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Package, Search, Plus, Loader2, AlertCircle, ChevronLeft, ChevronRight, MoreVertical, Edit, ClipboardList } from "lucide-react";
 import { BatchDetailsModal } from "@/components/inventory/BatchDetailsModal";
 import { cn } from "@/lib/utils";
 
@@ -34,7 +35,13 @@ export default function InsumosPage() {
     });
     const [submitLoading, setSubmitLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [codigoError, setCodigoError] = useState<string | null>(null);
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+    const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
+
+    // Pagination
+    const ITEMS_PER_PAGE = 5;
+    const [currentPage, setCurrentPage] = useState(1);
 
     // Filters
     const [filters, setFilters] = useState({
@@ -44,13 +51,6 @@ export default function InsumosPage() {
         categoria: "",
         estado: "" as "" | "ACTIVO" | "INACTIVO",
     });
-
-    // Close menu when clicking outside
-    useEffect(() => {
-        const handleClickOutside = () => setActiveMenuId(null);
-        window.addEventListener('click', handleClickOutside);
-        return () => window.removeEventListener('click', handleClickOutside);
-    }, []);
 
     const fetchInsumos = async () => {
         setIsLoading(true);
@@ -83,9 +83,22 @@ export default function InsumosPage() {
         return matchCodigo && matchNombre && matchMarca && matchCategoria && matchEstado;
     });
 
+    const totalPages = Math.ceil(filteredInsumos.length / ITEMS_PER_PAGE);
+    const paginatedInsumos = filteredInsumos.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
+
+    const handleFilterChange = (key: string, value: string) => {
+        setFilters(prev => ({ ...prev, [key]: value }));
+        setCurrentPage(1);
+    };
+
     const handleOpenCreate = () => {
         setEditingInsumo(null);
         setFormData({ codigo: "", nombre: "", descripcion: "", unidadMedida: "", categoria: "", marca: "", activo: true });
+        setCodigoError(null);
+        setMessage(null);
         setIsModalOpen(true);
     };
 
@@ -100,6 +113,8 @@ export default function InsumosPage() {
             marca: insumo.marca,
             activo: insumo.activo,
         });
+        setCodigoError(null);
+        setMessage(null);
         setIsModalOpen(true);
     };
 
@@ -107,6 +122,7 @@ export default function InsumosPage() {
         e.preventDefault();
         setSubmitLoading(true);
         setMessage(null);
+        setCodigoError(null);
 
         try {
             const url = "/api/inventory/supplies";
@@ -122,20 +138,23 @@ export default function InsumosPage() {
             });
 
             if (res.ok) {
-                // setMessage({ type: 'success', text: editingInsumo ? "Insumo actualizado" : "Insumo creado correctamente" });
                 setFormData({ codigo: "", nombre: "", descripcion: "", unidadMedida: "", categoria: "", marca: "", activo: true });
                 setIsModalOpen(false);
                 setEditingInsumo(null);
                 fetchInsumos();
             } else {
-                setMessage({ type: 'error', text: "Error al crear insumo" });
+                const data = await res.json().catch(() => ({}));
+                const errorMsg = data.error || "Error al guardar insumo";
+                if (res.status === 409) {
+                    setCodigoError(errorMsg);
+                } else {
+                    setMessage({ type: 'error', text: errorMsg });
+                }
             }
         } catch (error) {
             setMessage({ type: 'error', text: "Error de conexión" });
         } finally {
             setSubmitLoading(false);
-            // Clear message after 3s
-            setTimeout(() => setMessage(null), 3000);
         }
     };
 
@@ -172,7 +191,7 @@ export default function InsumosPage() {
                                 placeholder="Filtrar por código..."
                                 className="w-full pl-9 pr-4 py-2.5 text-sm rounded-xl border border-white/60 bg-white/50 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none shadow-inner transition-all placeholder:text-gray-400 font-medium"
                                 value={filters.codigo}
-                                onChange={(e) => setFilters(prev => ({ ...prev, codigo: e.target.value }))}
+                                onChange={(e) => handleFilterChange("codigo", e.target.value)}
                             />
                         </div>
                     </div>
@@ -183,7 +202,7 @@ export default function InsumosPage() {
                             placeholder="Buscar por nombre..."
                             className="w-full px-4 py-2.5 text-sm rounded-xl border border-white/60 bg-white/50 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none shadow-inner transition-all placeholder:text-gray-400 font-medium"
                             value={filters.nombre}
-                            onChange={(e) => setFilters(prev => ({ ...prev, nombre: e.target.value }))}
+                            onChange={(e) => handleFilterChange("nombre", e.target.value)}
                         />
                     </div>
                     <div className="space-y-1.5">
@@ -193,7 +212,7 @@ export default function InsumosPage() {
                             placeholder="Buscar por marca..."
                             className="w-full px-4 py-2.5 text-sm rounded-xl border border-white/60 bg-white/50 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none shadow-inner transition-all placeholder:text-gray-400 font-medium"
                             value={filters.marca}
-                            onChange={(e) => setFilters(prev => ({ ...prev, marca: e.target.value }))}
+                            onChange={(e) => handleFilterChange("marca", e.target.value)}
                         />
                     </div>
                     <div className="space-y-1.5">
@@ -201,7 +220,7 @@ export default function InsumosPage() {
                         <select
                             className="w-full px-4 py-2.5 text-sm rounded-xl border border-white/60 bg-white/50 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none shadow-inner transition-all font-medium appearance-none cursor-pointer"
                             value={filters.categoria}
-                            onChange={(e) => setFilters(prev => ({ ...prev, categoria: e.target.value }))}
+                            onChange={(e) => handleFilterChange("categoria", e.target.value)}
                         >
                             <option value="">Todas las categorías</option>
                             <option value="MEDICAMENTO">Medicamento</option>
@@ -216,7 +235,7 @@ export default function InsumosPage() {
                         <select
                             className="w-full px-4 py-2.5 text-sm rounded-xl border border-white/60 bg-white/50 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none shadow-inner transition-all font-medium appearance-none cursor-pointer"
                             value={filters.estado}
-                            onChange={(e) => setFilters(prev => ({ ...prev, estado: e.target.value as "" | "ACTIVO" | "INACTIVO" }))}
+                            onChange={(e) => handleFilterChange("estado", e.target.value)}
                         >
                             <option value="">Ver todos</option>
                             <option value="ACTIVO">Activos</option>
@@ -235,34 +254,34 @@ export default function InsumosPage() {
             )}
 
             {/* Table */}
-            <div className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl overflow-hidden shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] min-h-[400px]">
+            <div className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl overflow-hidden shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] min-h-[560px] flex flex-col">
                 {isLoading ? (
-                    <div className="p-20 flex flex-col items-center justify-center gap-4">
+                    <div className="flex-1 flex flex-col items-center justify-center gap-4">
                         <Loader2 className="animate-spin text-lime-600" size={40} />
                         <p className="text-sm font-bold text-gray-500 uppercase tracking-widest animate-pulse">Cargando catálogo...</p>
                     </div>
                 ) : filteredInsumos.length === 0 ? (
-                    <div className="p-20 text-center">
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-10">
                         <Package className="mx-auto text-gray-300 mb-4" size={48} />
                         <p className="text-gray-500 font-medium">No se encontraron insumos con los filtros aplicados.</p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto overflow-y-auto max-h-[600px] custom-scrollbar">
+                    <>
+                    <div className="overflow-x-auto flex-1">
                         <table className="w-full text-left text-sm border-collapse">
                             <thead>
                                 <tr className="bg-white/30 border-b border-white/40">
                                     <th className="px-6 py-4 text-[10px] font-black text-gray-500/80 uppercase tracking-widest">Código</th>
                                     <th className="px-6 py-4 text-[10px] font-black text-gray-500/80 uppercase tracking-widest">Insumo / Descripción</th>
                                     <th className="px-6 py-4 text-[10px] font-black text-gray-500/80 uppercase tracking-widest">Marca / Categoría</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-gray-500/80 uppercase tracking-widest">Unidad</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-gray-500/80 uppercase tracking-widest">Presentación</th>
                                     <th className="px-6 py-4 text-[10px] font-black text-gray-500/80 uppercase tracking-widest text-center">Stock Global</th>
                                     <th className="px-6 py-4 text-[10px] font-black text-gray-500/80 uppercase tracking-widest">Estado</th>
                                     <th className="px-6 py-4 text-[10px] font-black text-gray-500/80 uppercase tracking-widest text-right">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/30">
-                                {filteredInsumos.map((insumo, index) => {
-                                    const isLastItems = index >= filteredInsumos.length - 2;
+                                {paginatedInsumos.map((insumo) => {
                                     return (
                                         <tr key={insumo.insumoId} className="hover:bg-white/60 transition-all duration-200 group">
                                             <td className="px-6 py-4">
@@ -307,26 +326,37 @@ export default function InsumosPage() {
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            setActiveMenuId(activeMenuId === insumo.insumoId ? null : insumo.insumoId);
+                                                            if (activeMenuId === insumo.insumoId) {
+                                                                setActiveMenuId(null);
+                                                                setMenuPos(null);
+                                                            } else {
+                                                                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                                                                const openAbove = rect.bottom + 110 > window.innerHeight;
+                                                                setMenuPos({
+                                                                    top: openAbove ? rect.top - 110 : rect.bottom + 6,
+                                                                    right: window.innerWidth - rect.right,
+                                                                });
+                                                                setActiveMenuId(insumo.insumoId);
+                                                            }
                                                         }}
                                                         className="text-gray-400 hover:text-lime-600 p-2 rounded-xl hover:bg-white/80 transition-all active:scale-95 border border-transparent hover:border-white/60 shadow-none hover:shadow-sm"
                                                     >
                                                         <MoreVertical size={18} />
                                                     </button>
 
-                                                    {activeMenuId === insumo.insumoId && (
+                                                    {activeMenuId === insumo.insumoId && menuPos && createPortal(
                                                         <>
                                                             <div
-                                                                className="fixed inset-0 z-10"
-                                                                onClick={() => setActiveMenuId(null)}
+                                                                className="fixed inset-0 z-[9998]"
+                                                                onClick={() => { setActiveMenuId(null); setMenuPos(null); }}
                                                             />
-                                                            <div className={cn(
-                                                                "absolute right-0 z-20 w-56 rounded-2xl bg-white/90 backdrop-blur-xl shadow-2xl ring-1 ring-black/5 p-1 animate-in fade-in zoom-in-95 duration-150",
-                                                                isLastItems ? "bottom-full mb-2 origin-bottom-right" : "mt-2 origin-top-right"
-                                                            )}>
+                                                            <div
+                                                                className="fixed z-[9999] w-56 rounded-2xl bg-white shadow-2xl ring-1 ring-black/10 p-1 animate-in fade-in zoom-in-95 duration-150"
+                                                                style={{ top: menuPos.top, right: menuPos.right }}
+                                                            >
                                                                 <div className="py-1">
                                                                     <button
-                                                                        onClick={() => handleOpenEdit(insumo)}
+                                                                        onClick={() => { handleOpenEdit(insumo); setActiveMenuId(null); setMenuPos(null); }}
                                                                         className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-lime-500 hover:text-white rounded-xl flex items-center gap-3 transition-colors font-bold"
                                                                     >
                                                                         <Edit size={16} />
@@ -336,6 +366,7 @@ export default function InsumosPage() {
                                                                         onClick={() => {
                                                                             setViewingStocksFor(insumo);
                                                                             setActiveMenuId(null);
+                                                                            setMenuPos(null);
                                                                         }}
                                                                         className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-lime-500 hover:text-white rounded-xl flex items-center gap-3 transition-colors font-bold"
                                                                     >
@@ -344,7 +375,8 @@ export default function InsumosPage() {
                                                                     </button>
                                                                 </div>
                                                             </div>
-                                                        </>
+                                                        </>,
+                                                        document.body
                                                     )}
                                                 </div>
                                             </td>
@@ -354,13 +386,51 @@ export default function InsumosPage() {
                             </tbody>
                         </table>
                     </div>
+
+                        {/* Pagination footer */}
+                        <div className="flex items-center justify-between px-6 py-4 border-t border-white/30 bg-white/20 mt-auto">
+                            <p className="text-xs font-medium text-gray-500">
+                                Mostrando <span className="font-black text-gray-700">{(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredInsumos.length)}</span> de <span className="font-black text-gray-700">{filteredInsumos.length}</span> insumos
+                            </p>
+                            <div className="flex items-center gap-1">
+                                <button
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    disabled={currentPage === 1}
+                                    className="p-2 rounded-xl text-gray-500 hover:text-lime-700 hover:bg-white/60 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                >
+                                    <ChevronLeft size={16} />
+                                </button>
+                                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                                    <button
+                                        key={page}
+                                        onClick={() => setCurrentPage(page)}
+                                        className={cn(
+                                            "w-8 h-8 rounded-xl text-xs font-black transition-all",
+                                            page === currentPage
+                                                ? "bg-lime-500 text-white shadow-md shadow-lime-500/30"
+                                                : "text-gray-500 hover:text-lime-700 hover:bg-white/60"
+                                        )}
+                                    >
+                                        {page}
+                                    </button>
+                                ))}
+                                <button
+                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className="p-2 rounded-xl text-gray-500 hover:text-lime-700 hover:bg-white/60 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                >
+                                    <ChevronRight size={16} />
+                                </button>
+                            </div>
+                        </div>
+                    </>
                 )}
             </div>
 
             {/* Create/Edit Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-slate-900/30 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-md transition-all animate-in fade-in duration-300">
-                    <div className="bg-white/70 backdrop-blur-2xl backdrop-saturate-[1.2] w-full sm:max-w-2xl rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.12)] border border-white/60 max-h-[90vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom sm:zoom-in duration-300">
+                    <div className="bg-white/70 backdrop-blur-2xl backdrop-saturate-[1.2] w-full sm:max-w-5xl rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.12)] border border-white/60 max-h-[90vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom sm:zoom-in duration-300">
                         <div className="p-8 border-b border-white/40 flex justify-between items-center shrink-0 bg-white/30 backdrop-blur-md">
                             <div>
                                 <h3 className="text-xl font-black text-gray-900 tracking-tight">
@@ -368,19 +438,30 @@ export default function InsumosPage() {
                                 </h3>
                                 <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">Completa los datos del catálogo</p>
                             </div>
-                            <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-white/50 transition-colors">✕</button>
+                            <button onClick={() => { setIsModalOpen(false); setCodigoError(null); setMessage(null); }} className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-white/50 transition-colors">✕</button>
                         </div>
-                        <form onSubmit={handleSubmit} className="p-8 space-y-8 overflow-y-auto custom-scrollbar bg-white/20">
+                        <form onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto custom-scrollbar bg-white/20">
                             <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div className="space-y-1.5">
                                         <label className="text-[10px] font-black text-gray-500/80 uppercase tracking-widest px-1">Código del Insumo</label>
                                         <input
                                             required
-                                            className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400"
+                                            className={`w-full px-5 py-3.5 rounded-2xl focus:bg-white/80 focus:ring-2 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400 ${codigoError ? "border border-red-400 bg-red-50/30 focus:ring-red-400/50" : "border border-white/60 bg-white/50 focus:ring-lime-500/50"}`}
                                             value={formData.codigo}
-                                            onChange={e => setFormData({ ...formData, codigo: e.target.value })}
+                                            onChange={e => { setFormData({ ...formData, codigo: e.target.value }); setCodigoError(null); }}
                                             placeholder="Ej: MED-001"
+                                        />
+                                        {codigoError && <p className="text-xs text-red-500 font-medium px-1 mt-1">{codigoError}</p>}
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-gray-500/80 uppercase tracking-widest px-1">Nombre Comercial / Genérico</label>
+                                        <input
+                                            required
+                                            className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400"
+                                            value={formData.nombre}
+                                            onChange={e => setFormData({ ...formData, nombre: e.target.value })}
+                                            placeholder="Ej: Paracetamol 500mg"
                                         />
                                     </div>
                                     <div className="space-y-1.5">
@@ -401,18 +482,7 @@ export default function InsumosPage() {
                                     </div>
                                 </div>
 
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black text-gray-500/80 uppercase tracking-widest px-1">Nombre Comercial / Genérico</label>
-                                    <input
-                                        required
-                                        className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400"
-                                        value={formData.nombre}
-                                        onChange={e => setFormData({ ...formData, nombre: e.target.value })}
-                                        placeholder="Ej: Paracetamol 500mg"
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div className="space-y-1.5">
                                         <label className="text-[10px] font-black text-gray-500/80 uppercase tracking-widest px-1">Marca / Fabricante</label>
                                         <input
@@ -423,7 +493,7 @@ export default function InsumosPage() {
                                         />
                                     </div>
                                     <div className="space-y-1.5">
-                                        <label className="text-[10px] font-black text-gray-500/80 uppercase tracking-widest px-1">Unidad de Medida</label>
+                                        <label className="text-[10px] font-black text-gray-500/80 uppercase tracking-widest px-1">Presentación</label>
                                         <select
                                             required
                                             className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all appearance-none cursor-pointer"
@@ -437,17 +507,16 @@ export default function InsumosPage() {
                                             <option value="PAQUETE">Paquete</option>
                                         </select>
                                     </div>
-                                </div>
-
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black text-gray-500/80 uppercase tracking-widest px-1">Descripción corta</label>
-                                    <textarea
-                                        className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400"
-                                        rows={2}
-                                        value={formData.descripcion}
-                                        onChange={e => setFormData({ ...formData, descripcion: e.target.value })}
-                                        placeholder="Detalles adicionales..."
-                                    />
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-gray-500/80 uppercase tracking-widest px-1">Descripción corta</label>
+                                        <textarea
+                                            className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400"
+                                            rows={1}
+                                            value={formData.descripcion}
+                                            onChange={e => setFormData({ ...formData, descripcion: e.target.value })}
+                                            placeholder="Detalles adicionales..."
+                                        />
+                                    </div>
                                 </div>
 
                                 {editingInsumo && (
@@ -481,7 +550,7 @@ export default function InsumosPage() {
                             <div className="flex gap-4 pt-2">
                                 <button
                                     type="button"
-                                    onClick={() => setIsModalOpen(false)}
+                                    onClick={() => { setIsModalOpen(false); setCodigoError(null); setMessage(null); }}
                                     className="flex-1 py-4 rounded-2xl bg-white/50 border border-white/60 text-gray-700 font-bold hover:bg-white/80 transition-all text-sm shadow-sm active:scale-95"
                                 >
                                     Cancelar

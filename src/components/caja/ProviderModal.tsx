@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import { Users, Save } from "lucide-react";
+import { Save } from "lucide-react";
 
 interface Provider {
     proveedorId?: string;
@@ -23,165 +23,143 @@ interface ProviderModalProps {
 }
 
 export function ProviderModal({ isOpen, onClose, provider, onSave }: ProviderModalProps) {
-    const [formData, setFormData] = useState<Provider>({
-        nombre: "",
-        rifNif: "",
-        telefono: "",
-        correo: "",
-        direccion: "",
-        activo: true
-    });
-
-    // Split state for RIF and Phone
-    const [rifPrefix, setRifPrefix] = useState("J");
+    const [formData, setFormData] = useState({ nombre: "", correo: "", direccion: "", activo: true });
     const [rifValue, setRifValue] = useState("");
     const [phonePrefix, setPhonePrefix] = useState("0412");
     const [phoneValue, setPhoneValue] = useState("");
-
     const [isProcessing, setIsProcessing] = useState(false);
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
-        if (isOpen) {
-            if (provider) {
-                setFormData(provider);
+        if (!isOpen) return;
+        setFieldErrors({});
 
-                // Parse RIF
-                if (provider.rifNif && provider.rifNif.includes("-")) {
-                    const [p, ...v] = provider.rifNif.split("-");
-                    setRifPrefix(p);
-                    setRifValue(v.join("-"));
-                } else if (provider.rifNif) {
-                    // Fallback if no hyphen
-                    setRifValue(provider.rifNif);
-                } else {
-                    setRifPrefix("J");
-                    setRifValue("");
-                }
+        if (provider) {
+            setFormData({ nombre: provider.nombre, correo: provider.correo, direccion: provider.direccion, activo: provider.activo });
 
-                // Parse Phone
-                // Assumed format: 0412-1234567 or 04121234567. We'll try to match known prefixes.
-                if (provider.telefono) {
-                    const cleanPhone = provider.telefono.replace(/-/g, "");
-                    const knownPrefixes = ["0412", "0414", "0424", "0416", "0426", "0212"];
-                    const matchedPrefix = knownPrefixes.find(p => cleanPhone.startsWith(p));
-
-                    if (matchedPrefix) {
-                        setPhonePrefix(matchedPrefix);
-                        setPhoneValue(cleanPhone.substring(matchedPrefix.length));
-                    } else {
-                        setPhoneValue(cleanPhone);
-                    }
-                } else {
-                    setPhonePrefix("0412");
-                    setPhoneValue("");
-                }
-
+            if (provider.rifNif?.startsWith("J-")) {
+                setRifValue(provider.rifNif.slice(2));
             } else {
-                // Reset for new creation
-                setFormData({
-                    nombre: "",
-                    rifNif: "",
-                    telefono: "",
-                    correo: "",
-                    direccion: "",
-                    activo: true
-                });
-                setRifPrefix("J"); // Default for providers usually 'Juridico'
-                setRifValue("");
+                setRifValue(provider.rifNif || "");
+            }
+
+            if (provider.telefono) {
+                const clean = provider.telefono.replace(/-/g, "");
+                const prefixes = ["0412", "0422", "0414", "0424", "0416", "0426"];
+                const match = prefixes.find(p => clean.startsWith(p));
+                if (match) { setPhonePrefix(match); setPhoneValue(clean.slice(match.length)); }
+                else { setPhonePrefix("0412"); setPhoneValue(clean); }
+            } else {
                 setPhonePrefix("0412");
                 setPhoneValue("");
             }
+        } else {
+            setFormData({ nombre: "", correo: "", direccion: "", activo: true });
+            setRifValue("");
+            setPhonePrefix("0412");
+            setPhoneValue("");
         }
     }, [isOpen, provider]);
+
+    const clearError = (field: string) =>
+        setFieldErrors(prev => { const next = { ...prev }; delete next[field]; return next; });
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsProcessing(true);
-
-        // Concatenate values
-        const finalRif = `${rifPrefix}-${rifValue}`;
-        const finalPhone = phoneValue ? `${phonePrefix}-${phoneValue}` : "";
+        setFieldErrors({});
 
         const payload = {
             ...formData,
-            rifNif: finalRif,
-            telefono: finalPhone
+            rifNif: `J-${rifValue}`,
+            telefono: phoneValue ? `${phonePrefix}-${phoneValue}` : "",
         };
 
         try {
             const url = provider?.proveedorId
                 ? `/api/inventory/providers/${provider.proveedorId}`
                 : "/api/inventory/providers";
-
             const method = provider?.proveedorId ? "PUT" : "POST";
 
             const res = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payload),
             });
 
             if (res.ok) {
                 onSave();
                 onClose();
             } else {
-                const err = await res.json();
-                alert("Error: " + err.error);
+                const data = await res.json().catch(() => ({}));
+                if (res.status === 409 && data.field) {
+                    setFieldErrors({ [data.field]: data.error });
+                } else {
+                    setFieldErrors({ general: data.error || "Error al guardar proveedor" });
+                }
             }
-        } catch (error) {
-            console.error(error);
-            alert("Error de conexión");
+        } catch {
+            setFieldErrors({ general: "Error de conexión" });
         } finally {
             setIsProcessing(false);
         }
     };
 
+    const inputCls = (field: string) =>
+        `w-full px-5 py-3.5 rounded-2xl focus:bg-white/80 focus:ring-2 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400 ${
+            fieldErrors[field]
+                ? "border border-red-400 bg-red-50/30 focus:ring-red-400/50"
+                : "border border-white/60 bg-white/50 focus:ring-lime-500/50"
+        }`;
+
     return (
-        <Modal
-            isOpen={isOpen}
-            onClose={onClose}
-            title={provider ? "Editar Proveedor" : "Nuevo Proveedor"}
-        >
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre / Razón Social *</label>
+        <Modal isOpen={isOpen} onClose={onClose} title={provider ? "Editar Proveedor" : "Nuevo Proveedor"}>
+            <form onSubmit={handleSubmit} className="space-y-5">
+
+                {/* Nombre */}
+                <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-gray-500/80 uppercase tracking-widest px-1">Nombre / Razón Social</label>
                     <input
                         required
                         type="text"
-                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-lime-500 outline-none transition-all"
+                        className={inputCls("nombre")}
                         value={formData.nombre}
-                        onChange={e => setFormData({ ...formData, nombre: e.target.value })}
+                        onChange={e => { setFormData(p => ({ ...p, nombre: e.target.value })); clearError("nombre"); }}
+                        placeholder="Ej: Distribuidora Médica S.A."
                     />
+                    {fieldErrors.nombre && <p className="text-xs text-red-500 font-medium px-1">{fieldErrors.nombre}</p>}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* RIF Field with Prefix */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">RIF / NIF</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {/* RIF */}
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-gray-500/80 uppercase tracking-widest px-1">RIF / NIF</label>
                         <div className="flex gap-2">
-                            <select
-                                className="w-20 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2 py-2 text-sm outline-none focus:ring-2 focus:ring-lime-500"
-                                value={rifPrefix}
-                                onChange={e => setRifPrefix(e.target.value)}
-                            >
-                                <option value="J">J-</option>
-                            </select>
+                            <span className="flex items-center px-4 py-3.5 rounded-2xl bg-white/30 border border-white/60 text-sm font-black text-gray-600 select-none">
+                                J-
+                            </span>
                             <input
+                                required
                                 type="text"
-                                className="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-lime-500 outline-none transition-all"
+                                className={`flex-1 px-5 py-3.5 rounded-2xl focus:bg-white/80 focus:ring-2 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400 ${
+                                    fieldErrors.rifNif
+                                        ? "border border-red-400 bg-red-50/30 focus:ring-red-400/50"
+                                        : "border border-white/60 bg-white/50 focus:ring-lime-500/50"
+                                }`}
                                 value={rifValue}
-                                onChange={e => setRifValue(e.target.value)}
+                                onChange={e => { setRifValue(e.target.value.replace(/\D/g, "")); clearError("rifNif"); }}
                                 placeholder="123456789"
                             />
                         </div>
+                        {fieldErrors.rifNif && <p className="text-xs text-red-500 font-medium px-1">{fieldErrors.rifNif}</p>}
                     </div>
 
-                    {/* Phone Field with Prefix */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono</label>
+                    {/* Teléfono */}
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-gray-500/80 uppercase tracking-widest px-1">Teléfono</label>
                         <div className="flex gap-2">
                             <select
-                                className="w-24 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2 py-2 text-sm outline-none focus:ring-2 focus:ring-lime-500"
+                                className="rounded-2xl border border-white/60 bg-white/50 px-3 py-3.5 text-sm font-medium outline-none focus:ring-2 focus:ring-lime-500/50 appearance-none cursor-pointer"
                                 value={phonePrefix}
                                 onChange={e => setPhonePrefix(e.target.value)}
                             >
@@ -193,63 +171,74 @@ export function ProviderModal({ isOpen, onClose, provider, onSave }: ProviderMod
                                 <option value="0426">0426</option>
                             </select>
                             <input
+                                required
                                 type="text"
-                                className="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-lime-500 outline-none transition-all"
+                                maxLength={7}
+                                className={`flex-1 px-5 py-3.5 rounded-2xl focus:bg-white/80 focus:ring-2 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400 ${
+                                    fieldErrors.telefono
+                                        ? "border border-red-400 bg-red-50/30 focus:ring-red-400/50"
+                                        : "border border-white/60 bg-white/50 focus:ring-lime-500/50"
+                                }`}
                                 value={phoneValue}
-                                onChange={e => setPhoneValue(e.target.value.replace(/\D/g, ''))} // Only numbers
+                                onChange={e => { setPhoneValue(e.target.value.replace(/\D/g, "")); clearError("telefono"); }}
                                 placeholder="1234567"
                             />
                         </div>
+                        {fieldErrors.telefono && <p className="text-xs text-red-500 font-medium px-1">{fieldErrors.telefono}</p>}
                     </div>
                 </div>
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Correo Electrónico</label>
+                {/* Correo */}
+                <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-gray-500/80 uppercase tracking-widest px-1">Correo Electrónico</label>
                     <input
+                        required
                         type="email"
-                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-lime-500 outline-none transition-all"
-                        value={formData.correo || ""}
-                        onChange={e => setFormData({ ...formData, correo: e.target.value })}
+                        className={inputCls("correo")}
+                        value={formData.correo}
+                        onChange={e => { setFormData(p => ({ ...p, correo: e.target.value })); clearError("correo"); }}
+                        placeholder="contacto@proveedor.com"
                     />
+                    {fieldErrors.correo && <p className="text-xs text-red-500 font-medium px-1">{fieldErrors.correo}</p>}
                 </div>
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dirección</label>
+                {/* Dirección */}
+                <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-gray-500/80 uppercase tracking-widest px-1">Dirección</label>
                     <textarea
+                        required
                         rows={2}
-                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-lime-500 outline-none transition-all"
-                        value={formData.direccion || ""}
-                        onChange={e => setFormData({ ...formData, direccion: e.target.value })}
+                        className="w-full px-5 py-3.5 rounded-2xl border border-white/60 bg-white/50 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400 resize-none"
+                        value={formData.direccion}
+                        onChange={e => setFormData(p => ({ ...p, direccion: e.target.value }))}
+                        placeholder="Dirección completa del proveedor..."
                     />
                 </div>
 
+                {/* Toggle activo (solo edición) */}
                 {provider && (
-                    <div className="flex items-center gap-3 pt-2">
-                        <div className="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
-                            <input
-                                type="checkbox"
-                                name="activo"
-                                id="activo-toggle"
-                                className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer peer checked:right-0 right-6"
-                                checked={formData.activo}
-                                onChange={e => setFormData({ ...formData, activo: e.target.checked })}
-                            />
-                            <label htmlFor="activo-toggle" className={`toggle-label block overflow-hidden h-6 rounded-full cursor-pointer ${formData.activo ? 'bg-lime-500' : 'bg-gray-300 dark:bg-zinc-700'}`}></label>
+                    <div className="flex items-center gap-3 pt-1">
+                        <div
+                            className={`w-12 h-7 rounded-full p-1 cursor-pointer transition-all duration-300 ${formData.activo ? "bg-lime-500 shadow-[0_0_12px_rgba(132,204,22,0.4)]" : "bg-gray-200"}`}
+                            onClick={() => setFormData(p => ({ ...p, activo: !p.activo }))}
+                        >
+                            <div className={`w-5 h-5 rounded-full bg-white shadow-lg transform transition-transform duration-300 ${formData.activo ? "translate-x-5" : "translate-x-0"}`} />
                         </div>
-                        <label htmlFor="activo-toggle" className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+                        <span className="text-sm font-medium text-gray-700 cursor-pointer" onClick={() => setFormData(p => ({ ...p, activo: !p.activo }))}>
                             {formData.activo ? "Proveedor Activo" : "Proveedor Inactivo"}
-                        </label>
+                        </span>
                     </div>
                 )}
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-zinc-800">
+                {fieldErrors.general && (
+                    <p className="text-xs text-red-500 font-medium text-center bg-red-50/50 rounded-xl py-2 px-3">
+                        {fieldErrors.general}
+                    </p>
+                )}
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-white/40">
                     <Button variant="ghost" onClick={onClose} type="button">Cancelar</Button>
-                    <Button
-                        variant="primary"
-                        type="submit"
-                        isLoading={isProcessing}
-                        leftIcon={<Save size={18} />}
-                    >
+                    <Button variant="primary" type="submit" isLoading={isProcessing} leftIcon={<Save size={18} />}>
                         Guardar
                     </Button>
                 </div>

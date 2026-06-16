@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { AlertTriangle, ArrowRight } from "lucide-react";
+import { ALMACEN_ROLES } from "@/lib/constants/roles";
 
 export function RoleRedirect() {
     const { user, loading } = useAuth();
@@ -13,7 +14,7 @@ export function RoleRedirect() {
     const pathname = usePathname();
     const [shouldShowWarning, setShouldShowWarning] = useState(false);
 
-    const STAFF_ROLES = ['ADMIN', 'DOCTOR', 'MEDICO', 'RECEPCION', 'ALMACEN', 'CAJA', 'CAJA Y FACTURACION', 'CAJA Y FACTURACIÓN', 'CAJA/FACTURACION', 'CAJA/FACTURACIÓN'];
+    const STAFF_ROLES = ['ADMIN', 'DOCTOR', 'MEDICO', 'RECEPCION', ...ALMACEN_ROLES, 'CAJA', 'CAJA Y FACTURACION', 'CAJA Y FACTURACIÓN', 'CAJA/FACTURACION', 'CAJA/FACTURACIÓN'];
 
     useEffect(() => {
         if (loading || !user) return;
@@ -39,7 +40,7 @@ export function RoleRedirect() {
     const redirectToCorrectPanel = (role: string) => {
         if (role === "ADMIN") router.push("/admin");
         else if (role === "DOCTOR" || role === "MEDICO") router.push("/medico");
-        else if (role === "ALMACEN") router.push("/almacen");
+        else if ((ALMACEN_ROLES as readonly string[]).includes(role)) router.push("/almacen");
         else if (['CAJA', 'CAJA Y FACTURACION', 'CAJA Y FACTURACIÓN', 'CAJA/FACTURACION', 'CAJA/FACTURACIÓN'].includes(role)) router.push("/caja");
         else if (role === "RECEPCION") router.push("/recepcion");
     };

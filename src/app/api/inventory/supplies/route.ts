@@ -28,7 +28,7 @@ export async function GET(request: Request) {
                 },
             },
             orderBy: {
-                nombre: "asc",
+                insumoId: "asc",
             },
         });
 
@@ -56,6 +56,11 @@ export async function POST(request: Request) {
         // Basic validation
         if (!codigo || !nombre || !unidadMedida || !categoria) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+        }
+
+        const duplicateCodigo = await prisma.insumo.findFirst({ where: { codigo } });
+        if (duplicateCodigo) {
+            return NextResponse.json({ error: `Ya existe un insumo con el código "${codigo}". Usa un código diferente.` }, { status: 409 });
         }
 
         const newInsumo = await prisma.insumo.create({
@@ -91,6 +96,15 @@ export async function PUT(request: Request) {
 
         if (!insumoId) {
             return NextResponse.json({ error: "Missing insumoId" }, { status: 400 });
+        }
+
+        if (codigo) {
+            const duplicateCodigo = await prisma.insumo.findFirst({
+                where: { codigo, insumoId: { not: BigInt(insumoId) } },
+            });
+            if (duplicateCodigo) {
+                return NextResponse.json({ error: `Ya existe otro insumo con el código "${codigo}". Usa un código diferente.` }, { status: 409 });
+            }
         }
 
         const updatedInsumo = await prisma.insumo.update({

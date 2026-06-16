@@ -13,7 +13,8 @@ const updatePatientSchema = z.object({
     correo: z.string().email("Correo de contacto inválido"),
     direccion: z.string().min(1, "Dirección requerida"),
     estado: z.enum(["ACTIVO", "INACTIVO", "BLOQUEADO", "FALLECIDO"]),
-    email: z.string().email("Email de acceso inválido"),
+    // email is optional: NO REGISTRADO patients may not have a user account yet
+    email: z.union([z.string().email("Email de acceso inválido"), z.literal("")]).optional(),
     usuarioEstado: z.enum(["ACTIVO", "INACTIVO", "BLOQUEADO"]),
     password: z.string().optional(),
 }).superRefine((data, ctx) => {
@@ -63,6 +64,7 @@ export async function PUT(
             });
 
             if (updatedPatient.usuarioId) {
+                // Update existing user account
                 const userUpdateData: any = {
                     email: data.email,
                     estado: data.usuarioEstado as any,
@@ -73,6 +75,22 @@ export async function PUT(
                 await tx.usuario.update({
                     where: { usuarioId: updatedPatient.usuarioId },
                     data: userUpdateData,
+                });
+            } else if (data.email && data.email.trim() !== "" && data.password && data.password.trim() !== "") {
+                // Create user account for a previously NO REGISTRADO patient
+                const pacienteRole = await tx.rol.findUnique({ where: { nombre: "PACIENTE" } });
+                if (!pacienteRole) throw new Error("Rol PACIENTE no configurado");
+                const newUser = await tx.usuario.create({
+                    data: {
+                        email: data.email,
+                        passwordHash: await bcrypt.hash(data.password, 10),
+                        rolId: pacienteRole.rolId,
+                        estado: data.usuarioEstado as any,
+                    },
+                });
+                await tx.paciente.update({
+                    where: { pacienteId: id },
+                    data: { usuarioId: newUser.usuarioId },
                 });
             }
         });

@@ -9,90 +9,60 @@ import { X, Save, Loader2, AlertCircle, Eye, EyeOff, UserCog, Shield } from "luc
 import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
 import PatientInsuranceSection from "@/components/insurance/PatientInsuranceSection";
 
-// Robust Schema matching RegisterInput
-const receptionPatientSchema = z.object({
-    nombres: z
-        .string()
-        .min(2, "Nombre debe tener al menos 2 caracteres")
-        .max(50, "Nombre muy largo")
-        .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "El nombre solo puede contener letras"),
-    apellidos: z
-        .string()
-        .min(2, "Apellido debe tener al menos 2 caracteres")
-        .max(50, "Apellido muy largo")
-        .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "El apellido solo puede contener letras"),
-
-    // Split ID
+// Base: all fields required for both create and edit
+const receptionBaseSchema = z.object({
+    nombres: z.string().min(2, "Nombre debe tener al menos 2 caracteres").max(50, "Nombre muy largo").regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo letras"),
+    apellidos: z.string().min(2, "Apellido debe tener al menos 2 caracteres").max(50, "Apellido muy largo").regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo letras"),
     idType: z.enum(["V-", "E-", "J-"]),
     idNumber: z.string().min(6, "Mínimo 6 dígitos").max(12, "Máximo 12 dígitos").regex(/^\d+$/, "Solo números"),
-
-    fechaNacimiento: z.string().refine((date) => {
-        if (!date) return true; // Optional logic if needed, but here let's make it standard
-        const birthDate = new Date(date);
-        const today = new Date();
-        const age = today.getFullYear() - birthDate.getFullYear();
-        return age >= 0 && age <= 120;
-    }, "Fecha inválida").optional().or(z.literal("")),
-
-    sexo: z.string().min(1, "Sexo es requerido"),
-
-    // Contact
-    correo: z.string().email("Correo inválido").optional().or(z.literal("")),
-
-    // Split Phone
+    fechaNacimiento: z.string().min(1, "Fecha de nacimiento requerida"),
+    sexo: z.string().min(1, "Sexo requerido"),
+    correo: z.string().min(1, "Correo de contacto requerido").email("Correo de contacto inválido"),
     phoneCode: z.enum(["0412-", "0414-", "0416-", "0424-", "0426-", "0422-"]),
     phoneNumber: z.string().min(7, "Mínimo 7 dígitos").max(7, "Máximo 7 dígitos").regex(/^\d+$/, "Solo números"),
-
-    direccion: z.string().optional(),
-
-    // Account Data (Optional if not creating user, but standard here)
+    direccion: z.string().min(1, "Dirección requerida"),
     createAccount: z.boolean().optional(),
-    correoAcceso: z.string().email("Correo inválido").optional().or(z.literal("")),
-    password: z.string().optional(),
-    confirmPassword: z.string().optional(),
-}).superRefine((data, ctx) => {
-    // If correoAcceso is provided, password is required
-    // If correoAcceso is provided and password has been entered
-    if (data.correoAcceso && data.correoAcceso.length > 0) {
-        // Only validate password complexity IF provided. 
-        // Logic for REQUIERED password on Create should differ, but standardizing here:
-        // Ideally we'd know if it's CREATE or UPDATE, but schema doesn't.
-        // We'll trust the user or backend to reject empty passwords on CREATE.
+});
 
-        if (data.password && data.password.length > 0) {
-            if (data.password.length < 8) {
-                ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
-                    message: "La contraseña debe tener al menos 8 caracteres",
-                    path: ["password"],
-                });
-            }
-            if (!/[A-Z]/.test(data.password)) {
-                ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
-                    message: "Debe contener al menos una mayúscula",
-                    path: ["password"],
-                });
-            }
-            if (!/[0-9]/.test(data.password)) {
-                ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
-                    message: "Debe contener al menos un número",
-                    path: ["password"],
-                });
-            }
-            if (data.password !== data.confirmPassword) {
-                ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
-                    message: "Las contraseñas no coinciden",
-                    path: ["confirmPassword"],
-                });
-            }
-        }
+// CREATE: correoAcceso + password + confirmPassword requeridos y completamente validados
+const createReceptionPatientSchema = receptionBaseSchema.extend({
+    correoAcceso: z.string().min(1, "Correo de acceso requerido").email("Correo de acceso inválido"),
+    password: z.string()
+        .min(8, "Mínimo 8 caracteres")
+        .regex(/[A-Z]/, "Debe tener al menos una letra mayúscula")
+        .regex(/[0-9]/, "Debe tener al menos un número"),
+    confirmPassword: z.string().min(1, "Confirma tu contraseña"),
+}).superRefine((data, ctx) => {
+    if (data.password !== data.confirmPassword) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Las contraseñas no coinciden", path: ["confirmPassword"] });
     }
 });
 
-type PatientFormData = z.infer<typeof receptionPatientSchema>;
+// EDIT: correoAcceso opcional, contraseña opcional pero validada si se provee
+const editReceptionPatientSchema = receptionBaseSchema.extend({
+    correoAcceso: z.union([z.string().email("Correo de acceso inválido"), z.literal("")]).optional(),
+    password: z.string().optional(),
+    confirmPassword: z.string().optional(),
+}).superRefine((data, ctx) => {
+    if (data.password && data.password.trim() !== "") {
+        if (data.password.length < 8)
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Mínimo 8 caracteres", path: ["password"] });
+        if (!/[A-Z]/.test(data.password))
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Debe tener al menos una letra mayúscula", path: ["password"] });
+        if (!/[0-9]/.test(data.password))
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Debe tener al menos un número", path: ["password"] });
+        if (data.password !== data.confirmPassword)
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Las contraseñas no coinciden", path: ["confirmPassword"] });
+    }
+});
+
+type PatientFormData = {
+    nombres: string; apellidos: string;
+    idType: "V-" | "E-" | "J-"; idNumber: string;
+    fechaNacimiento: string; sexo: string; correo: string; direccion: string;
+    phoneCode: "0412-" | "0414-" | "0416-" | "0424-" | "0426-" | "0422-"; phoneNumber: string;
+    correoAcceso?: string; password?: string; confirmPassword?: string; createAccount?: boolean;
+};
 
 interface PatientModalProps {
     isOpen: boolean;
@@ -108,6 +78,8 @@ export function PatientModal({ isOpen, onClose, patient, onSuccess }: PatientMod
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [activeTab, setActiveTab] = useState<"datos" | "seguro">("datos");
 
+    const isEditing = !!patient;
+
     const {
         register,
         handleSubmit,
@@ -116,8 +88,9 @@ export function PatientModal({ isOpen, onClose, patient, onSuccess }: PatientMod
         control,
         formState: { errors },
     } = useForm<PatientFormData>({
-        resolver: zodResolver(receptionPatientSchema),
-        mode: "onChange",
+        resolver: zodResolver(isEditing ? editReceptionPatientSchema : createReceptionPatientSchema) as any,
+        mode: "onSubmit",
+        reValidateMode: "onChange",
         defaultValues: {
             idType: "V-",
             phoneCode: "0412-"
@@ -137,8 +110,9 @@ export function PatientModal({ isOpen, onClose, patient, onSuccess }: PatientMod
                 // Parse Split Fields
                 const docType = patient.documento.substring(0, 2) as any;
                 const docNum = patient.documento.substring(2);
-                const phoneCode = patient.telefono.substring(0, 5) as any;
-                const phoneNum = patient.telefono.substring(5);
+                const tel = patient.telefono || "";
+                const phoneCode = tel.substring(0, 5) as any;
+                const phoneNum = tel.substring(5);
 
                 setValue("nombres", patient.nombres);
                 setValue("apellidos", patient.apellidos);
@@ -197,11 +171,6 @@ export function PatientModal({ isOpen, onClose, patient, onSuccess }: PatientMod
         setIsSaving(true);
         setError(null);
         try {
-            // Manual Validation for CREATE
-            if (!patient && data.correoAcceso && (!data.password || data.password.length === 0)) {
-                throw new Error("La contraseña es requerida para crear un nuevo usuario");
-            }
-
             // Transform Data for API
             const payload = {
                 nombres: data.nombres,
@@ -311,13 +280,15 @@ export function PatientModal({ isOpen, onClose, patient, onSuccess }: PatientMod
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2">Nombres</label>
-                                    <input {...register("nombres")} className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400" placeholder="Juan" />
-                                    {errors.nombres && <p className="text-red-500 text-xs mt-1">{errors.nombres.message}</p>}
+                                    <input {...register("nombres")} placeholder="Juan"
+                                        className={`w-full px-5 py-3.5 rounded-2xl focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400 ${errors.nombres ? "border border-red-400 bg-red-50/30 focus:bg-red-50/50" : "border border-white/60 bg-white/50 focus:bg-white/80"}`} />
+                                    {errors.nombres && <p className="text-red-500 text-xs mt-1 font-bold">{errors.nombres.message}</p>}
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2">Apellidos</label>
-                                    <input {...register("apellidos")} className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400" placeholder="Pérez" />
-                                    {errors.apellidos && <p className="text-red-500 text-xs mt-1">{errors.apellidos.message}</p>}
+                                    <input {...register("apellidos")} placeholder="Pérez"
+                                        className={`w-full px-5 py-3.5 rounded-2xl focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400 ${errors.apellidos ? "border border-red-400 bg-red-50/30 focus:bg-red-50/50" : "border border-white/60 bg-white/50 focus:bg-white/80"}`} />
+                                    {errors.apellidos && <p className="text-red-500 text-xs mt-1 font-bold">{errors.apellidos.message}</p>}
                                 </div>
                             </div>
 
@@ -330,26 +301,29 @@ export function PatientModal({ isOpen, onClose, patient, onSuccess }: PatientMod
                                         <option value="E-">E-</option>
                                         <option value="J-">J-</option>
                                     </select>
-                                    <input {...register("idNumber")} className="flex-1 px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400" placeholder="12345678" />
+                                    <input {...register("idNumber")} placeholder="12345678"
+                                        className={`flex-1 px-5 py-3.5 rounded-2xl focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400 ${errors.idNumber ? "border border-red-400 bg-red-50/30 focus:bg-red-50/50" : "border border-white/60 bg-white/50 focus:bg-white/80"}`} />
                                 </div>
-                                {errors.idNumber && <p className="text-red-500 text-xs mt-1">{errors.idNumber.message}</p>}
+                                {errors.idNumber && <p className="text-red-500 text-xs mt-1 font-bold">{errors.idNumber.message}</p>}
                             </div>
 
-                            {/* Stacked Date & Sex for better spacing layout */}
                             <div>
                                 <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2">Fecha Nacimiento</label>
-                                <input type="date" {...register("fechaNacimiento")} className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400" />
+                                <input type="date" {...register("fechaNacimiento")}
+                                    className={`w-full px-5 py-3.5 rounded-2xl focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400 ${errors.fechaNacimiento ? "border border-red-400 bg-red-50/30 focus:bg-red-50/50" : "border border-white/60 bg-white/50 focus:bg-white/80"}`} />
+                                {errors.fechaNacimiento && <p className="text-red-500 text-xs mt-1 font-bold">{errors.fechaNacimiento.message}</p>}
                             </div>
 
                             <div>
                                 <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2">Sexo</label>
-                                <select {...register("sexo")} className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all">
+                                <select {...register("sexo")}
+                                    className={`w-full px-5 py-3.5 rounded-2xl focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all ${errors.sexo ? "border border-red-400 bg-red-50/30 focus:bg-red-50/50" : "border border-white/60 bg-white/50 focus:bg-white/80"}`}>
                                     <option value="">Seleccionar</option>
                                     <option value="MASCULINO">Masculino</option>
                                     <option value="FEMENINO">Femenino</option>
                                     <option value="OTRO">Otro</option>
                                 </select>
-                                {errors.sexo && <p className="text-red-500 text-xs mt-1">{errors.sexo.message}</p>}
+                                {errors.sexo && <p className="text-red-500 text-xs mt-1 font-bold">{errors.sexo.message}</p>}
                             </div>
                         </div>
 
@@ -369,33 +343,42 @@ export function PatientModal({ isOpen, onClose, patient, onSuccess }: PatientMod
                                         <option value="0426-">0426</option>
                                         <option value="0422-">0422</option>
                                     </select>
-                                    <input {...register("phoneNumber")} className="flex-1 px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400" placeholder="1234567" />
+                                    <input {...register("phoneNumber")} placeholder="1234567"
+                                        className={`flex-1 px-5 py-3.5 rounded-2xl focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400 ${errors.phoneNumber ? "border border-red-400 bg-red-50/30 focus:bg-red-50/50" : "border border-white/60 bg-white/50 focus:bg-white/80"}`} />
                                 </div>
-                                {errors.phoneNumber && <p className="text-red-500 text-xs mt-1">{errors.phoneNumber.message}</p>}
+                                {errors.phoneNumber && <p className="text-red-500 text-xs mt-1 font-bold">{errors.phoneNumber.message}</p>}
                             </div>
 
                             <div>
                                 <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2">Correo de Contacto</label>
-                                <input {...register("correo")} className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400" placeholder="contacto@ejemplo.com" />
-                                <p className="text-xs text-gray-500 mt-1">Donde recibirá notificaciones</p>
-                                {errors.correo && <p className="text-red-500 text-xs mt-1">{errors.correo.message}</p>}
+                                <input {...register("correo")} placeholder="contacto@ejemplo.com"
+                                    className={`w-full px-5 py-3.5 rounded-2xl focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400 ${errors.correo ? "border border-red-400 bg-red-50/30 focus:bg-red-50/50" : "border border-white/60 bg-white/50 focus:bg-white/80"}`} />
+                                {errors.correo
+                                    ? <p className="text-red-500 text-xs mt-1 font-bold">{errors.correo.message}</p>
+                                    : <p className="text-xs text-gray-500 mt-1">Donde recibirá notificaciones</p>
+                                }
                             </div>
 
                             <div>
                                 <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2">Dirección</label>
-                                <textarea {...register("direccion")} rows={5} className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400 resize-none" placeholder="Dirección completa..." />
+                                <textarea {...register("direccion")} rows={5} placeholder="Dirección completa..."
+                                    className={`w-full px-5 py-3.5 rounded-2xl focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400 resize-none ${errors.direccion ? "border border-red-400 bg-red-50/30 focus:bg-red-50/50" : "border border-white/60 bg-white/50 focus:bg-white/80"}`} />
+                                {errors.direccion && <p className="text-red-500 text-xs mt-1 font-bold">{errors.direccion.message}</p>}
                             </div>
                         </div>
 
-                        {/* Account Data - Always Visible to Allow Edits */}
+                        {/* Account Data */}
                         <div className="space-y-4">
                             <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider pb-1 border-b border-white/40">Cuenta de Acceso</h4>
                             <div className="space-y-5">
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2">Correo de Acceso</label>
-                                    <input {...register("correoAcceso")} className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400" placeholder="usuario@login.com" />
-                                    <p className="text-xs text-gray-500 mt-1">Para acceso al sistema</p>
-                                    {errors.correoAcceso && <p className="text-red-500 text-xs mt-1">{errors.correoAcceso.message}</p>}
+                                    <input {...register("correoAcceso")} placeholder="usuario@login.com"
+                                        className={`w-full px-5 py-3.5 rounded-2xl focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400 ${errors.correoAcceso ? "border border-red-400 bg-red-50/30 focus:bg-red-50/50" : "border border-white/60 bg-white/50 focus:bg-white/80"}`} />
+                                    {errors.correoAcceso
+                                        ? <p className="text-red-500 text-xs mt-1 font-bold">{errors.correoAcceso.message}</p>
+                                        : <p className="text-xs text-gray-500 mt-1">Para acceso al sistema</p>
+                                    }
                                 </div>
                                 <div className="space-y-5">
                                     <div>
@@ -406,14 +389,14 @@ export function PatientModal({ isOpen, onClose, patient, onSuccess }: PatientMod
                                             <input
                                                 type={showPassword ? "text" : "password"}
                                                 {...register("password")}
-                                                className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400 pr-10"
                                                 placeholder={patient ? "Dejar vacía para mantener actual" : "••••••••"}
+                                                className={`w-full px-5 py-3.5 rounded-2xl focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400 pr-10 ${errors.password ? "border border-red-400 bg-red-50/30 focus:bg-red-50/50" : "border border-white/60 bg-white/50 focus:bg-white/80"}`}
                                             />
                                             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                                                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                             </button>
                                         </div>
-                                        {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
+                                        {errors.password && <p className="text-red-500 text-xs mt-1 font-bold">{errors.password.message}</p>}
                                         {password && <PasswordStrengthIndicator password={password} />}
                                     </div>
                                     <div>
@@ -422,14 +405,14 @@ export function PatientModal({ isOpen, onClose, patient, onSuccess }: PatientMod
                                             <input
                                                 type={showConfirmPassword ? "text" : "password"}
                                                 {...register("confirmPassword")}
-                                                className="w-full px-5 py-3.5 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400 pr-10"
                                                 placeholder="••••••••"
+                                                className={`w-full px-5 py-3.5 rounded-2xl focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400 pr-10 ${errors.confirmPassword ? "border border-red-400 bg-red-50/30 focus:bg-red-50/50" : "border border-white/60 bg-white/50 focus:bg-white/80"}`}
                                             />
                                             <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                                                 {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                             </button>
                                         </div>
-                                        {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword.message}</p>}
+                                        {errors.confirmPassword && <p className="text-red-500 text-xs mt-1 font-bold">{errors.confirmPassword.message}</p>}
                                     </div>
                                 </div>
                             </div>

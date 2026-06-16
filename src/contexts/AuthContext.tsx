@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User } from "@/domain/entities/User";
 import { useRouter } from "next/navigation";
-import { CAJA_ROLES } from "@/lib/constants/roles";
+import { CAJA_ROLES, ALMACEN_ROLES } from "@/lib/constants/roles";
 
 interface AuthContextType {
     user: Partial<User> | null;
@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             targetPath = "/admin";
         } else if (role === "DOCTOR" || role === "MEDICO") {
             targetPath = "/medico";
-        } else if (role === "ALMACEN") {
+        } else if ((ALMACEN_ROLES as readonly string[]).includes(role)) {
             targetPath = "/almacen";
         } else if ((CAJA_ROLES as readonly string[]).includes(role)) {
             targetPath = "/caja";

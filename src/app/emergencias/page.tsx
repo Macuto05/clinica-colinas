@@ -188,6 +188,7 @@ function NewAdmissionModal({ onClose, onSuccess }: NewAdmissionModalProps) {
     // Quick patient creation
     const [newPatient, setNewPatient] = useState({ nombres: "", apellidos: "", documento: "", telefono: "" });
     const [cedTipo, setCedTipo] = useState<"V-" | "E-">("V-");
+    const [telCodigo, setTelCodigo] = useState("0412-");
 
     // Emergency data
     const [motivo, setMotivo] = useState("");
@@ -263,7 +264,7 @@ function NewAdmissionModal({ onClose, onSuccess }: NewAdmissionModalProps) {
                         nombres: newPatient.nombres,
                         apellidos: newPatient.apellidos,
                         documentoIdentidad: `${cedTipo}${newPatient.documento}`,
-                        telefono: newPatient.telefono || null,
+                        telefono: newPatient.telefono ? `${telCodigo}${newPatient.telefono}` : null,
                     })
                 });
                 if (!res.ok) {
@@ -443,11 +444,28 @@ function NewAdmissionModal({ onClose, onSuccess }: NewAdmissionModalProps) {
                                                 className={`flex-1 min-w-0 px-3 py-2.5 bg-white/60 text-sm focus:bg-white outline-none transition-all font-medium placeholder:text-gray-400 ${fieldErrors.documento ? "bg-red-50/30" : ""}`}
                                             />
                                         </div>
-                                        <input placeholder="Teléfono *" value={newPatient.telefono}
-                                            onChange={e => { setNewPatient({ ...newPatient, telefono: e.target.value.replace(/[^0-9-]/g, "") }); setFieldErrors(p => { const n={...p}; delete n.telefono; return n; }); }}
-                                            className={`px-4 py-2.5 rounded-xl bg-white/60 text-sm focus:bg-white focus:ring-2 focus:ring-red-300 outline-none shadow-sm transition-all font-medium placeholder:text-gray-400 border ${fieldErrors.telefono ? "border-red-400 bg-red-50/30" : "border-white/80"}`} />
+                                        <div className={`flex gap-0 rounded-xl overflow-hidden border ${fieldErrors.telefono ? "border-red-400" : "border-white/80"}`}>
+                                            <select
+                                                value={telCodigo}
+                                                onChange={e => setTelCodigo(e.target.value)}
+                                                className="px-2 py-2.5 bg-white/70 text-sm font-bold text-gray-700 outline-none border-r border-white/60 shrink-0"
+                                            >
+                                                <option value="0412-">0412</option>
+                                                <option value="0422-">0422</option>
+                                                <option value="0414-">0414</option>
+                                                <option value="0424-">0424</option>
+                                                <option value="0416-">0416</option>
+                                                <option value="0426-">0426</option>
+                                            </select>
+                                            <input
+                                                placeholder="1234567 *"
+                                                value={newPatient.telefono}
+                                                onChange={e => { setNewPatient({ ...newPatient, telefono: e.target.value.replace(/\D/g, "").slice(0, 7) }); setFieldErrors(p => { const n={...p}; delete n.telefono; return n; }); }}
+                                                className={`flex-1 min-w-0 px-3 py-2.5 bg-white/60 text-sm focus:bg-white outline-none transition-all font-medium placeholder:text-gray-400 ${fieldErrors.telefono ? "bg-red-50/30" : ""}`}
+                                            />
+                                        </div>
                                     </div>
-                                    <button onClick={() => { setMode("search"); setNewPatient({ nombres: "", apellidos: "", documento: "", telefono: "" }); setCedTipo("V-"); }}
+                                    <button onClick={() => { setMode("search"); setNewPatient({ nombres: "", apellidos: "", documento: "", telefono: "" }); setCedTipo("V-"); setTelCodigo("0412-"); }}
                                         className="text-xs font-bold text-gray-500 underline decoration-gray-300 hover:text-gray-800 transition-colors underline-offset-2">← Buscar paciente existente</button>
                                 </div>
                             )}
