@@ -81,70 +81,74 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             rutaArchivoDb = `/uploads/resultados-img/${uniqueName}`;
         }
 
-        // Execute DB changes
-        const result = await (prisma as any).$transaction(async (tx: any) => {
-            // 1. Create result
-            const resultado = await tx.resultadoImagenologia.create({
-                data: {
-                    detalleImgId: BigInt(detalleImgId),
-                    observacionGeneral: observacionGeneral || null,
-                    usuarioCarga: usuarioId,
+        // Execute DB changes with increased timeout (15s instead of default 5s)
+        // Status check queries can be slow with large result sets
+        const result = await (prisma as any).$transaction(
+            async (tx: any) => {
+                // 1. Create result
+                const resultado = await tx.resultadoImagenologia.create({
+                    data: {
+                        detalleImgId: BigInt(detalleImgId),
+                        observacionGeneral: observacionGeneral || null,
+                        usuarioCarga: usuarioId,
+                    }
+                });
+
+                // 2. Attach File
+                if (rutaArchivoDb) {
+                    await tx.documentoClinico.create({
+                        data: {
+                            resultadoImgId: resultado.resultadoId,
+                            citaId:        solicitud.citaId,
+                            nombreArchivo: finalNombre,
+                            rutaArchivo:   rutaArchivoDb,
+                            tipoDocumento: "RESULTADO_LAB"
+                        }
+                    });
                 }
-            });
 
-            // 2. Attach File
-            if (rutaArchivoDb) {
-                await tx.documentoClinico.create({
-                    data: {
-                        resultadoImgId: resultado.resultadoId,
-                        citaId:        solicitud.citaId,
-                        nombreArchivo: finalNombre,
-                        rutaArchivo:   rutaArchivoDb,
-                        tipoDocumento: "RESULTADO_LAB"
-                    }
-                });
-            }
+                // 3. Create Charge
+                if (examen) {
+                    await tx.cargoCuentaPaciente.create({
+                        data: {
+                            emergenciaId:     solicitud.cita?.emergencia?.emergenciaId || null,
+                            citaId:           solicitud.citaId,
+                            tipoCargo:        "EXAMEN", // Maps nicely for both lab/img
+                            examenImgId:      examen.examenId,
+                            cantidad:         1,
+                            usuarioGenerador: usuarioId,
+                            estadoCobro:      "PENDIENTE",
+                            observaciones:    "Cargo asignado al emitir informe de imagenología"
+                        }
+                    });
+                }
 
-            // 3. Create Charge
-            if (examen) {
-                await tx.cargoCuentaPaciente.create({
-                    data: {
-                        emergenciaId:     solicitud.cita?.emergencia?.emergenciaId || null,
-                        citaId:           solicitud.citaId,
-                        tipoCargo:        "EXAMEN", // Maps nicely for both lab/img
-                        examenImgId:      examen.examenId,
-                        cantidad:         1,
-                        usuarioGenerador: usuarioId,
-                        estadoCobro:      "PENDIENTE",
-                        observaciones:    "Cargo asignado al emitir informe de imagenología"
-                    }
-                });
-            }
-
-            // 4. Status check
-            const allDetails = await tx.solicitudImagenologiaDetalle.findMany({
-                where: { solicitudImgId: BigInt(id) },
-                include: { resultado: true }
-            });
-
-            const fullyAttended = allDetails.every((d: any) => 
-                d.detalleImgId.toString() === detalleImgId.toString() || d.resultado !== null
-            );
-
-            if (fullyAttended) {
-                await tx.solicitudImagenologia.update({
+                // 4. Status check
+                const allDetails = await tx.solicitudImagenologiaDetalle.findMany({
                     where: { solicitudImgId: BigInt(id) },
-                    data: { estadoSolicitud: "ATENDIDA" }
+                    include: { resultado: true }
                 });
-            } else {
-                await tx.solicitudImagenologia.update({
-                    where: { solicitudImgId: BigInt(id) },
-                    data: { estadoSolicitud: "APROBADA" } 
-                });
-            }
 
-            return resultado;
-        });
+                const fullyAttended = allDetails.every((d: any) =>
+                    d.detalleImgId.toString() === detalleImgId.toString() || d.resultado !== null
+                );
+
+                if (fullyAttended) {
+                    await tx.solicitudImagenologia.update({
+                        where: { solicitudImgId: BigInt(id) },
+                        data: { estadoSolicitud: "ATENDIDA" }
+                    });
+                } else {
+                    await tx.solicitudImagenologia.update({
+                        where: { solicitudImgId: BigInt(id) },
+                        data: { estadoSolicitud: "APROBADA" }
+                    });
+                }
+
+                return resultado;
+            },
+            { timeout: 15000 } // Increased from default 5000ms to 15000ms
+        );
 
         return NextResponse.json({ success: true, resultadoId: result.resultadoId.toString() });
     } catch (error) {

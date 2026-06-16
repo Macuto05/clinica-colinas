@@ -344,42 +344,45 @@ export default function AlmacenesPage() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setViewingWarehouse(null)}
-                            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                            className="absolute inset-0 bg-black/50"
                         />
 
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="relative w-full max-w-5xl bg-white/70 backdrop-blur-2xl backdrop-saturate-[1.2] rounded-[3rem] border border-white/60 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] flex flex-col h-[85vh] overflow-hidden"
+                            initial={{ opacity: 0, scale: 0.95, y: 12 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 12 }}
+                            className="relative w-full max-w-4xl bg-white rounded-2xl border border-gray-200 shadow-2xl flex flex-col max-h-[88vh] overflow-hidden"
                         >
-                            <div className="p-10 border-b border-white/60 flex justify-between items-center bg-white/50">
-                                <div className="flex items-center gap-5">
-                                    <div className="p-4 bg-lime-500/10 rounded-[1.5rem] text-lime-600 border border-lime-200/50 shadow-sm">
-                                        <Package size={28} />
+                            {/* Header */}
+                            <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center bg-white shrink-0">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="p-1.5 bg-lime-100 rounded-lg text-lime-600 border border-lime-200">
+                                        <Package size={15} />
                                     </div>
                                     <div>
-                                        <h3 className="text-2xl font-black text-gray-900 tracking-tight uppercase tracking-widest">
+                                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest leading-none">
                                             Inventario de {viewingWarehouse.nombre}
                                         </h3>
-                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mt-1 italic leading-relaxed line-clamp-1">{viewingWarehouse.descripcion || "Sin descripción de ubicación"}</p>
+                                        <p className="text-[9px] text-gray-400 font-medium mt-0.5 italic line-clamp-1">
+                                            {viewingWarehouse.descripcion || "Sin descripción de ubicación"}
+                                        </p>
                                     </div>
                                 </div>
-                                <button onClick={() => setViewingWarehouse(null)} className="p-3 hover:bg-gray-200/50 rounded-full transition-colors group active:scale-90">
-                                    <X size={24} className="text-gray-400 group-hover:text-gray-900" />
+                                <button onClick={() => setViewingWarehouse(null)} className="p-1.5 hover:bg-red-50 rounded-full transition-colors group">
+                                    <X size={16} className="text-gray-400 group-hover:text-red-500" />
                                 </button>
                             </div>
 
                             <div className="flex-1 flex flex-col overflow-hidden">
                                 {isLoadingStock ? (
-                                    <div className="flex-1 flex flex-col justify-center items-center gap-4">
-                                        <Loader2 className="animate-spin text-lime-600" size={50} />
+                                    <div className="flex-1 flex flex-col justify-center items-center gap-3">
+                                        <Loader2 className="animate-spin text-lime-600" size={32} />
                                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Escaneando existencias...</p>
                                     </div>
                                 ) : warehouseStock.length === 0 ? (
-                                    <div className="flex-1 flex flex-col justify-center items-center p-20 text-center">
-                                        <div className="w-24 h-24 bg-gray-500/5 rounded-full flex items-center justify-center text-gray-300 mb-8 border border-white/50">
-                                            <Package size={48} />
+                                    <div className="flex-1 flex flex-col justify-center items-center p-12 text-center">
+                                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-gray-300 mb-4">
+                                            <Package size={32} />
                                         </div>
                                         <p className="text-gray-400 font-black text-sm uppercase tracking-widest">Este almacén se encuentra vacío</p>
                                     </div>
@@ -390,59 +393,64 @@ export default function AlmacenesPage() {
                                     );
                                     return (
                                         <div className="flex flex-col flex-1 min-h-0">
-                                            {/* Search Bar */}
-                                            <div className="p-8 bg-white/20 border-b border-white/40">
-                                                <div className="relative group max-w-md">
-                                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-lime-600 transition-colors" size={20} />
+                                            {/* Search */}
+                                            <div className="px-4 py-3 border-b border-gray-100 bg-white shrink-0">
+                                                <div className="relative max-w-sm">
+                                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
                                                     <input
                                                         type="text"
                                                         placeholder="Filtrar por código o nombre..."
-                                                        className="w-full pl-12 pr-6 py-3 rounded-2xl border border-white/60 bg-white/40 focus:bg-white/80 focus:ring-4 focus:ring-lime-500/10 outline-none font-bold text-gray-800 shadow-inner transition-all sm:text-sm"
+                                                        className="w-full pl-8 pr-3 py-2 rounded-lg border border-gray-200 bg-white outline-none text-xs font-semibold text-gray-700 shadow-sm focus:ring-2 focus:ring-lime-400/40 transition-colors"
                                                         value={stockSearchTerm}
-                                                        onChange={(e) => setStockSearchTerm(e.target.value)}
+                                                        onChange={e => setStockSearchTerm(e.target.value)}
                                                     />
                                                 </div>
                                             </div>
-                                            
-                                            <div className="flex-1 overflow-auto custom-scrollbar">
+
+                                            <div
+                                                className="flex-1 overflow-auto"
+                                                style={{ overscrollBehavior: 'contain' }}
+                                            >
                                                 <table className="w-full text-left border-collapse">
-                                                    <thead>
-                                                        <tr className="bg-white/10 border-b border-white/40 sticky top-0 backdrop-blur-xl z-20">
-                                                            <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Código</th>
-                                                            <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Nombre / Marca</th>
-                                                            <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Categoría</th>
-                                                            <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] text-center">Disponible</th>
-                                                            <th className="px-8 py-6 text-right"></th>
+                                                    <thead className="bg-gray-50 sticky top-0 z-10">
+                                                        <tr>
+                                                            <th className="px-3 py-2 text-[9px] font-black text-gray-400 uppercase tracking-widest">Código</th>
+                                                            <th className="px-3 py-2 text-[9px] font-black text-gray-400 uppercase tracking-widest">Nombre / Marca</th>
+                                                            <th className="px-3 py-2 text-[9px] font-black text-gray-400 uppercase tracking-widest">Categoría</th>
+                                                            <th className="px-3 py-2 text-[9px] font-black text-gray-400 uppercase tracking-widest text-center">Disponible</th>
+                                                            <th className="px-3 py-2" />
                                                         </tr>
                                                     </thead>
-                                                    <tbody className="divide-y divide-white/20">
-                                                        {filteredStock.map((item) => (
-                                                            <tr key={item.stockId} className="hover:bg-white/40 transition-all group">
-                                                                <td className="px-8 py-6 font-mono text-[10px] font-black text-gray-400 uppercase tracking-tighter">
-                                                                    <span className="bg-white/50 px-2 py-1 rounded-lg border border-white/80">{item.codigo}</span>
+                                                    <tbody className="divide-y divide-gray-100 bg-white">
+                                                        {filteredStock.map(item => (
+                                                            <tr key={item.stockId} className="hover:bg-gray-50 transition-colors">
+                                                                <td className="px-3 py-2.5">
+                                                                    <span className="font-mono text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
+                                                                        {item.codigo}
+                                                                    </span>
                                                                 </td>
-                                                                <td className="px-8 py-6">
-                                                                    <div className="text-sm font-black text-gray-900 uppercase tracking-tight">{item.nombre}</div>
-                                                                    <div className="text-[10px] font-bold text-gray-400 mt-0.5 italic">{item.marca || "Marca Genérica"}</div>
+                                                                <td className="px-3 py-2.5">
+                                                                    <div className="text-xs font-black text-gray-900 uppercase">{item.nombre}</div>
+                                                                    <div className="text-[10px] text-gray-400 italic">{item.marca || "Marca Genérica"}</div>
                                                                 </td>
-                                                                <td className="px-8 py-6">
-                                                                    <span className="inline-flex items-center rounded-xl bg-blue-500/10 px-3 py-1 text-[9px] font-black text-blue-600 border border-blue-200 uppercase tracking-widest">
+                                                                <td className="px-3 py-2.5">
+                                                                    <span className="inline-flex items-center rounded-lg bg-blue-50 px-2 py-0.5 text-[9px] font-black text-blue-600 border border-blue-200 uppercase tracking-widest">
                                                                         {item.categoria}
                                                                     </span>
                                                                 </td>
-                                                                <td className="px-8 py-6 text-center">
-                                                                    <div className="inline-flex flex-col items-center p-2 px-4 rounded-2xl bg-white shadow-sm border border-white/80">
-                                                                        <span className="text-xl font-black text-gray-900 tracking-tighter">{item.cantidad}</span>
-                                                                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter">{item.unidadMedida}</span>
+                                                                <td className="px-3 py-2.5 text-center">
+                                                                    <div className="inline-flex flex-col items-center px-3 py-1 rounded-xl bg-gray-50 border border-gray-200">
+                                                                        <span className="text-sm font-black text-gray-900">{item.cantidad}</span>
+                                                                        <span className="text-[9px] font-bold text-gray-400 uppercase">{item.unidadMedida}</span>
                                                                     </div>
                                                                 </td>
-                                                                <td className="px-8 py-6 text-right">
+                                                                <td className="px-3 py-2.5 text-right">
                                                                     <button
                                                                         onClick={() => setSelectedInsumoForBatches(item)}
-                                                                        className="p-3 text-gray-400 hover:text-lime-600 bg-white/50 hover:bg-white rounded-2xl border border-white transition-all shadow-sm active:scale-90"
-                                                                        title="Gestionar Lotes"
+                                                                        className="p-1.5 text-gray-400 hover:text-lime-600 bg-gray-50 hover:bg-lime-50 rounded-lg border border-gray-200 hover:border-lime-200 transition-colors"
+                                                                        title="Ver Lotes"
                                                                     >
-                                                                        <ArrowRight size={18} />
+                                                                        <ArrowRight size={14} />
                                                                     </button>
                                                                 </td>
                                                             </tr>
@@ -455,10 +463,11 @@ export default function AlmacenesPage() {
                                 })()}
                             </div>
 
-                            <div className="p-8 border-t border-white/60 bg-white/50 flex justify-end">
+                            {/* Footer */}
+                            <div className="px-4 py-3 border-t border-gray-100 bg-white flex justify-end shrink-0">
                                 <button
                                     onClick={() => setViewingWarehouse(null)}
-                                    className="px-12 py-4 bg-gray-900 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-gray-900/10 active:scale-95 transition-all"
+                                    className="px-5 py-2 bg-gray-900 text-white rounded-lg text-xs font-black uppercase tracking-wider shadow-sm active:scale-95 transition-all"
                                 >
                                     Cerrar Vista
                                 </button>

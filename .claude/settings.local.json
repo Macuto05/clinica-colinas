@@ -29,7 +29,17 @@
       "Bash(mkdir -p \"c:/Users/Marcu/clinica-colinas/docs/superpowers/plans\")",
       "Bash(git checkout *)",
       "Bash(git commit -m 'docs: add decimal supply tracking implementation plan *)",
-      "Bash(git commit -m 'feat\\(pharmacy\\): allow decimal quantities in reconciliation input *)"
+      "Bash(git commit -m 'feat\\(pharmacy\\): allow decimal quantities in reconciliation input *)",
+      "Bash(git merge *)",
+      "Bash(git stash *)",
+      "Bash(gh pr *)",
+      "PowerShell(gh pr list --head feat/decimal-supply-tracking)",
+      "Bash(git diff *)",
+      "Bash(git show *)",
+      "Skill(run)",
+      "Skill(run:*)",
+      "Bash(curl -s http://localhost:3000/api/health)",
+      "Bash(curl -s http://localhost:3000)"
     ],
     "additionalDirectories": [
       "c:\\Users\\Marcu\\clinica-colinas\\docs\\superpowers"

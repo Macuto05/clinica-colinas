@@ -352,9 +352,10 @@ interface ReviewInvoiceModalProps {
     onClose: () => void;
     facturaId: string | null;
     onSuccess: () => void;
+    isApproved?: boolean;
 }
 
-function ReviewInvoiceModal({ isOpen, onClose, facturaId, onSuccess }: ReviewInvoiceModalProps) {
+function ReviewInvoiceModal({ isOpen, onClose, facturaId, onSuccess, isApproved = false }: ReviewInvoiceModalProps) {
     const [factura, setFactura] = useState<any>(null);
     const [detalles, setDetalles] = useState<FacturaDetalle[]>([]);
     const [loading, setLoading] = useState(false);
@@ -433,16 +434,21 @@ function ReviewInvoiceModal({ isOpen, onClose, facturaId, onSuccess }: ReviewInv
         }
     };
 
+    // Validar que no haya campos vacíos
+    const hasEmptyFields = detalles.some(d =>
+        !d.descripcion?.trim() || d.cantidad === undefined || d.cantidad === '' || d.precioUnitario === undefined || d.precioUnitario === ''
+    );
+
     if (!isOpen) return null;
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Revisión de Cargos y Factura">
-            <div className="space-y-6">
+        <Modal isOpen={isOpen} onClose={onClose} title="Revisión de Cargos y Factura" className="max-w-5xl">
+            <div className="space-y-4" style={{ contain: "layout style paint" }}>
                 {loading ? (
                     <div className="flex justify-center py-10"><Monitor className="animate-spin text-lime-600" /></div>
                 ) : (
                     <>
-                        <div className="bg-white/40 p-4 rounded-2xl border border-white/50 shadow-inner">
+                        <div className="bg-white/40 p-4 rounded-2xl border border-white/50">
                             <div className="flex justify-between items-center">
                                 <div>
                                     <p className="text-[10px] uppercase font-black text-gray-400 tracking-widest mb-1">Paciente</p>
@@ -455,75 +461,82 @@ function ReviewInvoiceModal({ isOpen, onClose, facturaId, onSuccess }: ReviewInv
                             </div>
                         </div>
 
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             <div className="flex items-center justify-between px-1">
-                                <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest">Desglose de Conceptos</h4>
-                                <button onClick={handleAddItem} className="flex items-center gap-1.5 text-[11px] font-black uppercase text-lime-600 bg-lime-50 px-3 py-1 rounded-full border border-lime-200">
-                                    <PlusCircle size={14} /> Añadir Item
-                                </button>
+                                <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest">Desglose de Conceptos {isApproved && <span className="text-[9px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded ml-2 border border-amber-200">(Vista)</span>}</h4>
+                                {!isApproved && (
+                                    <button onClick={handleAddItem} className="flex items-center gap-1.5 text-[11px] font-black uppercase text-lime-600 bg-lime-50 px-3 py-1 rounded-full border border-lime-200">
+                                        <PlusCircle size={14} /> Añadir Item
+                                    </button>
+                                )}
                             </div>
 
-                            <div className="max-h-[350px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                            <div className="max-h-[300px] overflow-y-auto space-y-2 pr-2">
                                 {detalles.map((d, i) => (
-                                    <div key={i} className="flex items-center gap-3 p-3 bg-white/60 border border-white/80 rounded-2xl shadow-sm transition-all hover:bg-white">
+                                    <div key={i} className={`flex items-center gap-3 p-3 rounded-2xl transition-colors ${isApproved ? 'bg-white/40 border border-white/60' : 'bg-white/60 border border-white/80 hover:bg-white/70'}`}>
                                         <div className="flex-1">
-                                            <input 
-                                                value={d.descripcion} 
-                                                onChange={e => handleUpdateItem(i, 'descripcion', e.target.value)}
-                                                className="w-full text-xs font-bold bg-transparent border-none outline-none focus:text-lime-700" 
+                                            <input
+                                                value={d.descripcion}
+                                                onChange={e => !isApproved && handleUpdateItem(i, 'descripcion', e.target.value)}
+                                                placeholder="Nombre del cargo..."
+                                                disabled={isApproved}
+                                                className={`w-full text-xs font-bold bg-transparent border-none outline-none ${isApproved ? 'text-gray-600 cursor-default' : 'focus:text-lime-700'}`}
                                             />
                                             <div className="flex items-center gap-4 mt-1">
                                                 <div className="flex items-center gap-1.5">
                                                     <span className="text-[10px] text-gray-400 font-bold uppercase">Cant:</span>
-                                                    <input 
-                                                        type="number" 
-                                                        value={isNaN(d.cantidad) ? '' : d.cantidad} 
-                                                        onChange={e => {
-                                                            const val = parseFloat(e.target.value);
-                                                            handleUpdateItem(i, 'cantidad', isNaN(val) ? 0 : val);
-                                                        }}
-                                                        className="w-12 text-xs font-black bg-white/50 rounded-lg px-2 py-1 border border-white/80 shadow-inner" 
+                                                    <input
+                                                        type="number"
+                                                        value={d.cantidad === 0 || d.cantidad === undefined ? '' : d.cantidad}
+                                                        onChange={e => !isApproved && handleUpdateItem(i, 'cantidad', parseFloat(e.target.value) || '')}
+                                                        placeholder="1"
+                                                        disabled={isApproved}
+                                                        className={`w-12 text-xs font-black rounded-lg px-2 py-1 border ${isApproved ? 'bg-white/30 border-white/50 cursor-default text-gray-600' : 'bg-white/50 border-white/80'}`}
                                                     />
                                                 </div>
                                                 <div className="flex items-center gap-1.5">
                                                     <span className="text-[10px] text-gray-400 font-bold uppercase">Precio $:</span>
-                                                    <input 
-                                                        type="number" 
-                                                        value={isNaN(d.precioUnitario) ? '' : d.precioUnitario} 
-                                                        onChange={e => {
-                                                            const val = parseFloat(e.target.value);
-                                                            handleUpdateItem(i, 'precioUnitario', isNaN(val) ? 0 : val);
-                                                        }}
-                                                        className="w-20 text-xs font-black bg-white/50 rounded-lg px-2 py-1 border border-white/80 shadow-inner text-emerald-700" 
+                                                    <input
+                                                        type="number"
+                                                        value={d.precioUnitario === 0 || d.precioUnitario === undefined ? '' : d.precioUnitario}
+                                                        onChange={e => !isApproved && handleUpdateItem(i, 'precioUnitario', parseFloat(e.target.value) || '')}
+                                                        placeholder="0.00"
+                                                        disabled={isApproved}
+                                                        className={`w-20 text-xs font-black rounded-lg px-2 py-1 border ${isApproved ? 'bg-white/30 border-white/50 cursor-default text-gray-600' : 'bg-white/50 border-white/80 text-emerald-700'}`}
                                                     />
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="text-right">
+                                        <div className="text-right shrink-0">
                                             <p className="text-xs font-black text-gray-900">${Number(d.importe).toFixed(2)}</p>
-                                            <button onClick={() => handleRemoveItem(i)} className="p-1.5 text-red-400 hover:text-red-600 transition-colors">
-                                                <XCircle size={16} />
-                                            </button>
+                                            {!isApproved && (
+                                                <button onClick={() => handleRemoveItem(i)} className="p-1.5 text-red-400 hover:text-red-600 transition-colors">
+                                                    <XCircle size={16} />
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         </div>
 
-                        <div className="pt-4 border-t border-white/40 flex justify-between items-center">
+                        <div className="pt-2 border-t border-white/40 flex justify-between items-center">
                             <div>
-                                <p className="text-[10px] uppercase font-black text-gray-400 tracking-widest">Total Provisional</p>
-                                <p className="text-3xl font-black text-gray-900 tracking-tight">
-                                    ${detalles.reduce((a, b) => a + Number(b.importe), 0).toFixed(2)}
+                                <p className="text-[10px] uppercase font-black text-gray-400 tracking-widest">Total {isApproved && '(Aprobado)'}</p>
+                                <p className="text-2xl font-black text-gray-900 tracking-tight">
+                                    ${detalles.reduce((a, b) => a + Number(b.importe || 0), 0).toFixed(2)}
                                 </p>
                             </div>
-                            <button 
-                                onClick={handleSave}
-                                disabled={saving}
-                                className="px-8 py-3.5 bg-gray-900 text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-black transition-all shadow-lg active:scale-95 disabled:opacity-50"
-                            >
-                                {saving ? "Guardando..." : "Finalizar Auditoría"}
-                            </button>
+                            {!isApproved && (
+                                <button
+                                    onClick={handleSave}
+                                    disabled={saving || hasEmptyFields}
+                                    title={hasEmptyFields ? "Completa todos los campos (nombre, cantidad, precio)" : ""}
+                                    className="px-8 py-3.5 bg-gray-900 text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-black transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {saving ? "Guardando..." : "Finalizar Auditoría"}
+                                </button>
+                            )}
                         </div>
                     </>
                 )}
@@ -553,6 +566,7 @@ export default function PagosPage() {
     // Review Modal State
     const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
     const [reviewFacturaId, setReviewFacturaId] = useState<string | null>(null);
+    const [isReviewApproved, setIsReviewApproved] = useState(false);
 
     // Filters State
     const [searchTerm, setSearchTerm] = useState("");
@@ -868,9 +882,14 @@ export default function PagosPage() {
                                                             <button
                                                                 onClick={() => {
                                                                     setReviewFacturaId(inv.facturaId);
+                                                                    setIsReviewApproved(inv.estadoFactura !== 'EN_REVISION');
                                                                     setIsReviewModalOpen(true);
                                                                 }}
-                                                                className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white/60 hover:bg-white text-gray-600 text-sm font-bold rounded-2xl transition-all border border-white/80 shadow-sm"
+                                                                className={`inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold rounded-2xl transition-all border ${
+                                                                    inv.estadoFactura === 'EN_REVISION'
+                                                                        ? 'bg-white/60 hover:bg-white text-gray-600 border-white/80 shadow-sm'
+                                                                        : 'bg-white/50 text-gray-500 border-white/60'
+                                                                }`}
                                                             >
                                                                 Revisar
                                                             </button>
@@ -1199,6 +1218,7 @@ export default function PagosPage() {
                 onClose={() => setIsReviewModalOpen(false)}
                 facturaId={reviewFacturaId}
                 onSuccess={() => loadData()}
+                isApproved={isReviewApproved}
             />
 
             <Toaster position="top-right" richColors />

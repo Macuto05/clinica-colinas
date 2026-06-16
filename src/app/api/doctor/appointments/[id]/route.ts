@@ -19,19 +19,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
                 receta: {
                     include: { detalles: true }
                 },
-                solicitudesLab: {
-                    include: {
-                        detalles: {
-                            include: { examen: true }
-                        }
-                    }
-                },
-                solicitudesImg: {
-                    include: {
-                        detalles: {
-                            include: { examen: true }
-                        }
-                    }
+                ordenEstudio: {
+                    include: { detalles: true }
                 }
             }
         });
@@ -70,20 +59,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
                     recetaId: d.recetaId.toString()
                 }))
             } : null,
-            ordenes: [
-                ...(app.solicitudesLab || []).flatMap(s => s.detalles.map(d => ({
-                    id: d.detalleLabId.toString(),
-                    tipo: 'Laboratorio',
-                    estudio: d.examen.nombre,
-                    fecha: s.fechaSolicitud
-                }))),
-                ...(app.solicitudesImg || []).flatMap(s => s.detalles.map(d => ({
-                    id: d.detalleImgId.toString(),
-                    tipo: 'Imagenología',
-                    estudio: d.examen.nombre,
-                    fecha: s.fechaSolicitud
-                })))
-            ]
+            ordenes: app.ordenEstudio
+                ? app.ordenEstudio.detalles.map(d => ({
+                    id: d.detalleId.toString(),
+                    estudio: d.estudio,
+                    tipo: d.tipo,
+                }))
+                : []
         };
 
         return NextResponse.json(formatted);

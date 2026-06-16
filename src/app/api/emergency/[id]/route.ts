@@ -101,6 +101,10 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
             data.medicoId = data.medicoId ? BigInt(data.medicoId) : null;
         }
 
+        // CRITICAL: Track if we're ONLY updating CartaAval (not changing emergency status)
+        // If yes, skip the automatic billing consolidation logic entirely
+        const isOnlyUpdatingCartaAval = cartaAvalData && !data.estadoEmergencia;
+
         // Auto-set fechaAlta when status is ALTA, ATENDIDO or REFERIDO
         if (data.estadoEmergencia === 'ALTA' || data.estadoEmergencia === 'REFERIDO' || data.estadoEmergencia === 'ATENDIDO') {
             data.fechaAlta = new Date();
@@ -117,7 +121,8 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
         // ── AUTOMATIC BILLING ON DISCHARGE ───────────────────────────
         // When status is 'ALTA', consolidate pending charges into a draft invoice.
         // Factura links directly to emergenciaId + pacienteId (no cita dependency).
-        if (data.estadoEmergencia === 'ALTA') {
+        // CRITICAL: Never execute this if we're ONLY updating CartaAval!
+        if (data.estadoEmergencia === 'ALTA' && !isOnlyUpdatingCartaAval) {
             try {
                 // Fix Bug #3: use consistent userId extraction pattern
                 const emisorId = BigInt(
@@ -224,13 +229,15 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
                             },
                         });
                     } else if (existingFactura.estadoFactura === 'EN_REVISION' || existingFactura.estadoFactura === 'PENDIENTE') {
+                        // ⚠️ CRITICAL: NEVER modify a factura that is already APROBADA or beyond
+                        // If somehow we reach here with an approved factura, skip this update
                         const invoiceNumber = existingFactura.numeroFactura || newInvoiceNumber;
-                        
+
                         // First delete old details to avoid duplicates
                         await tx.facturaDetalle.deleteMany({
                             where: { facturaId: existingFactura.facturaId }
                         });
-                        
+
                         await tx.factura.update({
                             where: { facturaId: existingFactura.facturaId },
                             data: {
@@ -242,6 +249,9 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
                                 observaciones: `Actualizada en Alta Médica. Cargos consolidados: ${pendingCargos.length}`
                             }
                         });
+                    } else {
+                        // Factura exists but is in APROBADA or later state — NEVER touch it
+                        console.warn(`[Emergency] Factura #${existingFactura.numeroFactura} (ID: ${existingFactura.facturaId}) is in state ${existingFactura.estadoFactura}. Skipping consolidation to prevent data loss.`);
                     }
 
                     // 5. Mark charges as FACTURADO
@@ -277,8 +287,12 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
         }
 
         // Upsert Carta Aval
+        // CRITICAL: Updating CartaAval should NOT affect the factura or its billing state
+        // Only when CREATING (not updating) and setting to APROBADA should we update emergency payment verification
         if (cartaAvalData) {
             if (cartaAvalData.cartaAvalId) {
+                // ⚠️ IMPORTANT: When updating CartaAval, DO NOT change emergency payment verification
+                // Even if rejecting CartaAval, the factura and its charges should remain intact
                 await (prisma as any).cartaAval.update({
                     where: { cartaAvalId: BigInt(cartaAvalData.cartaAvalId) },
                     data: {
@@ -287,8 +301,13 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
                         observaciones: cartaAvalData.observaciones,
                         ...(cartaAvalData.estado === "APROBADA" || cartaAvalData.estado === "RECHAZADA" ? { fechaRespuesta: new Date() } : {})
                     }
+                    // NOTE: We explicitly do NOT update emergencia.verificacionPago or tipoPago here
+                    // because updating CartaAval from APROBADA to RECHAZADA should not affect billing
                 });
             } else {
+                // Only when CREATING a new CartaAval and setting it to APROBADA should we update payment verification
+                const shouldUpdatePaymentVerification = cartaAvalData.estado === "APROBADA";
+
                 await (prisma as any).cartaAval.create({
                     data: {
                         emergenciaId: BigInt(id),
@@ -300,6 +319,17 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
                         ...(cartaAvalData.estado === "APROBADA" || cartaAvalData.estado === "RECHAZADA" ? { fechaRespuesta: new Date() } : {})
                     }
                 });
+
+                // Only update emergency verification if we created a new APROBADA CartaAval
+                if (shouldUpdatePaymentVerification) {
+                    await (prisma as any).emergencia.update({
+                        where: { emergenciaId: BigInt(id) },
+                        data: {
+                            verificacionPago: 'CONFIRMADO',
+                            tipoPago: 'ASEGURADO'
+                        }
+                    });
+                }
             }
         }
 

@@ -75,48 +75,19 @@ export async function POST(req: NextRequest) {
                 });
             }
 
-            // 3. Create Orders (Laboratory / Radiology)
+            // 3. Create Orders (free-text, for patient reference only — not connected to lab/img modules)
             if (ordenes && ordenes.length > 0) {
-                for (const order of ordenes) {
-                    const tipoNormalizado = order.tipo?.toLowerCase() || "";
-                    if (tipoNormalizado.includes("lab")) {
-                        // Find or Create Exam record
-                        let examen = await tx.examenLaboratorio.findFirst({
-                            where: { nombre: { equals: order.estudio, mode: 'insensitive' } }
-                        });
-                        if (!examen) {
-                            examen = await tx.examenLaboratorio.create({ data: { nombre: order.estudio, precio: 0 } });
+                await tx.ordenEstudio.create({
+                    data: {
+                        citaId: BigInt(citaId),
+                        detalles: {
+                            create: ordenes.map((o: any) => ({
+                                estudio: o.estudio,
+                                tipo: o.tipo,
+                            }))
                         }
-                        // Create Request
-                        await tx.solicitudLaboratorio.create({
-                            data: {
-                                citaId: BigInt(citaId),
-                                usuarioSolicita: usuarioId,
-                                detalles: {
-                                    create: { examenId: examen.examenId }
-                                }
-                            }
-                        });
-                    } else if (tipoNormalizado.includes("img") || tipoNormalizado.includes("rayo") || tipoNormalizado.includes("eco")) {
-                        // Find or Create Exam record
-                        let examen = await tx.examenImagenologia.findFirst({
-                            where: { nombre: { equals: order.estudio, mode: 'insensitive' } }
-                        });
-                        if (!examen) {
-                            examen = await tx.examenImagenologia.create({ data: { nombre: order.estudio, precio: 0 } });
-                        }
-                        // Create Request
-                        await tx.solicitudImagenologia.create({
-                            data: {
-                                citaId: BigInt(citaId),
-                                usuarioSolicita: usuarioId,
-                                detalles: {
-                                    create: { examenId: examen.examenId }
-                                }
-                            }
-                        });
                     }
-                }
+                });
             }
 
             // 4. Update Appointment Status

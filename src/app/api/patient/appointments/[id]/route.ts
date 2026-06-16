@@ -48,11 +48,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
                 receta: {
                     include: { detalles: true }
                 },
-                solicitudesLab: {
-                    include: { detalles: { include: { examen: true } } }
-                },
-                solicitudesImg: {
-                    include: { detalles: { include: { examen: true } } }
+                ordenEstudio: {
+                    include: { detalles: true }
                 }
             } as any
         });
@@ -122,14 +119,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
                     instrucciones: d.instrucciones
                 }))
             } : null,
-            ordenes: [
-                ...((app as any).solicitudesLab || []).flatMap((sol: any) => 
-                    sol.detalles.map((det: any) => ({ tipo: 'Laboratorio', estudio: det.examen.nombre }))
-                ),
-                ...((app as any).solicitudesImg || []).flatMap((sol: any) => 
-                    sol.detalles.map((det: any) => ({ tipo: 'Imagenología', estudio: det.examen.nombre }))
-                )
-            ]
+            ordenes: (app as any).ordenEstudio
+                ? (app as any).ordenEstudio.detalles.map((d: any) => ({
+                    estudio: d.estudio,
+                    tipo: d.tipo,
+                }))
+                : []
         };
 
         return NextResponse.json(formatted);

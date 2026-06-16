@@ -179,6 +179,7 @@ model CitaMedica {
   solicitudesImg    SolicitudImagenologia[]
   diagnostico       Diagnostico?
   receta            Receta?
+  ordenEstudio      OrdenEstudio?
   cartasAval        CartaAval[]
   emergencia        Emergencia?
   cargosCuenta      CargoCuentaPaciente[]
@@ -756,6 +757,26 @@ model RecetaDetalle {
   receta        Receta  @relation(fields: [recetaId], references: [recetaId], onDelete: Cascade)
 
   @@map("receta_detalle")
+}
+
+model OrdenEstudio {
+  ordenId  BigInt                @id @default(autoincrement()) @map("orden_id")
+  citaId   BigInt                @unique @map("cita_id")
+  fecha    DateTime              @default(now()) @db.Date
+  detalles OrdenEstudioDetalle[]
+  cita     CitaMedica            @relation(fields: [citaId], references: [citaId], onDelete: Cascade)
+
+  @@map("orden_estudio")
+}
+
+model OrdenEstudioDetalle {
+  detalleId BigInt       @id @default(autoincrement()) @map("detalle_id")
+  ordenId   BigInt       @map("orden_id")
+  estudio   String       @db.VarChar(255)
+  tipo      String       @db.VarChar(80)
+  orden     OrdenEstudio @relation(fields: [ordenId], references: [ordenId], onDelete: Cascade)
+
+  @@map("orden_estudio_detalle")
 }
 
 model HistoriaClinica {
