@@ -9,6 +9,7 @@ import { FormInput } from "@/components/auth/FormInput";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
+import { validatePassword } from "@/lib/validations/password";
 
 const baseSchema = z.object({
     nombres: z.string()
@@ -43,7 +44,10 @@ const baseSchema = z.object({
 });
 
 const createSchema = baseSchema.extend({
-    password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
+    password: z.string()
+        .min(8, "La contraseña debe tener al menos 8 caracteres")
+        .refine(p => /[A-Z]/.test(p), "La contraseña debe tener al menos una letra mayúscula")
+        .refine(p => /[0-9]/.test(p), "La contraseña debe tener al menos un número"),
 });
 
 const editSchema = baseSchema.extend({

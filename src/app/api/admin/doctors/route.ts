@@ -18,7 +18,10 @@ const createDoctorSchema = z.object({
     numeroColegiatura: z.string().optional(),
     fechaIngreso: z.string().optional(),
     email: z.string().email("Email inválido"),
-    password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
+    password: z.string()
+        .min(8, "La contraseña debe tener al menos 8 caracteres")
+        .refine(p => /[A-Z]/.test(p), "La contraseña debe tener al menos una letra mayúscula")
+        .refine(p => /[0-9]/.test(p), "La contraseña debe tener al menos un número"),
 });
 
 export async function POST(req: NextRequest) {
