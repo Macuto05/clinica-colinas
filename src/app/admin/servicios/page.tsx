@@ -14,11 +14,11 @@ export default async function ServiciosPage() {
     const [labRaw, imgRaw] = await Promise.all([
         (prisma as any).examenLaboratorio.findMany({
             select: { examenId: true, nombre: true, descripcion: true, precio: true, activo: true },
-            orderBy: { nombre: "asc" },
+            orderBy: { examenId: "asc" },
         }),
         (prisma as any).examenImagenologia.findMany({
             select: { examenId: true, nombre: true, descripcion: true, precio: true, activo: true },
-            orderBy: { nombre: "asc" },
+            orderBy: { examenId: "asc" },
         }),
     ]);
 
@@ -39,7 +39,7 @@ export default async function ServiciosPage() {
             activo:      e.activo,
             tipo:        "imagenologia" as const,
         })),
-    ].sort((a, b) => a.nombre.localeCompare(b.nombre));
+    ].sort((a, b) => Number(a.examenId) - Number(b.examenId));
 
     return <ServiciosTable servicios={servicios} />;
 }

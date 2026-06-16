@@ -5,6 +5,7 @@ import { Shield, Plus, Search, Loader2, Edit2, ToggleLeft, ToggleRight, Phone, M
 import { FormInput } from "@/components/auth/FormInput";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { Select } from "@/components/ui/Select";
 
 interface PlanCobertura {
     nombre: string;
@@ -49,6 +50,10 @@ export default function AseguradorasPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // RIF split state
+    const [rifTipo, setRifTipo] = useState<"J-" | "V-" | "E-" | "G-">("J-");
+    const [rifNumero, setRifNumero] = useState("");
+
     // Plan input
     const [planNombreInput, setPlanNombreInput] = useState("");
     const [planMontoInput, setPlanMontoInput] = useState("");
@@ -88,9 +93,19 @@ export default function AseguradorasPage() {
     const totalPages = Math.ceil(filtered.length / pageSize);
     const paginatedData = filtered.slice((page - 1) * pageSize, page * pageSize);
 
+    const parseRif = (rif: string) => {
+        const prefixes = ["J-", "V-", "E-", "G-"] as const;
+        const found = prefixes.find(p => rif.startsWith(p));
+        return found
+            ? { tipo: found, numero: rif.slice(found.length) }
+            : { tipo: "J-" as const, numero: rif };
+    };
+
     const openCreate = () => {
         setEditingId(null);
         setForm(emptyForm);
+        setRifTipo("J-");
+        setRifNumero("");
         setPlanNombreInput("");
         setPlanMontoInput("");
         setError(null);
@@ -99,6 +114,9 @@ export default function AseguradorasPage() {
 
     const openEdit = (a: Aseguradora) => {
         setEditingId(a.aseguradoraId);
+        const rif = parseRif(a.rifNif || "");
+        setRifTipo(rif.tipo);
+        setRifNumero(rif.numero);
         setForm({
             nombre: a.nombre,
             rifNif: a.rifNif || "",
@@ -115,23 +133,29 @@ export default function AseguradorasPage() {
     };
 
     const handleSave = async () => {
-        if (!form.nombre.trim()) { setError("El nombre es obligatorio."); return; }
+        if (!form.nombre.trim()) { setError("El nombre de la aseguradora es obligatorio."); return; }
+        if (!rifNumero.trim()) { setError("El RIF/NIF es obligatorio."); return; }
+        if (!form.telefono.trim()) { setError("El teléfono es obligatorio."); return; }
+        if (!form.correo.trim()) { setError("El correo electrónico es obligatorio."); return; }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo)) { setError("El correo electrónico no tiene un formato válido."); return; }
+        if (!form.direccion.trim()) { setError("La dirección fiscal es obligatoria."); return; }
         setIsSaving(true);
         setError(null);
 
         try {
             const url = editingId ? `/api/admin/insurers/${editingId}` : "/api/admin/insurers";
             const method = editingId ? "PUT" : "POST";
+            const rifNifCombinado = `${rifTipo}${rifNumero}`;
 
             const res = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     ...form,
-                    rifNif: form.rifNif || null,
-                    telefono: form.telefono || null,
-                    correo: form.correo || null,
-                    direccion: form.direccion || null,
+                    rifNif: rifNifCombinado,
+                    telefono: form.telefono,
+                    correo: form.correo,
+                    direccion: form.direccion,
                     planesCobertura: form.planesCobertura,
                 })
             });
@@ -334,17 +358,37 @@ export default function AseguradorasPage() {
                             />
 
                             <div className="grid grid-cols-2 gap-4">
-                                <FormInput
-                                    label="RIF / NIF"
-                                    value={form.rifNif}
-                                    onChange={e => setForm({ ...form, rifNif: e.target.value })}
-                                    placeholder="J-12345678-9"
-                                />
+                                <div className="space-y-2">
+                                    <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider ml-1">
+                                        RIF / NIF
+                                    </label>
+                                    <div className="flex gap-2">
+                                        <div className="w-20 flex-shrink-0">
+                                            <Select
+                                                value={rifTipo}
+                                                onChange={e => setRifTipo(e.target.value as any)}
+                                                options={[
+                                                    { value: "J-", label: "J-" },
+                                                    { value: "V-", label: "V-" },
+                                                    { value: "E-", label: "E-" },
+                                                    { value: "G-", label: "G-" },
+                                                ]}
+                                            />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <FormInput
+                                                value={rifNumero}
+                                                onChange={e => setRifNumero(e.target.value.replace(/[^0-9-]/g, ""))}
+                                                placeholder="12345678-9"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
                                 <FormInput
                                     label="Teléfono"
                                     value={form.telefono}
-                                    onChange={e => setForm({ ...form, telefono: e.target.value })}
-                                    placeholder="0212-1234567"
+                                    onChange={e => setForm({ ...form, telefono: e.target.value.replace(/[^0-9]/g, "") })}
+                                    placeholder="02121234567"
                                 />
                             </div>
 
@@ -422,7 +466,7 @@ export default function AseguradorasPage() {
                             )}
 
                             {form.planesCobertura.length === 0 && (
-                                <p className="text-xs text-gray-300 italic">Aún no hay planes definidos.</p>
+                                <p className="text-xs text-gray-500 italic">Aún no hay planes definidos.</p>
                             )}
 
                             {/* Add plan inputs */}
@@ -436,7 +480,7 @@ export default function AseguradorasPage() {
                                     className="flex-[2] min-w-0 px-4 py-2.5 rounded-2xl border border-white/60 bg-white/50 backdrop-blur-sm text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lime-400/50 transition-all"
                                 />
                                 <div className="relative flex-1 min-w-0">
-                                    <DollarSign size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                    <DollarSign size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" />
                                     <input
                                         type="number"
                                         min="0"
@@ -444,7 +488,7 @@ export default function AseguradorasPage() {
                                         value={planMontoInput}
                                         onChange={e => setPlanMontoInput(e.target.value)}
                                         onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPlan(); } }}
-                                        placeholder="Monto USD"
+                                        placeholder="Monto"
                                         className="w-full pl-8 pr-4 py-2.5 rounded-2xl border border-white/60 bg-white/50 backdrop-blur-sm text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lime-400/50 transition-all"
                                     />
                                 </div>

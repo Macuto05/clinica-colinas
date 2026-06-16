@@ -33,7 +33,7 @@ function ServicioModal({ isOpen, onClose, onSaved, servicio }: ModalProps) {
 
     const [nombre,      setNombre]      = useState(servicio?.nombre      ?? "");
     const [descripcion, setDescripcion] = useState(servicio?.descripcion ?? "");
-    const [precio,      setPrecio]      = useState(servicio?.precio?.toString() ?? "0");
+    const [precio,      setPrecio]      = useState(servicio?.precio?.toString() ?? "");
     const [activo,      setActivo]      = useState(servicio?.activo      ?? true);
     const [tipo,        setTipo]        = useState<"laboratorio" | "imagenologia">(
         servicio?.tipo ?? "laboratorio"
@@ -46,7 +46,7 @@ function ServicioModal({ isOpen, onClose, onSaved, servicio }: ModalProps) {
             document.body.style.overflow = "hidden";
             setNombre(servicio?.nombre ?? "");
             setDescripcion(servicio?.descripcion ?? "");
-            setPrecio(servicio?.precio?.toString() ?? "0");
+            setPrecio(servicio?.precio?.toString() ?? "");
             setActivo(servicio?.activo ?? true);
             setTipo(servicio?.tipo ?? "laboratorio");
             setError(null);
@@ -209,7 +209,7 @@ function ServicioModal({ isOpen, onClose, onSaved, servicio }: ModalProps) {
                             required
                             min="0"
                             step="0.01"
-                            placeholder="0.00"
+                            placeholder="Ej. 25.00"
                             className="w-full px-4 py-3 rounded-xl bg-white/60 border border-white/70 focus:border-lime-400/60 focus:ring-2 focus:ring-lime-400/20 outline-none text-sm font-medium text-gray-900 placeholder:text-gray-400 transition-all"
                         />
                     </div>
@@ -387,7 +387,6 @@ export function ServiciosTable({ servicios }: ServiciosTableProps) {
                     <table className="min-w-full">
                         <thead>
                             <tr className="bg-white/30 border-b border-white/40">
-                                <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-gray-500/80">ID</th>
                                 <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-gray-500/80">Nombre</th>
                                 <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-gray-500/80">Descripción</th>
                                 <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-gray-500/80">Precio</th>
@@ -399,10 +398,6 @@ export function ServiciosTable({ servicios }: ServiciosTableProps) {
                         <tbody className="divide-y divide-white/40">
                             {filtrados.map(s => (
                                 <tr key={`${s.tipo}-${s.examenId}`} className="hover:bg-white/60 transition-colors group">
-
-                                    <td className="px-6 py-5 whitespace-nowrap text-sm font-bold text-gray-400">
-                                        #{s.examenId.padStart(4, "0")}
-                                    </td>
 
                                     <td className="px-6 py-5 whitespace-nowrap">
                                         <span className="text-sm font-black text-gray-900 tracking-tight">
@@ -462,7 +457,7 @@ export function ServiciosTable({ servicios }: ServiciosTableProps) {
 
                             {filtrados.length === 0 && (
                                 <tr>
-                                    <td colSpan={7} className="py-20 text-center">
+                                    <td colSpan={6} className="py-20 text-center">
                                         <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">
                                             No se encontraron servicios con esos filtros.
                                         </p>
