@@ -36,6 +36,7 @@ export function DoctorActions({ doctor, specialties }: DoctorActionsProps) {
         apellidos:           doctor.empleado.apellidos,
         documentoIdentidad:  doctor.empleado.documentoIdentidad,
         telefono:            doctor.empleado.telefono || "",
+        correoInstitucional: doctor.empleado.correoInstitucional || "",
         especialidad:        doctor.especialidadId.toString(),
         licenciaProfesional: doctor.licenciaProfesional || "",
         numeroColegiatura:   doctor.numeroColegiatura || "",
