@@ -11,13 +11,13 @@ const createDoctorSchema = z.object({
     nombres: z.string().min(2, "El nombre es requerido"),
     apellidos: z.string().min(2, "El apellido es requerido"),
     documentoIdentidad: z.string().min(5, "Documento de identidad requerido"),
-    telefono: z.string().optional(),
+    telefono: z.string().min(1, "Teléfono requerido"),
     especialidad: z.string().min(1, "Especialidad requerida"),
-    correoInstitucional: z.string().email().optional().or(z.literal("")),
-    licenciaProfesional: z.string().optional(),
-    numeroColegiatura: z.string().optional(),
-    fechaIngreso: z.string().optional(),
-    email: z.string().email("Email inválido"),
+    correoInstitucional: z.string().email("Correo de contacto inválido"),
+    licenciaProfesional: z.string().min(1, "Licencia profesional requerida"),
+    numeroColegiatura: z.string().min(1, "Número de colegiatura requerido"),
+    fechaIngreso: z.string().min(1, "Fecha de ingreso requerida"),
+    email: z.string().email("Email de acceso inválido"),
     password: z.string()
         .min(8, "La contraseña debe tener al menos 8 caracteres")
         .refine(p => /[A-Z]/.test(p), "La contraseña debe tener al menos una letra mayúscula")

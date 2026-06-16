@@ -9,7 +9,7 @@ import { FormInput } from "@/components/auth/FormInput";
 import { Select } from "@/components/ui/Select";
 import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
 
-const basePatientSchema = z.object({
+const patientBaseSchema = z.object({
     nombres: z
         .string()
         .min(2, "Nombre debe tener al menos 2 caracteres")
@@ -26,26 +26,31 @@ const basePatientSchema = z.object({
         .min(6, "Mínimo 6 dígitos")
         .max(12, "Máximo 12 dígitos")
         .regex(/^\d+$/, "Solo números"),
-    fechaNacimiento: z.string().optional(),
-    sexo: z.string().optional(),
+    fechaNacimiento: z.string().min(1, "Fecha de nacimiento requerida"),
+    sexo: z.string().min(1, "Sexo requerido"),
     phoneCode: z.enum(["0412-", "0414-", "0416-", "0424-", "0426-", "0422-"]),
     phoneNumber: z
         .string()
         .min(7, "Mínimo 7 dígitos")
         .max(7, "Máximo 7 dígitos")
         .regex(/^\d+$/, "Solo números"),
-    correo: z.string().email("Correo inválido").optional().or(z.literal("")),
-    direccion: z.string().optional(),
-    estado: z.enum(["ACTIVO", "INACTIVO", "BLOQUEADO", "FALLECIDO"]).optional(),
-    email: z.string().email("Email de usuario inválido").optional().or(z.literal("")),
-    usuarioEstado: z.enum(["ACTIVO", "INACTIVO", "BLOQUEADO"]).optional(),
-    password: z.string().optional(),
+    correo: z.string().email("Correo de contacto inválido"),
+    direccion: z.string().min(1, "Dirección requerida"),
+    email: z.string().email("Email de acceso inválido"),
 });
 
-const createPatientSchema = basePatientSchema.superRefine((data, ctx) => {
-    if (data.email && !data.password) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "La contraseña es requerida cuando se proporciona el correo de acceso", path: ["password"] });
-    }
+const createPatientSchema = patientBaseSchema.extend({
+    password: z.string()
+        .min(8, "Mínimo 8 caracteres")
+        .refine(p => /[A-Z]/.test(p), "Debe tener al menos una letra mayúscula")
+        .refine(p => /[0-9]/.test(p), "Debe tener al menos un número"),
+});
+
+const editPatientSchema = patientBaseSchema.extend({
+    estado: z.enum(["ACTIVO", "INACTIVO", "BLOQUEADO", "FALLECIDO"]),
+    usuarioEstado: z.enum(["ACTIVO", "INACTIVO", "BLOQUEADO"]),
+    password: z.string().optional(),
+}).superRefine((data, ctx) => {
     if (data.password) {
         if (data.password.length < 8)
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Mínimo 8 caracteres", path: ["password"] });
@@ -56,9 +61,15 @@ const createPatientSchema = basePatientSchema.superRefine((data, ctx) => {
     }
 });
 
-const editPatientSchema = basePatientSchema;
-
-type PatientFormData = z.infer<typeof basePatientSchema>;
+type PatientFormData = {
+    nombres: string; apellidos: string;
+    idType: "V-" | "E-" | "J-"; idNumber: string;
+    fechaNacimiento: string; sexo: string;
+    phoneCode: "0412-" | "0414-" | "0416-" | "0424-" | "0426-" | "0422-"; phoneNumber: string;
+    correo: string; direccion: string; email: string; password?: string;
+    estado?: "ACTIVO" | "INACTIVO" | "BLOQUEADO" | "FALLECIDO";
+    usuarioEstado?: "ACTIVO" | "INACTIVO" | "BLOQUEADO";
+};
 
 interface PatientFormProps {
     initialData?: any;
@@ -96,7 +107,7 @@ export default function PatientForm({ initialData, onClose, onSuccess }: Patient
         watch,
         reset,
     } = useForm<PatientFormData>({
-        resolver: zodResolver(isEditing ? editPatientSchema : createPatientSchema),
+        resolver: zodResolver(isEditing ? editPatientSchema : createPatientSchema) as any,
         defaultValues: {
             nombres: initialData?.nombres || "",
             apellidos: initialData?.apellidos || "",

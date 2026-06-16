@@ -8,25 +8,16 @@ const createPatientSchema = z.object({
     nombres: z.string().min(2, "El nombre es requerido"),
     apellidos: z.string().min(2, "El apellido es requerido"),
     documentoIdentidad: z.string().min(5, "Documento de identidad requerido"),
-    fechaNacimiento: z.string().optional(),
-    sexo: z.string().optional(),
-    telefono: z.string().optional(),
-    correo: z.string().email().optional().or(z.literal("")),
-    direccion: z.string().optional(),
-    email: z.string().email("Email de acceso inválido").optional().or(z.literal("")),
-    password: z.string().optional(),
-}).superRefine((data, ctx) => {
-    if (data.email && !data.password) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "La contraseña es requerida cuando se proporciona el correo de acceso", path: ["password"] });
-    }
-    if (data.password) {
-        if (data.password.length < 8)
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "La contraseña debe tener al menos 8 caracteres", path: ["password"] });
-        if (!/[A-Z]/.test(data.password))
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "La contraseña debe tener al menos una letra mayúscula", path: ["password"] });
-        if (!/[0-9]/.test(data.password))
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "La contraseña debe tener al menos un número", path: ["password"] });
-    }
+    fechaNacimiento: z.string().min(1, "Fecha de nacimiento requerida"),
+    sexo: z.string().min(1, "Sexo requerido"),
+    telefono: z.string().min(1, "Teléfono requerido"),
+    correo: z.string().email("Correo de contacto inválido"),
+    direccion: z.string().min(1, "Dirección requerida"),
+    email: z.string().email("Email de acceso inválido"),
+    password: z.string()
+        .min(8, "La contraseña debe tener al menos 8 caracteres")
+        .refine(p => /[A-Z]/.test(p), "La contraseña debe tener al menos una letra mayúscula")
+        .refine(p => /[0-9]/.test(p), "La contraseña debe tener al menos un número"),
 });
 
 export async function POST(req: NextRequest) {
@@ -45,33 +36,28 @@ export async function POST(req: NextRequest) {
         const data = validation.data;
 
         const result = await prisma.$transaction(async (tx) => {
-            let usuarioId: bigint | null = null;
+            const existing = await tx.usuario.findUnique({ where: { email: data.email } });
+            if (existing) throw new Error("Ya existe un usuario con ese correo electrónico");
 
-            if (data.email && data.password) {
-                const existing = await tx.usuario.findUnique({ where: { email: data.email } });
-                if (existing) throw new Error("Ya existe un usuario con ese correo electrónico");
+            const pacienteRole = await tx.rol.findUnique({ where: { nombre: "PACIENTE" } });
+            if (!pacienteRole) throw new Error("Rol PACIENTE no encontrado en el sistema");
 
-                const pacienteRole = await tx.rol.findUnique({ where: { nombre: "PACIENTE" } });
-                if (!pacienteRole) throw new Error("Rol PACIENTE no encontrado en el sistema");
-
-                const passwordHash = await bcrypt.hash(data.password, 10);
-                const usuario = await tx.usuario.create({
-                    data: { rolId: pacienteRole.rolId, email: data.email, passwordHash, estado: "ACTIVO" },
-                });
-                usuarioId = usuario.usuarioId;
-            }
+            const passwordHash = await bcrypt.hash(data.password, 10);
+            const usuario = await tx.usuario.create({
+                data: { rolId: pacienteRole.rolId, email: data.email, passwordHash, estado: "ACTIVO" },
+            });
 
             return tx.paciente.create({
                 data: {
-                    usuarioId,
+                    usuarioId: usuario.usuarioId,
                     nombres: data.nombres,
                     apellidos: data.apellidos,
-                    documentoIdentidad: data.documentoIdentidad || null,
-                    fechaNacimiento: data.fechaNacimiento ? new Date(data.fechaNacimiento) : null,
-                    sexo: data.sexo || null,
-                    telefono: data.telefono || null,
-                    correo: data.correo || null,
-                    direccion: data.direccion || null,
+                    documentoIdentidad: data.documentoIdentidad,
+                    fechaNacimiento: new Date(data.fechaNacimiento),
+                    sexo: data.sexo,
+                    telefono: data.telefono,
+                    correo: data.correo,
+                    direccion: data.direccion,
                     estado: "ACTIVO",
                 },
             });

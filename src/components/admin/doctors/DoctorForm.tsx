@@ -9,7 +9,6 @@ import { FormInput } from "@/components/auth/FormInput";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
-import { validatePassword } from "@/lib/validations/password";
 
 const baseSchema = z.object({
     nombres: z.string()
@@ -33,14 +32,11 @@ const baseSchema = z.object({
         .max(7, "Máximo 7 dígitos")
         .regex(/^\d+$/, "Solo números"),
     especialidad: z.string().min(1, "Especialidad requerida"),
-    correoInstitucional: z.string().email("Email inválido").optional().or(z.literal("")),
-    licenciaProfesional: z.string().optional(),
-    numeroColegiatura: z.string().optional(),
-    fechaIngreso: z.string().optional(),
-    email: z.string().email("Email inválido"),
-    activo: z.boolean().optional(),
-    estadoLaboral: z.string().optional(),
-    usuarioEstado: z.string().optional(),
+    correoInstitucional: z.string().email("Correo de contacto inválido"),
+    licenciaProfesional: z.string().min(1, "Licencia profesional requerida"),
+    numeroColegiatura: z.string().min(1, "Número de colegiatura requerido"),
+    fechaIngreso: z.string().min(1, "Fecha de ingreso requerida"),
+    email: z.string().email("Email de acceso inválido"),
 });
 
 const createSchema = baseSchema.extend({
@@ -52,6 +48,18 @@ const createSchema = baseSchema.extend({
 
 const editSchema = baseSchema.extend({
     password: z.string().optional(),
+    activo: z.boolean(),
+    estadoLaboral: z.string().min(1, "Estado laboral requerido"),
+    usuarioEstado: z.string().min(1, "Estado de usuario requerido"),
+}).superRefine((data, ctx) => {
+    if (data.password) {
+        if (data.password.length < 8)
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "La contraseña debe tener al menos 8 caracteres", path: ["password"] });
+        if (!/[A-Z]/.test(data.password))
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "La contraseña debe tener al menos una letra mayúscula", path: ["password"] });
+        if (!/[0-9]/.test(data.password))
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "La contraseña debe tener al menos un número", path: ["password"] });
+    }
 });
 
 export interface DoctorFormData {
