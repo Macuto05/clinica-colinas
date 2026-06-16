@@ -24,14 +24,19 @@ const insurerSchema = z.object({
 // GET — List all insurers
 export async function GET() {
     try {
-        const aseguradoras = await prisma.aseguradora.findMany({
-            orderBy: { nombre: 'asc' },
-            include: {
-                _count: { select: { polizas: true } }
-            }
-        });
+        const [aseguradoras, polizaCounts] = await Promise.all([
+            prisma.aseguradora.findMany({ orderBy: { nombre: "asc" } }),
+            (prisma as any).poliza.groupBy({
+                by: ["aseguradoraId"],
+                _count: { polizaId: true },
+            }),
+        ]);
 
-        const formatted = aseguradoras.map(a => ({
+        const countMap = new Map<string, number>(
+            polizaCounts.map((p: any) => [p.aseguradoraId.toString(), p._count.polizaId])
+        );
+
+        const formatted = aseguradoras.map((a: any) => ({
             aseguradoraId: a.aseguradoraId.toString(),
             nombre: a.nombre,
             rifNif: a.rifNif,
@@ -39,8 +44,8 @@ export async function GET() {
             correo: a.correo,
             direccion: a.direccion,
             activa: a.activa,
-            planesCobertura: (a as any).planesCobertura ?? [],
-            totalPolizas: a._count.polizas
+            planesCobertura: a.planesCobertura ?? [],
+            totalPolizas: countMap.get(a.aseguradoraId.toString()) ?? 0,
         }));
 
         return NextResponse.json(formatted);
@@ -72,21 +77,31 @@ export async function POST(req: NextRequest) {
 
         const { nombre, rifNif, telefono, correo, direccion, activa, planesCobertura } = result.data;
 
+        // Manual uniqueness checks for fields without @unique in schema
+        const [dupNombre, dupRif, dupTelefono, dupCorreo] = await Promise.all([
+            prisma.aseguradora.findFirst({ where: { nombre } }),
+            rifNif ? prisma.aseguradora.findFirst({ where: { rifNif } }) : null,
+            telefono ? (prisma.aseguradora as any).findFirst({ where: { telefono } }) : null,
+            correo ? (prisma.aseguradora as any).findFirst({ where: { correo } }) : null,
+        ]);
+
+        if (dupNombre) return NextResponse.json({ error: "Ya existe una aseguradora con ese nombre." }, { status: 409 });
+        if (dupRif) return NextResponse.json({ error: "Ya existe una aseguradora con ese RIF/NIF." }, { status: 409 });
+        if (dupTelefono) return NextResponse.json({ error: "Ya existe una aseguradora con ese teléfono." }, { status: 409 });
+        if (dupCorreo) return NextResponse.json({ error: "Ya existe una aseguradora con ese correo electrónico." }, { status: 409 });
+
         const newInsurer = await prisma.aseguradora.create({
-            data: { nombre, rifNif, telefono, correo, direccion, activa, planesCobertura: planesCobertura ?? [] } as any
+            data: { nombre, rifNif, telefono, correo, direccion, activa, planesCobertura: planesCobertura ?? [] } as any,
         });
 
         return NextResponse.json({
             success: true,
-            aseguradora: {
-                ...newInsurer,
-                aseguradoraId: newInsurer.aseguradoraId.toString()
-            }
+            aseguradora: { ...newInsurer, aseguradoraId: newInsurer.aseguradoraId.toString() },
         }, { status: 201 });
 
     } catch (error: any) {
-        if (error.code === 'P2002') {
-            return NextResponse.json({ error: "Ya existe una aseguradora con ese nombre o RIF" }, { status: 409 });
+        if (error.code === "P2002") {
+            return NextResponse.json({ error: "Ya existe una aseguradora con ese nombre o RIF." }, { status: 409 });
         }
         console.error("Error creating insurer:", error);
         return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });

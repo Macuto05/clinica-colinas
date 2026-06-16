@@ -70,6 +70,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
         }
 
         const { id } = await context.params;
+        const aseguradoraId = BigInt(id);
         const body = await req.json();
         const result = updateInsurerSchema.safeParse(body);
 
@@ -80,9 +81,24 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
             );
         }
 
+        const { nombre, rifNif, telefono, correo } = result.data;
+
+        // Uniqueness checks excluding this record
+        const [dupNombre, dupRif, dupTelefono, dupCorreo] = await Promise.all([
+            nombre ? prisma.aseguradora.findFirst({ where: { nombre, NOT: { aseguradoraId } } }) : null,
+            rifNif ? prisma.aseguradora.findFirst({ where: { rifNif, NOT: { aseguradoraId } } }) : null,
+            telefono ? (prisma.aseguradora as any).findFirst({ where: { telefono, NOT: { aseguradoraId } } }) : null,
+            correo ? (prisma.aseguradora as any).findFirst({ where: { correo, NOT: { aseguradoraId } } }) : null,
+        ]);
+
+        if (dupNombre) return NextResponse.json({ error: "Ya existe una aseguradora con ese nombre." }, { status: 409 });
+        if (dupRif) return NextResponse.json({ error: "Ya existe una aseguradora con ese RIF/NIF." }, { status: 409 });
+        if (dupTelefono) return NextResponse.json({ error: "Ya existe una aseguradora con ese teléfono." }, { status: 409 });
+        if (dupCorreo) return NextResponse.json({ error: "Ya existe una aseguradora con ese correo electrónico." }, { status: 409 });
+
         const updated = await prisma.aseguradora.update({
-            where: { aseguradoraId: BigInt(id) },
-            data: result.data
+            where: { aseguradoraId },
+            data: result.data,
         });
 
         return NextResponse.json({
