@@ -5,7 +5,6 @@ import { Shield, Plus, Search, Loader2, Edit2, ToggleLeft, ToggleRight, Phone, M
 import { FormInput } from "@/components/auth/FormInput";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { Select } from "@/components/ui/Select";
 
 interface PlanCobertura {
     nombre: string;
@@ -50,8 +49,7 @@ export default function AseguradorasPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // RIF split state
-    const [rifTipo, setRifTipo] = useState<"J-" | "V-" | "E-" | "G-">("J-");
+    // RIF state
     const [rifNumero, setRifNumero] = useState("");
 
     // Plan input
@@ -93,18 +91,9 @@ export default function AseguradorasPage() {
     const totalPages = Math.ceil(filtered.length / pageSize);
     const paginatedData = filtered.slice((page - 1) * pageSize, page * pageSize);
 
-    const parseRif = (rif: string) => {
-        const prefixes = ["J-", "V-", "E-", "G-"] as const;
-        const found = prefixes.find(p => rif.startsWith(p));
-        return found
-            ? { tipo: found, numero: rif.slice(found.length) }
-            : { tipo: "J-" as const, numero: rif };
-    };
-
     const openCreate = () => {
         setEditingId(null);
         setForm(emptyForm);
-        setRifTipo("J-");
         setRifNumero("");
         setPlanNombreInput("");
         setPlanMontoInput("");
@@ -114,9 +103,8 @@ export default function AseguradorasPage() {
 
     const openEdit = (a: Aseguradora) => {
         setEditingId(a.aseguradoraId);
-        const rif = parseRif(a.rifNif || "");
-        setRifTipo(rif.tipo);
-        setRifNumero(rif.numero);
+        const rifRaw = a.rifNif || "";
+        setRifNumero(rifRaw.startsWith("J-") ? rifRaw.slice(2) : rifRaw);
         setForm({
             nombre: a.nombre,
             rifNif: a.rifNif || "",
@@ -145,7 +133,7 @@ export default function AseguradorasPage() {
         try {
             const url = editingId ? `/api/admin/insurers/${editingId}` : "/api/admin/insurers";
             const method = editingId ? "PUT" : "POST";
-            const rifNifCombinado = `${rifTipo}${rifNumero}`;
+            const rifNifCombinado = `J-${rifNumero}`;
 
             const res = await fetch(url, {
                 method,
@@ -363,17 +351,8 @@ export default function AseguradorasPage() {
                                         RIF / NIF
                                     </label>
                                     <div className="flex gap-2">
-                                        <div className="w-20 flex-shrink-0">
-                                            <Select
-                                                value={rifTipo}
-                                                onChange={e => setRifTipo(e.target.value as any)}
-                                                options={[
-                                                    { value: "J-", label: "J-" },
-                                                    { value: "V-", label: "V-" },
-                                                    { value: "E-", label: "E-" },
-                                                    { value: "G-", label: "G-" },
-                                                ]}
-                                            />
+                                        <div className="flex-shrink-0 px-4 py-3 rounded-2xl border border-white/60 bg-white/50 backdrop-blur-md text-sm font-medium text-gray-700 shadow-inner">
+                                            J-
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <FormInput
