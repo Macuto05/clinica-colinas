@@ -78,9 +78,18 @@ export async function POST(req: Request) {
         const existingPatient = await prisma.paciente.findUnique({
             where: { documentoIdentidad }
         });
-
         if (existingPatient) {
-            return NextResponse.json({ error: "Ya existe un paciente con este documento" }, { status: 400 });
+            return NextResponse.json({ error: "Ya existe un paciente con ese documento de identidad." }, { status: 409 });
+        }
+
+        // Check Duplicates for Telefono
+        if (telefono) {
+            const existingTelefono = await (prisma.paciente as any).findFirst({
+                where: { telefono }
+            });
+            if (existingTelefono) {
+                return NextResponse.json({ error: "Ya existe un paciente con ese número de teléfono." }, { status: 409 });
+            }
         }
 
         let newUsuarioId: bigint | null = null;

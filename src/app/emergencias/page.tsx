@@ -187,6 +187,7 @@ function NewAdmissionModal({ onClose, onSuccess }: NewAdmissionModalProps) {
 
     // Quick patient creation
     const [newPatient, setNewPatient] = useState({ nombres: "", apellidos: "", documento: "", telefono: "" });
+    const [cedTipo, setCedTipo] = useState<"V-" | "E-">("V-");
 
     // Emergency data
     const [motivo, setMotivo] = useState("");
@@ -197,6 +198,7 @@ function NewAdmissionModal({ onClose, onSuccess }: NewAdmissionModalProps) {
 
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
     // Debounced search
     useEffect(() => {
@@ -217,6 +219,7 @@ function NewAdmissionModal({ onClose, onSuccess }: NewAdmissionModalProps) {
     const selectPatient = async (p: any) => {
         setSelectedPatient(p);
         setMode("selected");
+        setFieldErrors(prev => { const n = { ...prev }; delete n.paciente; return n; });
         setSearch("");
         setSearchResults([]);
         // Fetch active policies
@@ -236,24 +239,30 @@ function NewAdmissionModal({ onClose, onSuccess }: NewAdmissionModalProps) {
     const createAndSubmit = async () => {
         setError(null);
 
-        // Validate emergency data
-        if (!motivo.trim()) { setError("Escribe el motivo de ingreso."); return; }
+        const errs: Record<string, string> = {};
+        if (mode === "search" && !selectedPatient) errs.paciente = "Selecciona o registra un paciente.";
+        if (mode === "new-patient") {
+            if (!newPatient.nombres.trim()) errs.nombres = "Requerido";
+            if (!newPatient.apellidos.trim()) errs.apellidos = "Requerido";
+            if (!newPatient.documento.trim()) errs.documento = "Requerido";
+            if (!newPatient.telefono.trim()) errs.telefono = "Requerido";
+        }
+        if (!motivo.trim()) errs.motivo = "Escribe el motivo de ingreso.";
+        if (Object.keys(errs).length > 0) { setFieldErrors(errs); return; }
+        setFieldErrors({});
 
         setSaving(true);
         try {
             let pacienteId: string | null = null;
 
             if (mode === "new-patient") {
-                if (!newPatient.nombres || !newPatient.apellidos || !newPatient.documento) {
-                    setError("Nombre, apellido y documento son requeridos."); setSaving(false); return;
-                }
                 const res = await fetch("/api/reception/patients", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         nombres: newPatient.nombres,
                         apellidos: newPatient.apellidos,
-                        documentoIdentidad: newPatient.documento,
+                        documentoIdentidad: `${cedTipo}${newPatient.documento}`,
                         telefono: newPatient.telefono || null,
                     })
                 });
@@ -333,7 +342,7 @@ function NewAdmissionModal({ onClose, onSuccess }: NewAdmissionModalProps) {
                     <div className="p-5 flex flex-col gap-4">
 
                         {/* Sección 1: Identificar Paciente */}
-                        <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl p-4 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
+                        <section className={`bg-white/40 backdrop-blur-md rounded-2xl p-4 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] border ${fieldErrors.paciente ? "border-red-400/70" : "border-white/50"}`}>
                             <div className="flex items-center gap-2.5 mb-3">
                                 <span className="w-6 h-6 rounded-full bg-gray-900/90 text-white shadow-md text-[11px] font-black flex items-center justify-center">1</span>
                                 <h4 className="font-bold text-gray-800 text-sm">Identificar Paciente</h4>
@@ -368,10 +377,13 @@ function NewAdmissionModal({ onClose, onSuccess }: NewAdmissionModalProps) {
                                         </div>
                                     )}
 
-                                    <button onClick={() => setMode("new-patient")}
+                                    <button onClick={() => { setMode("new-patient"); setFieldErrors(prev => { const n={...prev}; delete n.paciente; return n; }); }}
                                         className="w-full py-3 border-2 border-dashed border-gray-300/60 rounded-2xl text-sm font-semibold text-gray-500 hover:border-red-400/60 hover:text-red-600 transition-colors flex items-center justify-center gap-2 bg-white/20 hover:bg-white/40">
-                                        <Plus size={16} /> Paciente no registrado — crear perfil
+                                        <Plus size={16} /> Paciente no registrado: crear perfil
                                     </button>
+                                    {fieldErrors.paciente && (
+                                        <p className="text-xs font-bold text-red-500 mt-1">{fieldErrors.paciente}</p>
+                                    )}
                                 </div>
                             )}
 
@@ -409,16 +421,33 @@ function NewAdmissionModal({ onClose, onSuccess }: NewAdmissionModalProps) {
                                 <div className="space-y-3 p-4 border-2 border-dashed border-red-300/50 rounded-2xl bg-red-50/40">
                                     <p className="text-xs font-bold text-red-600/80 uppercase tracking-wider flex items-center gap-1.5"><Heart size={13}/> Perfil de emergencia</p>
                                     <div className="grid grid-cols-2 gap-2.5">
-                                        <input placeholder="Nombres *" value={newPatient.nombres} onChange={e => setNewPatient({ ...newPatient, nombres: e.target.value })}
-                                            className="px-4 py-2.5 rounded-xl bg-white/60 border border-white/80 text-sm focus:bg-white focus:ring-2 focus:ring-red-300 outline-none shadow-sm transition-all font-medium placeholder:text-gray-400" />
-                                        <input placeholder="Apellidos *" value={newPatient.apellidos} onChange={e => setNewPatient({ ...newPatient, apellidos: e.target.value })}
-                                            className="px-4 py-2.5 rounded-xl bg-white/60 border border-white/80 text-sm focus:bg-white focus:ring-2 focus:ring-red-300 outline-none shadow-sm transition-all font-medium placeholder:text-gray-400" />
-                                        <input placeholder="Cédula / Documento *" value={newPatient.documento} onChange={e => setNewPatient({ ...newPatient, documento: e.target.value })}
-                                            className="px-4 py-2.5 rounded-xl bg-white/60 border border-white/80 text-sm focus:bg-white focus:ring-2 focus:ring-red-300 outline-none shadow-sm transition-all font-medium placeholder:text-gray-400" />
-                                        <input placeholder="Teléfono" value={newPatient.telefono} onChange={e => setNewPatient({ ...newPatient, telefono: e.target.value })}
-                                            className="px-4 py-2.5 rounded-xl bg-white/60 border border-white/80 text-sm focus:bg-white focus:ring-2 focus:ring-red-300 outline-none shadow-sm transition-all font-medium placeholder:text-gray-400" />
+                                        <input placeholder="Nombres *" value={newPatient.nombres}
+                                            onChange={e => { setNewPatient({ ...newPatient, nombres: e.target.value }); setFieldErrors(p => { const n={...p}; delete n.nombres; return n; }); }}
+                                            className={`px-4 py-2.5 rounded-xl bg-white/60 text-sm focus:bg-white focus:ring-2 focus:ring-red-300 outline-none shadow-sm transition-all font-medium placeholder:text-gray-400 border ${fieldErrors.nombres ? "border-red-400 bg-red-50/30" : "border-white/80"}`} />
+                                        <input placeholder="Apellidos *" value={newPatient.apellidos}
+                                            onChange={e => { setNewPatient({ ...newPatient, apellidos: e.target.value }); setFieldErrors(p => { const n={...p}; delete n.apellidos; return n; }); }}
+                                            className={`px-4 py-2.5 rounded-xl bg-white/60 text-sm focus:bg-white focus:ring-2 focus:ring-red-300 outline-none shadow-sm transition-all font-medium placeholder:text-gray-400 border ${fieldErrors.apellidos ? "border-red-400 bg-red-50/30" : "border-white/80"}`} />
+                                        <div className={`flex gap-1.5 rounded-xl overflow-hidden border ${fieldErrors.documento ? "border-red-400" : "border-white/80"}`}>
+                                            <select
+                                                value={cedTipo}
+                                                onChange={e => setCedTipo(e.target.value as "V-" | "E-")}
+                                                className="px-2 py-2.5 bg-white/70 text-sm font-bold text-gray-700 outline-none border-r border-white/60 shrink-0"
+                                            >
+                                                <option value="V-">V-</option>
+                                                <option value="E-">E-</option>
+                                            </select>
+                                            <input
+                                                placeholder="Cédula *"
+                                                value={newPatient.documento}
+                                                onChange={e => { setNewPatient({ ...newPatient, documento: e.target.value.replace(/\D/g, "") }); setFieldErrors(p => { const n={...p}; delete n.documento; return n; }); }}
+                                                className={`flex-1 min-w-0 px-3 py-2.5 bg-white/60 text-sm focus:bg-white outline-none transition-all font-medium placeholder:text-gray-400 ${fieldErrors.documento ? "bg-red-50/30" : ""}`}
+                                            />
+                                        </div>
+                                        <input placeholder="Teléfono *" value={newPatient.telefono}
+                                            onChange={e => { setNewPatient({ ...newPatient, telefono: e.target.value.replace(/[^0-9-]/g, "") }); setFieldErrors(p => { const n={...p}; delete n.telefono; return n; }); }}
+                                            className={`px-4 py-2.5 rounded-xl bg-white/60 text-sm focus:bg-white focus:ring-2 focus:ring-red-300 outline-none shadow-sm transition-all font-medium placeholder:text-gray-400 border ${fieldErrors.telefono ? "border-red-400 bg-red-50/30" : "border-white/80"}`} />
                                     </div>
-                                    <button onClick={() => { setMode("search"); setNewPatient({ nombres: "", apellidos: "", documento: "", telefono: "" }); }}
+                                    <button onClick={() => { setMode("search"); setNewPatient({ nombres: "", apellidos: "", documento: "", telefono: "" }); setCedTipo("V-"); }}
                                         className="text-xs font-bold text-gray-500 underline decoration-gray-300 hover:text-gray-800 transition-colors underline-offset-2">← Buscar paciente existente</button>
                                 </div>
                             )}
@@ -476,9 +505,12 @@ function NewAdmissionModal({ onClose, onSuccess }: NewAdmissionModalProps) {
 
                             <div>
                                 <label className="text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2 block">Motivo de Ingreso *</label>
-                                <textarea value={motivo} onChange={e => setMotivo(e.target.value)} rows={3}
+                                <textarea value={motivo}
+                                    onChange={e => { setMotivo(e.target.value); setFieldErrors(p => { const n={...p}; delete n.motivo; return n; }); }}
+                                    rows={3}
                                     placeholder="Describe la situación: síntomas, lesión, circunstancias..."
-                                    className="w-full px-5 py-4 rounded-2xl bg-white/50 border border-white/60 focus:bg-white/80 focus:ring-2 focus:ring-red-400/50 outline-none resize-none text-sm shadow-inner transition-all placeholder:text-gray-400 font-medium" />
+                                    className={`w-full px-5 py-4 rounded-2xl bg-white/50 focus:bg-white/80 focus:ring-2 focus:ring-red-400/50 outline-none resize-none text-sm shadow-inner transition-all placeholder:text-gray-400 font-medium border ${fieldErrors.motivo ? "border-red-400/70 bg-red-50/20" : "border-white/60"}`} />
+                                {fieldErrors.motivo && <p className="text-xs font-bold text-red-500 mt-1">{fieldErrors.motivo}</p>}
                             </div>
 
                             <div>

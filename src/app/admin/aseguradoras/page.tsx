@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Shield, Plus, Search, Loader2, Edit2, ToggleLeft, ToggleRight, Phone, Mail, Building2, Hash, Save, X, Tag, DollarSign } from "lucide-react";
+import { Shield, Plus, Search, Loader2, Edit2, ToggleLeft, ToggleRight, Phone, Mail, Building2, Save, X, Tag, DollarSign } from "lucide-react";
 import { FormInput } from "@/components/auth/FormInput";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
@@ -226,7 +226,6 @@ export default function AseguradorasPage() {
                                 <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Nombre</th>
                                 <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">RIF/NIF</th>
                                 <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Contacto</th>
-                                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Pólizas</th>
                                 <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Estado</th>
                                 <th className="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Acciones</th>
                             </tr>
@@ -234,7 +233,7 @@ export default function AseguradorasPage() {
                         <tbody className="divide-y divide-gray-200 dark:divide-zinc-800">
                             {filtered.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="py-12 text-center text-gray-400">
+                                    <td colSpan={5} className="py-12 text-center text-gray-400">
                                         {searchTerm ? "No se encontraron aseguradoras con ese criterio." : "No hay aseguradoras registradas."}
                                     </td>
                                 </tr>
@@ -257,11 +256,6 @@ export default function AseguradorasPage() {
                                             {a.correo && <div className="flex items-center gap-1"><Mail size={12} /> {a.correo}</div>}
                                             {!a.telefono && !a.correo && "—"}
                                         </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className="inline-flex items-center gap-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full text-xs font-semibold">
-                                            <Hash size={12} /> {a.totalPolizas}
-                                        </span>
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${a.activa
