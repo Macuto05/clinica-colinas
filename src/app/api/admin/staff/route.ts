@@ -16,7 +16,6 @@ const staffApiSchema = z.object({
         .min(8, "La contraseña debe tener al menos 8 caracteres")
         .refine(p => /[A-Z]/.test(p), "La contraseña debe tener al menos una letra mayúscula")
         .refine(p => /[0-9]/.test(p), "La contraseña debe tener al menos un número"),
-    estadoLaboral: z.enum(["ACTIVO", "VACACIONES", "LICENCIA", "SUSPENDIDO", "RETIRADO"]),
 });
 
 export async function POST(request: Request) {
@@ -65,7 +64,7 @@ export async function POST(request: Request) {
                     telefono: data.telefono,
                     correoInstitucional: data.correoInstitucional,
                     fechaIngreso: new Date(data.fechaIngreso),
-                    estadoLaboral: data.estadoLaboral as any,
+                    estadoLaboral: "ACTIVO",
                     usuarioId: newUser.usuarioId,
                 }
             });
