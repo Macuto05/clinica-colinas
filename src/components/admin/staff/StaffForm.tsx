@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
 
-const staffSchema = z.object({
+const staffBaseSchema = z.object({
     nombres: z.string()
         .min(2, "Nombre debe tener al menos 2 caracteres")
         .max(50, "Nombre muy largo")
@@ -29,16 +29,43 @@ const staffSchema = z.object({
         .min(7, "Mínimo 7 dígitos")
         .max(7, "Máximo 7 dígitos")
         .regex(/^\d+$/, "Solo números"),
-    correoInstitucional: z.string().email("Email inválido").optional().or(z.literal("")),
-    fechaIngreso: z.string().optional(),
+    correoInstitucional: z.string().email("Correo de contacto inválido"),
+    fechaIngreso: z.string().min(1, "Fecha de ingreso requerida"),
     rolId: z.string().min(1, "El rol es requerido"),
-    email: z.string().email("Email de usuario requerido"),
-    password: z.string().optional(),
-    estadoLaboral: z.enum(["ACTIVO", "VACACIONES", "LICENCIA", "SUSPENDIDO", "RETIRADO"]).optional(),
-    usuarioEstado: z.enum(["ACTIVO", "INACTIVO", "BLOQUEADO"]).optional(),
+    email: z.string().email("Email de acceso inválido"),
 });
 
-export type StaffFormData = z.infer<typeof staffSchema>;
+const createStaffSchema = staffBaseSchema.extend({
+    password: z.string()
+        .min(8, "La contraseña debe tener al menos 8 caracteres")
+        .refine(p => /[A-Z]/.test(p), "La contraseña debe tener al menos una letra mayúscula")
+        .refine(p => /[0-9]/.test(p), "La contraseña debe tener al menos un número"),
+});
+
+const editStaffSchema = staffBaseSchema.extend({
+    password: z.string().optional(),
+    estadoLaboral: z.enum(["ACTIVO", "VACACIONES", "LICENCIA", "SUSPENDIDO", "RETIRADO"]),
+    usuarioEstado: z.enum(["ACTIVO", "INACTIVO", "BLOQUEADO"]),
+}).superRefine((data, ctx) => {
+    if (data.password) {
+        if (data.password.length < 8)
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "La contraseña debe tener al menos 8 caracteres", path: ["password"] });
+        if (!/[A-Z]/.test(data.password))
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "La contraseña debe tener al menos una letra mayúscula", path: ["password"] });
+        if (!/[0-9]/.test(data.password))
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "La contraseña debe tener al menos un número", path: ["password"] });
+    }
+});
+
+export type StaffFormData = {
+    nombres: string; apellidos: string;
+    idType: "V-" | "E-" | "J-"; idNumber: string;
+    phoneCode: "0412-" | "0414-" | "0416-" | "0424-" | "0426-" | "0422-"; phoneNumber: string;
+    correoInstitucional: string; fechaIngreso: string;
+    rolId: string; email: string; password?: string;
+    estadoLaboral?: "ACTIVO" | "VACACIONES" | "LICENCIA" | "SUSPENDIDO" | "RETIRADO";
+    usuarioEstado?: "ACTIVO" | "INACTIVO" | "BLOQUEADO";
+};
 
 interface StaffFormProps {
     onSuccess: () => void;
@@ -76,7 +103,7 @@ export default function StaffForm({ onSuccess, onCancel, roles, initialData }: S
         reset,
         watch
     } = useForm<StaffFormData>({
-        resolver: zodResolver(staffSchema),
+        resolver: zodResolver(isEditing ? editStaffSchema : createStaffSchema) as any,
         mode: "onChange",
         defaultValues: initialData ? {
             ...initialData,
@@ -121,12 +148,6 @@ export default function StaffForm({ onSuccess, onCancel, roles, initialData }: S
     const onSubmit = async (data: StaffFormData) => {
         setIsLoading(true);
         setServerError(null);
-
-        if (!isEditing && (!data.password || data.password.length < 6)) {
-            setServerError("La contraseña es requerida y debe tener al menos 6 caracteres");
-            setIsLoading(false);
-            return;
-        }
 
         try {
             const url = isEditing

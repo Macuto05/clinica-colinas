@@ -4,16 +4,26 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 
 const updateStaffSchema = z.object({
-    nombres: z.string().optional(),
-    apellidos: z.string().optional(),
-    documentoIdentidad: z.string().optional(),
-    telefono: z.string().optional(),
-    correoInstitucional: z.string().optional(),
-    fechaIngreso: z.string().optional(),
-    rolId: z.string().optional(),
-    email: z.string().email().optional(),
+    nombres: z.string().min(2, "El nombre es requerido"),
+    apellidos: z.string().min(2, "El apellido es requerido"),
+    documentoIdentidad: z.string().min(5, "Documento de identidad requerido"),
+    telefono: z.string().min(1, "Teléfono requerido"),
+    correoInstitucional: z.string().email("Correo de contacto inválido"),
+    fechaIngreso: z.string().min(1, "Fecha de ingreso requerida"),
+    rolId: z.string().min(1, "El rol es requerido"),
+    email: z.string().email("Email de acceso inválido"),
     password: z.string().optional(),
-    estadoLaboral: z.enum(["ACTIVO", "VACACIONES", "LICENCIA", "SUSPENDIDO", "RETIRADO"]).optional(),
+    estadoLaboral: z.enum(["ACTIVO", "VACACIONES", "LICENCIA", "SUSPENDIDO", "RETIRADO"]),
+    usuarioEstado: z.enum(["ACTIVO", "INACTIVO", "BLOQUEADO"]),
+}).superRefine((data, ctx) => {
+    if (data.password) {
+        if (data.password.length < 8)
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "La contraseña debe tener al menos 8 caracteres", path: ["password"] });
+        if (!/[A-Z]/.test(data.password))
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "La contraseña debe tener al menos una letra mayúscula", path: ["password"] });
+        if (!/[0-9]/.test(data.password))
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "La contraseña debe tener al menos un número", path: ["password"] });
+    }
 });
 
 export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
@@ -25,14 +35,13 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
 
         if (!result.success) {
             return NextResponse.json(
-                { error: "Datos inválidos", details: result.error.flatten().fieldErrors },
+                { error: result.error.issues[0].message },
                 { status: 400 }
             );
         }
 
         const data = result.data;
 
-        // Find existing employee
         const employee = await prisma.empleado.findUnique({
             where: { empleadoId: id },
             include: { usuario: true }
@@ -42,9 +51,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
             return NextResponse.json({ error: "Empleado no encontrado" }, { status: 404 });
         }
 
-        // Transaction
         await prisma.$transaction(async (tx) => {
-            // Update Empleado
             await tx.empleado.update({
                 where: { empleadoId: id },
                 data: {
@@ -53,26 +60,24 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
                     documentoIdentidad: data.documentoIdentidad,
                     telefono: data.telefono,
                     correoInstitucional: data.correoInstitucional,
-                    fechaIngreso: data.fechaIngreso ? new Date(data.fechaIngreso) : undefined,
+                    fechaIngreso: new Date(data.fechaIngreso),
                     estadoLaboral: data.estadoLaboral as any,
                 }
             });
 
-            // Update User if exists
             if (employee.usuarioId) {
-                const updateData: any = {};
-                if (data.email) updateData.email = data.email;
-                if (data.rolId) updateData.rolId = BigInt(data.rolId);
-                if (data.password && data.password.length >= 6) {
-                    updateData.passwordHash = await bcrypt.hash(data.password, 10);
+                const userUpdateData: any = {
+                    email: data.email,
+                    rolId: BigInt(data.rolId),
+                    estado: data.usuarioEstado as any,
+                };
+                if (data.password && data.password.trim() !== "") {
+                    userUpdateData.passwordHash = await bcrypt.hash(data.password, 10);
                 }
-
-                if (Object.keys(updateData).length > 0) {
-                    await tx.usuario.update({
-                        where: { usuarioId: employee.usuarioId },
-                        data: updateData
-                    });
-                }
+                await tx.usuario.update({
+                    where: { usuarioId: employee.usuarioId },
+                    data: userUpdateData,
+                });
             }
         });
 
