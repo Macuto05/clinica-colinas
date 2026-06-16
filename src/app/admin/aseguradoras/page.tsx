@@ -48,6 +48,10 @@ export default function AseguradorasPage() {
     const [form, setForm] = useState<FormData>(emptyForm);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+    const clearFieldError = (field: string) =>
+        setFieldErrors(prev => { const n = { ...prev }; delete n[field]; return n; });
 
     // RIF state
     const [rifNumero, setRifNumero] = useState("");
@@ -98,6 +102,7 @@ export default function AseguradorasPage() {
         setPlanNombreInput("");
         setPlanMontoInput("");
         setError(null);
+        setFieldErrors({});
         setIsModalOpen(true);
     };
 
@@ -117,16 +122,20 @@ export default function AseguradorasPage() {
         setPlanNombreInput("");
         setPlanMontoInput("");
         setError(null);
+        setFieldErrors({});
         setIsModalOpen(true);
     };
 
     const handleSave = async () => {
-        if (!form.nombre.trim()) { setError("El nombre de la aseguradora es obligatorio."); return; }
-        if (!rifNumero.trim()) { setError("El RIF/NIF es obligatorio."); return; }
-        if (!form.telefono.trim()) { setError("El teléfono es obligatorio."); return; }
-        if (!form.correo.trim()) { setError("El correo electrónico es obligatorio."); return; }
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo)) { setError("El correo electrónico no tiene un formato válido."); return; }
-        if (!form.direccion.trim()) { setError("La dirección fiscal es obligatoria."); return; }
+        const errs: Record<string, string> = {};
+        if (!form.nombre.trim()) errs.nombre = "El nombre es obligatorio.";
+        if (!rifNumero.trim()) errs.rifNumero = "El RIF/NIF es obligatorio.";
+        if (!form.telefono.trim()) errs.telefono = "El teléfono es obligatorio.";
+        if (!form.correo.trim()) errs.correo = "El correo electrónico es obligatorio.";
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo)) errs.correo = "El correo no tiene un formato válido.";
+        if (!form.direccion.trim()) errs.direccion = "La dirección fiscal es obligatoria.";
+        if (Object.keys(errs).length > 0) { setFieldErrors(errs); return; }
+        setFieldErrors({});
         setIsSaving(true);
         setError(null);
 
@@ -340,9 +349,9 @@ export default function AseguradorasPage() {
                             <FormInput
                                 label="Nombre de la Aseguradora"
                                 value={form.nombre}
-                                onChange={e => setForm({ ...form, nombre: e.target.value })}
+                                onChange={e => { setForm({ ...form, nombre: e.target.value }); clearFieldError("nombre"); }}
                                 placeholder="Ej: Mercantil Seguros"
-                                required
+                                error={fieldErrors.nombre}
                             />
 
                             <div className="grid grid-cols-2 gap-4">
@@ -357,8 +366,9 @@ export default function AseguradorasPage() {
                                         <div className="flex-1 min-w-0">
                                             <FormInput
                                                 value={rifNumero}
-                                                onChange={e => setRifNumero(e.target.value.replace(/[^0-9-]/g, ""))}
+                                                onChange={e => { setRifNumero(e.target.value.replace(/[^0-9-]/g, "")); clearFieldError("rifNumero"); }}
                                                 placeholder="12345678-9"
+                                                error={fieldErrors.rifNumero}
                                             />
                                         </div>
                                     </div>
@@ -366,8 +376,9 @@ export default function AseguradorasPage() {
                                 <FormInput
                                     label="Teléfono"
                                     value={form.telefono}
-                                    onChange={e => setForm({ ...form, telefono: e.target.value.replace(/[^0-9]/g, "") })}
-                                    placeholder="02121234567"
+                                    onChange={e => { setForm({ ...form, telefono: e.target.value.replace(/[^0-9-]/g, "") }); clearFieldError("telefono"); }}
+                                    placeholder="0212-1234567"
+                                    error={fieldErrors.telefono}
                                 />
                             </div>
 
@@ -376,14 +387,16 @@ export default function AseguradorasPage() {
                                     label="Correo Electrónico"
                                     type="email"
                                     value={form.correo}
-                                    onChange={e => setForm({ ...form, correo: e.target.value })}
+                                    onChange={e => { setForm({ ...form, correo: e.target.value }); clearFieldError("correo"); }}
                                     placeholder="contacto@aseguradora.com"
+                                    error={fieldErrors.correo}
                                 />
                                 <FormInput
                                     label="Dirección Fiscal"
                                     value={form.direccion}
-                                    onChange={e => setForm({ ...form, direccion: e.target.value })}
+                                    onChange={e => { setForm({ ...form, direccion: e.target.value }); clearFieldError("direccion"); }}
                                     placeholder="Av. Principal, Caracas"
+                                    error={fieldErrors.direccion}
                                 />
                             </div>
 
