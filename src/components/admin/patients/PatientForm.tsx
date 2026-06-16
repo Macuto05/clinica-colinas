@@ -9,7 +9,7 @@ import { FormInput } from "@/components/auth/FormInput";
 import { Select } from "@/components/ui/Select";
 import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
 
-const patientSchema = z.object({
+const basePatientSchema = z.object({
     nombres: z
         .string()
         .min(2, "Nombre debe tener al menos 2 caracteres")
@@ -42,7 +42,23 @@ const patientSchema = z.object({
     password: z.string().optional(),
 });
 
-type PatientFormData = z.infer<typeof patientSchema>;
+const createPatientSchema = basePatientSchema.superRefine((data, ctx) => {
+    if (data.email && !data.password) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "La contraseña es requerida cuando se proporciona el correo de acceso", path: ["password"] });
+    }
+    if (data.password) {
+        if (data.password.length < 8)
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Mínimo 8 caracteres", path: ["password"] });
+        if (!/[A-Z]/.test(data.password))
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Debe tener al menos una letra mayúscula", path: ["password"] });
+        if (!/[0-9]/.test(data.password))
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Debe tener al menos un número", path: ["password"] });
+    }
+});
+
+const editPatientSchema = basePatientSchema;
+
+type PatientFormData = z.infer<typeof basePatientSchema>;
 
 interface PatientFormProps {
     initialData?: any;
@@ -80,7 +96,7 @@ export default function PatientForm({ initialData, onClose, onSuccess }: Patient
         watch,
         reset,
     } = useForm<PatientFormData>({
-        resolver: zodResolver(patientSchema),
+        resolver: zodResolver(isEditing ? editPatientSchema : createPatientSchema),
         defaultValues: {
             nombres: initialData?.nombres || "",
             apellidos: initialData?.apellidos || "",
