@@ -187,10 +187,10 @@ export function AppointmentActionModal({ isOpen, onClose, appointment, action, o
 
     return createPortal(
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in duration-200">
-            <div className={`bg-white/70 backdrop-blur-2xl backdrop-saturate-[1.2] w-full ${action === 'RESCHEDULE' ? 'max-w-2xl' : 'max-w-md'} rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.12)] border border-white/60 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200`}>
+            <div className={`bg-white/70 backdrop-blur-2xl backdrop-saturate-[1.2] w-full ${action === 'RESCHEDULE' ? 'max-w-5xl' : 'max-w-md'} rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.12)] border border-white/60 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200`}>
 
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-white/40 bg-white/30 shrink-0">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-white/40 bg-white/30 shrink-0">
                     <h3 className="text-lg font-bold text-gray-900 tracking-tight flex items-center gap-2">
                         {action === 'CONFIRM' && <><CheckCircle className="text-lime-600" size={20} /> Confirmar Asistencia</>}
                         {action === 'CANCEL' && <><Ban className="text-red-500" size={20} /> Cancelar Cita</>}
@@ -202,8 +202,8 @@ export function AppointmentActionModal({ isOpen, onClose, appointment, action, o
                 </div>
 
                 {/* Body */}
-                <div className="p-6 overflow-y-auto flex-1 space-y-6">
-                    <div className="mb-6 p-5 bg-white/40 backdrop-blur-md rounded-3xl border border-white/50 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
+                <div className="px-6 py-4 overflow-y-auto flex-1 space-y-4">
+                    <div className="mb-3 px-4 py-3 bg-white/40 backdrop-blur-md rounded-2xl border border-white/50 shadow-[0_4px_16px_0_rgba(0,0,0,0.02)]">
                         <div className="flex justify-between items-start">
                             <div>
                                 <p className="text-xs text-gray-500 uppercase tracking-wider font-bold mb-1">Paciente</p>
@@ -298,17 +298,17 @@ export function AppointmentActionModal({ isOpen, onClose, appointment, action, o
                     )}
 
                     {action === 'RESCHEDULE' && (
-                        <div className="space-y-6">
+                        <div className="space-y-4">
                             {rescheduleError && (
                                 <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm flex items-center gap-2">
                                     <AlertCircle size={16} /> {rescheduleError}
                                 </div>
                             )}
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500/80 uppercase tracking-wider mb-2">Nueva Fecha</label>
-                                    <div className="bg-white/50 border border-white/60 rounded-3xl overflow-hidden p-4 shadow-inner backdrop-blur-sm">
+                                    <div className="bg-white/50 border border-white/60 rounded-3xl overflow-hidden p-2 shadow-inner backdrop-blur-sm">
                                         <CustomCalendar
                                             value={newDate ? parse(newDate, 'yyyy-MM-dd', new Date()) : null}
                                             onChange={(d) => {
@@ -356,7 +356,7 @@ export function AppointmentActionModal({ isOpen, onClose, appointment, action, o
                                 </div>
                             </div>
 
-                            <div className="flex justify-between items-center pt-6 border-t border-white/40 mt-6 bg-white/30 backdrop-blur-sm -mx-6 -mb-6 p-6">
+                            <div className="flex justify-between items-center pt-4 border-t border-white/40 mt-2 bg-white/30 backdrop-blur-sm -mx-6 -mb-4 px-6 py-4">
                                 <div className="text-sm">
                                     {newDate && newTime && (
                                         <span className="flex items-center gap-2 text-lime-700 font-bold bg-lime-50/70 px-4 py-2 rounded-full border border-lime-200/50 shadow-sm backdrop-blur-md">

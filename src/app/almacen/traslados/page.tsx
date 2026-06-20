@@ -55,6 +55,7 @@ export default function TrasladosPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState("");
+    const [observaciones, setObservaciones] = useState("");
 
     // --- 1. Load Warehouses ---
     useEffect(() => {
@@ -102,7 +103,6 @@ export default function TrasladosPage() {
             cantidad: 1,
             stockDisponible: Number(item.cantidadActual)
         }]);
-        setSearchTerm(""); // clear search
     };
 
     const handleUpdateQuantity = (id: string, qty: number) => {
@@ -125,7 +125,7 @@ export default function TrasladosPage() {
                 usuarioId: user?.id || "1",
                 almacenId: origen,
                 almacenDestinoId: destino,
-                motivo: `Traslado manual de ${origen} a ${destino}`,
+                observaciones: observaciones.trim() || undefined,
                 items: selectedItems.map(i => ({
                     insumoId: i.insumoId,
                     cantidad: i.cantidad,
@@ -488,6 +488,20 @@ export default function TrasladosPage() {
                                     </div>
                                 ))}
                             </div>
+                        </div>
+
+                        {/* Observaciones */}
+                        <div className="space-y-3 mb-8">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+                                Observación / Motivo del Traslado <span className="font-medium normal-case tracking-normal text-gray-300">(opcional)</span>
+                            </label>
+                            <textarea
+                                placeholder="Ej: Reabastecimiento urgente solicitado por enfermería piso 1..."
+                                value={observaciones}
+                                onChange={(e) => setObservaciones(e.target.value)}
+                                rows={3}
+                                className="w-full px-5 py-4 rounded-2xl border border-white/60 bg-white/50 focus:bg-white/80 focus:ring-2 focus:ring-lime-500/50 outline-none text-sm font-medium shadow-inner transition-all placeholder:text-gray-400 resize-none"
+                            />
                         </div>
 
                         {error && (

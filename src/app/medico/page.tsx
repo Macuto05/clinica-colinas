@@ -71,7 +71,7 @@ export default function DoctorDashboard() {
     // Calcular estadísticas de citas
     const stats = {
         total: appointments.length,
-        pending: appointments.filter(a => !a.yaAtendida && a.estado !== 'CANCELADA').length,
+        pending: appointments.filter(a => !a.yaAtendida).length,
         done: appointments.filter(a => a.yaAtendida).length
     };
 
@@ -120,9 +120,9 @@ export default function DoctorDashboard() {
                                 <div className="text-center min-w-[80px]">
                                     <p className="text-lg font-bold text-gray-900 dark:text-white">{app.hora}</p>
                                     <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase
-                                        ${app.yaAtendida ? 'bg-lime-100 text-lime-700' : 'bg-gray-100 text-gray-600'}
+                                        ${app.estado === 'CONFIRMADA' ? 'bg-lime-100 text-lime-700' : 'bg-gray-100 text-gray-600'}
                                     `}>
-                                        {app.yaAtendida ? 'ATENDIDA' : 'PENDIENTE'}
+                                        {app.estado === 'CONFIRMADA' ? 'CONFIRMADA' : 'PROGRAMADA'}
                                     </span>
                                 </div>
 
@@ -164,13 +164,17 @@ export default function DoctorDashboard() {
                                         <Link href={`/medico/citas/${app.id}?view=history`} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors">
                                             Ver Historia
                                         </Link>
-                                    ) : (
+                                    ) : app.estado === 'CONFIRMADA' ? (
                                         <Link
                                             href={`/medico/citas/${app.id}`}
                                             className="inline-flex items-center gap-2 px-5 py-2.5 bg-lime-600 hover:bg-lime-700 text-white font-bold rounded-xl shadow-lg shadow-lime-500/30 transition-all hover:scale-105"
                                         >
                                             Atender <ArrowRight size={18} />
                                         </Link>
+                                    ) : (
+                                        <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-zinc-500 font-bold rounded-xl cursor-not-allowed">
+                                            Atender <ArrowRight size={18} />
+                                        </span>
                                     )}
                                 </div>
                             </div>

@@ -89,7 +89,7 @@ export const Calendar: React.FC<CalendarProps> = ({
 
     const renderHeader = () => {
         return (
-            <div className="flex items-center justify-between mb-4 px-2">
+            <div className="flex items-center justify-between mb-2 px-2">
                 <button
                     onClick={prevMonth}
                     className="p-1 hover:bg-gray-100 rounded-full transition-colors"
@@ -117,7 +117,7 @@ export const Calendar: React.FC<CalendarProps> = ({
     const renderDays = () => {
         const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
         return (
-            <div className="grid grid-cols-7 mb-2 gap-1">
+            <div className="grid grid-cols-7 mb-1 gap-1">
                 {days.map(day => (
                     <div key={day} className="text-center text-xs font-semibold text-gray-400 py-1">
                         {day}
@@ -158,7 +158,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                 const isCurrentMonth = isSameMonth(day, monthStart);
 
                 // Styling based on status
-                let cellClass = "relative h-12 w-full flex items-center justify-center rounded-lg text-sm font-medium transition-all duration-200 ";
+                let cellClass = "relative h-9 w-full flex items-center justify-center rounded-lg text-sm font-medium transition-all duration-200 ";
 
                 if (!isCurrentMonth) {
                     cellClass += "opacity-30 "; // Dim days from other months
@@ -202,9 +202,9 @@ export const Calendar: React.FC<CalendarProps> = ({
     };
 
     return (
-        <div className="bg-white rounded-2xl p-6 w-full shadow-nil border-nil">
+        <div className="bg-white rounded-2xl p-3 w-full shadow-nil border-nil">
             {/* Legend */}
-            <div className="flex gap-4 mb-4 text-xs">
+            <div className="flex gap-4 mb-2 text-xs">
                 <div className="flex items-center gap-1">
                     <div className="w-3 h-3 bg-lime-100 border border-lime-200 rounded"></div>
                     <span className="text-gray-600">Disponible</span>

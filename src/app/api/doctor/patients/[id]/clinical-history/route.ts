@@ -1,15 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma"; // Adjust path if needed
+import { prisma } from "@/lib/prisma";
+import { CLINICAL_HISTORY_SECTIONS } from "@/lib/clinical-history-config";
 
-// Helper to serialize BigInt
-const bigIntReplacer = (key: string, value: any) => {
-    if (typeof value === 'bigint') {
-        return value.toString();
-    }
+const bigIntReplacer = (_key: string, value: any) => {
+    if (typeof value === 'bigint') return value.toString();
     return value;
 };
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+// IDs de campos del examen físico (secciones p2_*)
+const PHYSICAL_EXAM_FIELD_IDS = new Set(
+    CLINICAL_HISTORY_SECTIONS
+        .filter(s => s.id.startsWith("p2_"))
+        .flatMap(s => s.fields.map(f => f.id))
+);
+
+function stripDate(value: string): string {
+    return value.replace(/\s*\d{2}\/\d{2}\/\d{4}$/, "").trimEnd();
+}
+
+function todayFormatted(): string {
+    const d = new Date();
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    return `${day}/${month}/${d.getFullYear()}`;
+}
+
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         const { id } = await params;
         const pacienteId = parseInt(id);
@@ -21,12 +37,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             where: { pacienteId: pacienteId }
         });
 
-        // Initialize empty if not found, but return structure so UI doesn't crash
         if (!historia) {
             return NextResponse.json({ contenido: {} });
         }
 
-        // Serialize BigInts if any (ID is Int, pacienteId is BigInt)
         const json = JSON.stringify(historia, bigIntReplacer);
         return new NextResponse(json, {
             headers: { 'Content-Type': 'application/json' }
@@ -43,23 +57,53 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         const { id } = await params;
         const pacienteId = parseInt(id);
         const body = await req.json();
-        // Body expected: { contenido: { ... }, updatedById: ... }
 
         if (isNaN(pacienteId)) {
             return NextResponse.json({ error: "ID de paciente inválido" }, { status: 400 });
         }
 
         const { contenido, updatedById } = body;
+        const dateStr = todayFormatted();
+
+        // Leer registro existente para comparar valores campo a campo
+        const existing = await prisma.historiaClinica.findUnique({
+            where: { pacienteId },
+            select: { contenido: true }
+        });
+        const oldContenido = (existing?.contenido ?? {}) as Record<string, any>;
+
+        // Procesar campos del examen físico: estampar fecha solo si el contenido cambió
+        const processedContenido: Record<string, any> = {};
+        for (const [key, newValue] of Object.entries(contenido as Record<string, any>)) {
+            if (PHYSICAL_EXAM_FIELD_IDS.has(key) && typeof newValue === "string") {
+                const oldRaw = typeof oldContenido[key] === "string" ? oldContenido[key] : "";
+                const oldStripped = stripDate(oldRaw);
+                const newStripped = stripDate(newValue);
+
+                if (newStripped === oldStripped) {
+                    // Sin cambio → conservar valor original con su fecha
+                    processedContenido[key] = oldRaw;
+                } else if (newStripped === "") {
+                    // Campo vaciado → guardar vacío, sin fecha
+                    processedContenido[key] = "";
+                } else {
+                    // Contenido nuevo o modificado → estampar fecha de hoy
+                    processedContenido[key] = `${newStripped} ${dateStr}`;
+                }
+            } else {
+                processedContenido[key] = newValue;
+            }
+        }
 
         const historia = await prisma.historiaClinica.upsert({
-            where: { pacienteId: pacienteId },
+            where: { pacienteId },
             update: {
-                contenido: contenido,
+                contenido: processedContenido,
                 updatedById: updatedById ? parseInt(updatedById) : null
             },
             create: {
-                pacienteId: pacienteId,
-                contenido: contenido || {},
+                pacienteId,
+                contenido: processedContenido,
                 updatedById: updatedById ? parseInt(updatedById) : null
             }
         });

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ClipboardList, Search, ArrowRight, ArrowLeft, ArrowUpRight, ArrowDownLeft, RefreshCw, Calendar, Filter, Loader2, FileText, XCircle } from "lucide-react";
+import { ClipboardList, Search, ArrowRight, ArrowLeft, ArrowUpRight, ArrowDownLeft, RefreshCw, Calendar, Filter, Loader2, FileText, XCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +39,8 @@ export default function MovimientosPage() {
     const [almacenes, setAlmacenes] = useState<Almacen[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [viewingDetails, setViewingDetails] = useState<Movimiento | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 10;
 
     // Filters
     const [selectedAlmacen, setSelectedAlmacen] = useState("");
@@ -59,7 +61,8 @@ export default function MovimientosPage() {
             if (startDate) params.append("startDate", startDate);
             if (endDate) params.append("endDate", endDate);
 
-            const res = await fetch(`/api/inventory/movements?${params.toString()}`);
+            setCurrentPage(1);
+            const res = await fetch(`/api/inventory/movements?${params.toString()}&limit=500`);
             if (res.ok) {
                 const data = await res.json();
                 setMovimientos(data);
@@ -89,6 +92,9 @@ export default function MovimientosPage() {
         return () => clearTimeout(timer);
     }, [selectedAlmacen, selectedTipo, startDate, endDate]);
 
+    // Reset page on text search change
+    useEffect(() => { setCurrentPage(1); }, [searchTerm]);
+
     // Client-side filtering for search term (Insumo name/code)
     const filteredMovimientos = movimientos.filter(m => {
         if (!searchTerm) return true;
@@ -98,6 +104,12 @@ export default function MovimientosPage() {
             d.insumo.codigo.toLowerCase().includes(term)
         ) || (m.referencia && m.referencia.toLowerCase().includes(term));
     });
+
+    const totalPages = Math.ceil(filteredMovimientos.length / ITEMS_PER_PAGE);
+    const paginatedMovimientos = filteredMovimientos.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
 
     const getBadgeStyle = (tipo: string) => {
         switch (tipo) {
@@ -178,7 +190,7 @@ export default function MovimientosPage() {
             </div>
 
             {/* Table */}
-            <div className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl overflow-hidden shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] min-h-[400px]">
+            <div className="bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl overflow-hidden shadow-[0_4px_16px_0_rgba(0,0,0,0.02)] min-h-[400px] flex flex-col">
                 {isLoading ? (
                     <div className="p-20 flex flex-col items-center justify-center gap-4">
                         <Loader2 className="animate-spin text-lime-600" size={40} />
@@ -190,7 +202,8 @@ export default function MovimientosPage() {
                         <p className="text-gray-500 font-medium">No se encontraron movimientos registrados.</p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto custom-scrollbar">
+                    <>
+                    <div className="overflow-x-auto custom-scrollbar flex-1">
                         <table className="w-full text-left text-sm border-collapse">
                             <thead>
                                 <tr className="bg-white/30 border-b border-white/40">
@@ -203,7 +216,7 @@ export default function MovimientosPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/30">
-                                {filteredMovimientos.map((mov) => {
+                                {paginatedMovimientos.map((mov) => {
                                     let displayName = mov.usuario.email;
                                     let empId = "";
 
@@ -263,13 +276,55 @@ export default function MovimientosPage() {
                             </tbody>
                         </table>
                     </div>
+
+                        {/* Pagination footer */}
+                        <div className="flex items-center justify-between px-6 py-4 border-t border-white/30 bg-white/20 mt-auto">
+                            <p className="text-xs font-medium text-gray-500">
+                                Mostrando{" "}
+                                <span className="font-black text-gray-700">
+                                    {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredMovimientos.length)}
+                                </span>{" "}
+                                de <span className="font-black text-gray-700">{filteredMovimientos.length}</span> movimientos
+                            </p>
+                            <div className="flex items-center gap-1">
+                                <button
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    disabled={currentPage === 1}
+                                    className="p-2 rounded-xl text-gray-500 hover:text-lime-700 hover:bg-white/60 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                >
+                                    <ChevronLeft size={16} />
+                                </button>
+                                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                                    <button
+                                        key={page}
+                                        onClick={() => setCurrentPage(page)}
+                                        className={cn(
+                                            "w-8 h-8 rounded-xl text-xs font-black transition-all",
+                                            page === currentPage
+                                                ? "bg-lime-500 text-white shadow-md shadow-lime-500/30"
+                                                : "text-gray-500 hover:text-lime-700 hover:bg-white/60"
+                                        )}
+                                    >
+                                        {page}
+                                    </button>
+                                ))}
+                                <button
+                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className="p-2 rounded-xl text-gray-500 hover:text-lime-700 hover:bg-white/60 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                >
+                                    <ChevronRight size={16} />
+                                </button>
+                            </div>
+                        </div>
+                    </>
                 )}
             </div>
             {/* View Details Modal */}
             {viewingDetails && (
-                <div className="fixed inset-0 bg-slate-900/30 z-50 flex items-center justify-center p-4 backdrop-blur-md transition-all animate-in fade-in duration-300">
-                    <div className="bg-white/70 backdrop-blur-2xl backdrop-saturate-[1.2] w-full max-w-lg rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.12)] border border-white/60 flex flex-col max-h-[85vh] animate-in zoom-in duration-300">
-                        <div className="p-8 border-b border-white/40 flex justify-between items-center bg-white/30 backdrop-blur-md shrink-0">
+                <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
+                    <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.18)] border border-gray-200 flex flex-col max-h-[85vh] animate-in zoom-in duration-300 overflow-hidden">
+                        <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-white shrink-0">
                             <div>
                                 <h3 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">
                                     <div className="p-2 bg-lime-500/10 rounded-xl">
@@ -281,12 +336,12 @@ export default function MovimientosPage() {
                                     {new Date(viewingDetails.fechaMovimiento).toLocaleDateString()} — {viewingDetails.tipoMovimiento}
                                 </p>
                             </div>
-                            <button onClick={() => setViewingDetails(null)} className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-white/50 transition-colors">✕</button>
+                            <button onClick={() => setViewingDetails(null)} className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors">✕</button>
                         </div>
-                        <div className="p-8 overflow-y-auto custom-scrollbar bg-white/20">
+                        <div className="p-8 overflow-y-auto bg-gray-50" style={{ overscrollBehavior: 'contain' }}>
                             <div className="space-y-4">
                                 {viewingDetails.detalles.map((d, idx) => (
-                                    <div key={idx} className="flex justify-between items-center p-5 bg-white/40 backdrop-blur-sm border border-white/50 rounded-2xl shadow-sm group hover:bg-white/60 transition-all">
+                                    <div key={idx} className="flex justify-between items-center p-5 bg-white border border-gray-100 rounded-2xl shadow-sm group hover:border-lime-200 transition-colors">
                                         <div>
                                             <p className="font-black text-gray-900 group-hover:text-lime-700 transition-colors">{d.insumo.nombre}</p>
                                             <p className="text-[10px] font-mono text-gray-400 mt-0.5">{d.insumo.codigo}</p>
@@ -316,8 +371,8 @@ export default function MovimientosPage() {
                                 ))}
                             </div>
                             {viewingDetails.observaciones && (
-                                <div className="mt-6 p-5 bg-amber-500/5 border border-amber-200/50 rounded-2xl">
-                                    <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest mb-1 shadow-none">Observaciones:</p>
+                                <div className="mt-6 p-5 bg-amber-50 border border-amber-200/50 rounded-2xl">
+                                    <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest mb-1">Observaciones:</p>
                                     <p className="text-sm text-gray-700 font-medium italic">"{viewingDetails.observaciones}"</p>
                                 </div>
                             )}
@@ -327,10 +382,10 @@ export default function MovimientosPage() {
                                 </div>
                             )}
                         </div>
-                        <div className="p-8 border-t border-white/40 bg-white/30 backdrop-blur-md shrink-0 text-right">
+                        <div className="p-8 border-t border-gray-100 bg-white shrink-0 text-right">
                             <button
                                 onClick={() => setViewingDetails(null)}
-                                className="px-8 py-3 bg-white/50 border border-white/60 text-gray-700 rounded-2xl text-sm font-bold transition-all hover:bg-white/80 active:scale-95 shadow-sm"
+                                className="px-8 py-3 bg-gray-100 border border-gray-200 text-gray-700 rounded-2xl text-sm font-bold transition-colors hover:bg-gray-200 active:scale-95 shadow-sm"
                             >
                                 Cerrar Detalle
                             </button>

@@ -147,7 +147,14 @@ export function BatchDetailsModal({ isOpen, onClose, insumo, filterAlmacenId }: 
                                 </div>
                                 <div>
                                     <h2 className="text-xl font-black text-gray-900 tracking-tight">{insumo.nombre}</h2>
-                                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">Código: {insumo.codigo}</p>
+                                    <div className="flex items-center gap-3 mt-1">
+                                        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Código: {insumo.codigo}</p>
+                                        {!isLoading && details.length > 0 && (
+                                            <span className="text-[10px] font-black uppercase tracking-widest bg-lime-500/10 text-lime-700 px-2.5 py-1 rounded-full border border-lime-200/50">
+                                                Stock Global: {details.reduce((sum, wh) => sum + wh.lotes.reduce((s, l) => s + l.cantidad, 0), 0)}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                             <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-white/50 rounded-full transition-colors">

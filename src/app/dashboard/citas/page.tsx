@@ -3,12 +3,13 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Calendar, Clock, Plus, FileText, ArrowRight, AlertCircle, Search, X as XIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, Clock, Plus, FileText, ArrowRight, AlertCircle, Search, X as XIcon, ChevronLeft, ChevronRight, CalendarClock, Ban } from "lucide-react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Modal } from "@/components/ui/Modal";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { AppointmentDetailsModal } from "./components/AppointmentDetailsModal";
 import { EmergencyExamsModal } from "./components/EmergencyExamsModal";
+import { AppointmentActionModal } from "@/app/recepcion/components/AppointmentActionModal";
 import { toast } from "sonner";
 
 const PAGE_SIZE = 10;
@@ -20,6 +21,7 @@ interface Appointment {
     endTime: string;
     type: string;
     status: string;
+    doctorId?: number;
     doctorName?: string;
     reason?: string;
 }
@@ -55,6 +57,7 @@ export default function AppointmentsPage() {
     const [selectedAppointmentDetails, setSelectedAppointmentDetails] = useState<any>(null);
     const [loadingDetails, setLoadingDetails] = useState(false);
     const [examsEmergenciaId, setExamsEmergenciaId] = useState<string | null>(null);
+    const [actionModal, setActionModal] = useState<{ open: boolean; action: 'RESCHEDULE' | 'CANCEL' | null; appointment: any }>({ open: false, action: null, appointment: null });
 
     // ── Filtros Citas ──────────────────────────────────────────────────────
     const [draftCitaDoctor, setDraftCitaDoctor] = useState('');
@@ -162,6 +165,25 @@ export default function AppointmentsPage() {
     const emgTotalPages = Math.max(1, Math.ceil(filteredEmg.length / PAGE_SIZE));
     const paginatedEmg = filteredEmg.slice((emgPage - 1) * PAGE_SIZE, emgPage * PAGE_SIZE);
     const emgHasFilters = !!(appliedEmg.desde || appliedEmg.hasta);
+
+    const handleOpenAction = (apt: Appointment, action: 'RESCHEDULE' | 'CANCEL') => {
+        const patientName = [(user as any)?.firstName, (user as any)?.lastName].filter(Boolean).join(' ') || (user as any)?.email || 'Paciente';
+        setActionModal({
+            open: true,
+            action,
+            appointment: {
+                id: String(apt.id),
+                patientName,
+                doctorName: apt.doctorName || 'No asignado',
+                date: apt.date,
+                startTime: apt.startTime,
+                status: apt.status,
+                reason: apt.reason || '',
+                doctorId: String(apt.doctorId ?? ''),
+                isPaid: false,
+            }
+        });
+    };
 
     const handleBuscarCitas  = () => { setAppliedCita({ doctor: draftCitaDoctor, estado: draftCitaEstado, desde: draftCitaDesde, hasta: draftCitaHasta }); setCitaPage(1); };
     const handleLimpiarCitas = () => { setDraftCitaDoctor(''); setDraftCitaEstado(''); setDraftCitaDesde(''); setDraftCitaHasta(''); setAppliedCita({ doctor: '', estado: '', desde: '', hasta: '' }); setCitaPage(1); };
@@ -288,6 +310,7 @@ export default function AppointmentsPage() {
                             <div className="grid gap-5">
                                 {paginatedCitas.map((apt) => {
                                     const isCompleted = ['ATENDIDA', 'COMPLETADA', 'FINALIZADA'].includes(apt.status);
+                                    const isActionable = ['PROGRAMADA', 'CONFIRMADA'].includes(apt.status);
                                     return (
                                         <div key={apt.id} className="group bg-white/40 backdrop-blur-md p-6 rounded-[2rem] border border-white/50 flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all hover:bg-white/70 hover:shadow-lg hover:scale-[1.01]">
                                             <div className="flex items-start gap-5">
@@ -323,9 +346,24 @@ export default function AppointmentsPage() {
                                                     <button onClick={() => handleOpenDetails(apt.id)} className="w-full md:w-auto text-[11px] font-black uppercase tracking-widest text-lime-700 bg-lime-500/10 hover:bg-lime-500/20 border border-lime-500/20 px-6 py-3 rounded-xl flex items-center justify-center gap-2 transition-all hover:scale-[1.02]">
                                                         Ver Resultados <ArrowRight size={14} />
                                                     </button>
-                                                ) : (
-                                                    <div className="h-10 hidden md:block" />
-                                                )}
+                                                ) : isActionable ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={() => handleOpenAction(apt, 'RESCHEDULE')}
+                                                            title="Reprogramar cita"
+                                                            className="p-2.5 rounded-xl text-lime-600 hover:bg-lime-50 border border-lime-200/60 hover:border-lime-300 transition-all hover:scale-105"
+                                                        >
+                                                            <CalendarClock size={18} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleOpenAction(apt, 'CANCEL')}
+                                                            title="Cancelar cita"
+                                                            className="p-2.5 rounded-xl text-red-400 hover:bg-red-50 border border-red-200/60 hover:border-red-300 transition-all hover:scale-105"
+                                                        >
+                                                            <Ban size={18} />
+                                                        </button>
+                                                    </div>
+                                                ) : null}
                                             </div>
                                         </div>
                                     );
@@ -515,6 +553,17 @@ export default function AppointmentsPage() {
                 onClose={() => setDetailsModalOpen(false)}
                 appointment={selectedAppointmentDetails}
                 loading={loadingDetails}
+            />
+
+            <AppointmentActionModal
+                isOpen={actionModal.open}
+                onClose={() => setActionModal({ open: false, action: null, appointment: null })}
+                appointment={actionModal.appointment}
+                action={actionModal.action}
+                onSuccess={() => {
+                    setActionModal({ open: false, action: null, appointment: null });
+                    fetchAppointments();
+                }}
             />
 
             {examsEmergenciaId && (

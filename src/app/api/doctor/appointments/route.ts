@@ -52,7 +52,7 @@ export async function GET(req: Request) {
                     gte: startOfDay,
                     lte: endOfDay
                 },
-                estadoCita: 'CONFIRMADA' // Strict: Doctor only sees confirmed patients
+                estadoCita: { in: ['PROGRAMADA', 'CONFIRMADA'] }
             },
             include: {
                 paciente: true,

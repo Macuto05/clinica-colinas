@@ -15,7 +15,8 @@ import {
     ClipboardList,
     Menu,
     ChevronRight,
-    Activity
+    Activity,
+    PackageX
 } from "lucide-react";
 import ExchangeRateWidget from "@/components/admin/ExchangeRateWidget";
 
@@ -44,11 +45,12 @@ export default function AlmacenLayout({ children }: AlmacenLayoutProps) {
 
     const navigation = [
         { name: "Resumen", href: "/almacen", icon: LayoutDashboard, section: "Almacén" },
-        { name: "Insumos / Catálogo", href: "/almacen/insumos", icon: Package, section: "Gestión" },
+        { name: "Insumos", href: "/almacen/insumos", icon: Package, section: "Gestión" },
         { name: "Almacenes", href: "/almacen/almacenes", icon: Factory, section: "Gestión" },
         { name: "Traslados", href: "/almacen/traslados", icon: ArrowLeftRight, section: "Gestión" },
         { name: "Historial Movimientos", href: "/almacen/movimientos", icon: ClipboardList, section: "Gestión" },
         { name: "Pedidos de Compra", href: "/almacen/pedidos", icon: Package, section: "Gestión" },
+        { name: "Bajas por Vencimiento", href: "/almacen/bajas", icon: PackageX, section: "Reportes" },
     ];
 
     const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/');
@@ -79,7 +81,7 @@ export default function AlmacenLayout({ children }: AlmacenLayoutProps) {
             {/* Sidebar */}
             <aside
                 className={`
-                    fixed inset-y-0 left-0 z-50 w-56 bg-white/60 backdrop-blur-xl border-r border-white/50 shadow-[2px_0_16px_0_rgba(0,0,0,0.06)] transform transition-transform duration-200 ease-in-out flex flex-col
+                    print:hidden fixed inset-y-0 left-0 z-50 w-56 bg-white/60 backdrop-blur-xl border-r border-white/50 shadow-[2px_0_16px_0_rgba(0,0,0,0.06)] transform transition-transform duration-200 ease-in-out flex flex-col
                     ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
                 `}
             >
@@ -144,6 +146,22 @@ export default function AlmacenLayout({ children }: AlmacenLayoutProps) {
                             )
                         })}
                     </div>
+
+                    <div className="my-2.5 border-t border-white/40 mx-2" />
+
+                    <div className="mb-2">
+                        <p className="px-3 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1.5">Reportes</p>
+                        {navigation.filter(n => n.section === "Reportes").map(item => {
+                            const active = isActive(item.href);
+                            return (
+                                <Link key={item.name} href={item.href} onClick={() => setIsMobileMenuOpen(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl border text-sm font-bold transition-all duration-200 group ${active ? "border-lime-500/80 bg-lime-50/80 text-lime-700 shadow-[0_4px_12px_rgba(132,204,22,0.2)] ring-2 ring-lime-400/20 scale-[1.02] backdrop-blur-sm" : "border-transparent bg-transparent text-gray-500/80 hover:bg-white/50 hover:border-white/60 hover:text-gray-700 hover:shadow-sm"}`}>
+                                    <item.icon size={20} className={`transition-colors duration-200 ${active ? "text-lime-600" : "text-gray-400 group-hover:text-gray-600"}`} />
+                                    <span className="truncate">{item.name}</span>
+                                    {active && <ChevronRight size={16} className="ml-auto text-lime-400 shrink-0" />}
+                                </Link>
+                            )
+                        })}
+                    </div>
                 </nav>
 
                 {/* Logout */}
@@ -159,9 +177,9 @@ export default function AlmacenLayout({ children }: AlmacenLayoutProps) {
             </aside>
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col min-w-0 overflow-hidden lg:pl-56">
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden lg:pl-56 print:pl-0">
                 {/* Mobile Header */}
-                <header className="lg:hidden h-16 bg-white/60 backdrop-blur-xl border-b border-white/50 flex items-center justify-between px-4">
+                <header className="print:hidden lg:hidden h-16 bg-white/60 backdrop-blur-xl border-b border-white/50 flex items-center justify-between px-4">
                     <button
                         onClick={() => setIsMobileMenuOpen(true)}
                         className="p-2 -ml-2 text-gray-600 hover:bg-white/60 rounded-xl transition-colors"
@@ -177,7 +195,7 @@ export default function AlmacenLayout({ children }: AlmacenLayoutProps) {
                 </header>
 
                 {/* Desktop Header */}
-                <header className="hidden lg:flex items-center justify-end sticky top-0 z-40 px-8 py-4 pointer-events-none">
+                <header className="print:hidden hidden lg:flex items-center justify-end sticky top-0 z-40 px-8 py-4 pointer-events-none">
                     <div className="pointer-events-auto">
                         <ExchangeRateWidget />
                     </div>

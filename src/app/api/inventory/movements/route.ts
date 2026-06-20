@@ -9,6 +9,7 @@ export async function GET(request: Request) {
         const { searchParams } = new URL(request.url);
         const almacenId = searchParams.get("almacenId");
         const tipo = searchParams.get("tipo");
+        const motivo = searchParams.get("motivo");
         const insumoId = searchParams.get("insumoId");
         const startDate = searchParams.get("startDate");
         const endDate = searchParams.get("endDate");
@@ -18,6 +19,7 @@ export async function GET(request: Request) {
 
         if (almacenId) where.almacenId = BigInt(almacenId);
         if (tipo) where.tipoMovimiento = tipo;
+        if (motivo) where.observaciones = motivo;
         if (insumoId) {
             // Filter by specific insumo (needs join on details)
             where.detalles = { some: { insumoId: BigInt(insumoId) } };
@@ -75,7 +77,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { tipo, pedidoId, items, usuarioId, motivo, almacenDestinoId } = body;
+        const { tipo, pedidoId, items, usuarioId, motivo, almacenDestinoId, observaciones: obsCustom } = body;
 
         // Validation
         if (!tipo || !items || !Array.isArray(items) || items.length === 0 || !usuarioId) {
@@ -134,7 +136,7 @@ export async function POST(request: Request) {
                         pedidoCompraId: pedidoId ? BigInt(pedidoId) : null,
                         observaciones: pedidoId
                             ? `Recepción de pedido #${pedidoId}`
-                            : (tipo === 'TRASLADO' && almacenDestinoId
+                            : obsCustom || (tipo === 'TRASLADO' && almacenDestinoId
                                 ? `Traslado hacia Almacén #${almacenDestinoId}`
                                 : motivo || `Movimiento ${tipo}`),
                         referencia: referencia
@@ -150,7 +152,7 @@ export async function POST(request: Request) {
                             tipoMovimiento: 'ENTRADA', // Logic: Transfer IN to destination is an ENTRY
                             fechaMovimiento: new Date(),
                             usuarioId: BigInt(usuarioId),
-                            observaciones: `Traslado desde Almacén #${almacenId}`,
+                            observaciones: obsCustom || `Traslado desde Almacén #${almacenId}`,
                             referencia: referencia // Shared Reference (e.g. TRF-5)
                         }
                     });
