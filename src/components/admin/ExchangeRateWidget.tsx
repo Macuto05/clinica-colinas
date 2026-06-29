@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { RefreshCw, DollarSign, TrendingUp, AlertCircle } from "lucide-react";
+import { DollarSign, AlertCircle } from "lucide-react";
 
 interface ExchangeRate {
     valor: number;
@@ -51,11 +51,6 @@ export default function ExchangeRateWidget() {
         return () => window.removeEventListener("bcv-update", handleUpdate);
     }, []);
 
-    const handleRefresh = (e: React.MouseEvent) => {
-        e.preventDefault();
-        fetchRate();
-    };
-
     return (
         <div className="flex items-center gap-4 bg-white/40 backdrop-blur-md border border-white/50 rounded-full px-5 py-2 shadow-[0_4px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_24px_rgba(132,204,22,0.1)] transition-all duration-300 group">
             <div className="flex items-center gap-2 text-lime-600">
@@ -77,18 +72,9 @@ export default function ExchangeRateWidget() {
                 ) : !rate ? (
                     <span className="text-sm font-black text-gray-500/60 uppercase tracking-tighter italic">--.-- Bs</span>
                 ) : (
-                    <>
-                        <span className="text-sm font-black text-gray-800 tracking-tight">
-                            {Number(rate.valor).toLocaleString('es-VE', { minimumFractionDigits: 2 })} <span className="text-[10px] text-gray-400">Bs</span>
-                        </span>
-                        <button
-                            onClick={handleRefresh}
-                            className="text-gray-400 hover:text-lime-600 hover:rotate-180 transition-all duration-500 p-1"
-                            title="Actualizar Tasa"
-                        >
-                            <RefreshCw size={12} strokeWidth={2.5} />
-                        </button>
-                    </>
+                    <span className="text-sm font-black text-gray-800 tracking-tight">
+                        {Number(rate.valor).toLocaleString('es-VE', { minimumFractionDigits: 2 })} <span className="text-[10px] text-gray-400">Bs</span>
+                    </span>
                 )}
             </div>
         </div>

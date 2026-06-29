@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import {
     Users, CalendarCheck, Ambulance, DollarSign,
     BarChart3, RefreshCw, Loader2, Stethoscope,
-    Package, TrendingUp,
+    Package,
 } from "lucide-react";
 
 interface Kpis {
@@ -282,7 +282,7 @@ export default function AdminMetricasPage() {
                             <div className="flex items-center gap-2 mb-5">
                                 <Package size={16} className="text-orange-500" />
                                 <h2 className="font-semibold text-gray-800 dark:text-gray-200">Inventario — movimientos</h2>
-                                <span className="ml-auto text-xs text-gray-400">últimos 7 días</span>
+                                <span className="ml-auto text-xs text-gray-400 capitalize">{mesActual}</span>
                             </div>
                             {movItems.length === 0 ? (
                                 <p className="text-sm text-gray-400 text-center py-6">Sin movimientos esta semana</p>
@@ -332,53 +332,6 @@ export default function AdminMetricasPage() {
                         </div>
                     </div>
 
-                    {/* ── Resumen rápido ── */}
-                    <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-6">
-                        <div className="flex items-center gap-2 mb-4">
-                            <TrendingUp size={16} className="text-[#2D6B4F]" />
-                            <h2 className="font-semibold text-gray-800 dark:text-gray-200">Resumen operativo</h2>
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                            {[
-                                {
-                                    label: "Tasa de atención",
-                                    value: data?.citasPorEstado.length
-                                        ? (() => {
-                                            const atendidas = data.citasPorEstado.find(c => c.estado === "ATENDIDA")?.total ?? 0;
-                                            const total = data.citasPorEstado.reduce((s, c) => s + c.total, 0);
-                                            return total > 0 ? `${Math.round((atendidas / total) * 100)}%` : "—";
-                                        })()
-                                        : "—",
-                                    sub: "Citas atendidas vs total",
-                                },
-                                {
-                                    label: "Nivel crítico",
-                                    value: (() => {
-                                        const critico = data?.emergenciasPorNivel.find(e => e.nivel === "CRITICO")?.total ?? 0;
-                                        const total = data?.emergenciasPorNivel.reduce((s, e) => s + e.total, 0) ?? 0;
-                                        return total > 0 ? `${Math.round((critico / total) * 100)}%` : "—";
-                                    })(),
-                                    sub: "Emergencias críticas vs total",
-                                },
-                                {
-                                    label: "Entradas inventario",
-                                    value: data?.movimientosPorTipo.find(m => m.tipo === "ENTRADA")?.total ?? 0,
-                                    sub: "Últimos 7 días",
-                                },
-                                {
-                                    label: "Salidas inventario",
-                                    value: data?.movimientosPorTipo.find(m => m.tipo === "SALIDA")?.total ?? 0,
-                                    sub: "Últimos 7 días",
-                                },
-                            ].map(item => (
-                                <div key={item.label} className="bg-gray-50 dark:bg-zinc-800 rounded-lg p-4">
-                                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{item.value}</p>
-                                    <p className="text-xs font-medium text-gray-600 dark:text-gray-300 mt-1">{item.label}</p>
-                                    <p className="text-xs text-gray-400 mt-0.5">{item.sub}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
                 </>
             )}
         </div>

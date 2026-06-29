@@ -30,10 +30,6 @@ export async function GET(req: NextRequest) {
         const inicioMes = new Date(año, mes, 1);
         const finMes    = new Date(año, mes + 1, 0, 23, 59, 59, 999);
 
-        // Semana: siempre los últimos 7 días reales (independiente del mes seleccionado)
-        const inicioSemana = new Date(ahora);
-        inicioSemana.setDate(ahora.getDate() - 6);
-        inicioSemana.setHours(0, 0, 0, 0);
 
         const [
             totalPacientes,
@@ -89,10 +85,10 @@ export async function GET(req: NextRequest) {
                 orderBy: { _count: { nivelUrgencia: 'desc' } },
             }),
 
-            // Chart 3 — Movimientos de inventario esta semana por tipo
+            // Chart 3 — Movimientos de inventario del mes seleccionado por tipo
             prisma.movimientoInventario.groupBy({
                 by: ['tipoMovimiento'],
-                where: { fechaMovimiento: { gte: inicioSemana } },
+                where: { fechaMovimiento: { gte: inicioMes, lte: finMes } },
                 _count: { _all: true },
                 orderBy: { _count: { tipoMovimiento: 'desc' } },
             }),
