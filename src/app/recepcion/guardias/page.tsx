@@ -24,6 +24,11 @@ function toISO(date: Date): string {
     return date.toISOString().split("T")[0];
 }
 
+/** Fecha de hoy en hora venezolana (America/Caracas) en formato YYYY-MM-DD */
+function hoyVE(): string {
+    return new Date().toLocaleDateString("en-CA", { timeZone: "America/Caracas" });
+}
+
 const DIA_LABELS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 const TURNOS = ["MAÑANA", "NOCHE"] as const;
 type Turno = typeof TURNOS[number];
@@ -149,7 +154,7 @@ function GuardiaCell({
 /* ─── Page ─────────────────────────────────────────── */
 export default function GuardiasPage() {
     const { user } = useAuth();
-    const [lunes, setLunes] = useState<Date>(() => getLunes(new Date()));
+    const [lunes, setLunes] = useState<Date>(() => getLunes(new Date(hoyVE() + "T12:00:00Z")));
     const [medicos, setMedicos] = useState<Medico[]>([]);
     const [guardias, setGuardias] = useState<Guardia[]>([]);
     const [loadingGuardias, setLoadingGuardias] = useState(false);
@@ -188,7 +193,7 @@ export default function GuardiasPage() {
         return `${lunes.getUTCDate()} ${meses[lunes.getUTCMonth()]} – ${dom.getUTCDate()} ${meses[dom.getUTCMonth()]} ${dom.getUTCFullYear()}`;
     };
 
-    const hoyISO = toISO(new Date());
+    const hoyISO = hoyVE();
 
     return (
         <div className="space-y-6">
