@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
         // Filtrar por turno activo
         const turno = getTurnoActual();
         const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
+        hoy.setUTCHours(0, 0, 0, 0);
 
         const guardias = await prisma.guardiaEmergencia.findMany({
             where: { fecha: hoy, turno },

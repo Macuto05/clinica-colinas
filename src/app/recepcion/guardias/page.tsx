@@ -94,14 +94,14 @@ function GuardiaCell({
     };
 
     return (
-        <div className="p-2 flex flex-col gap-1.5 min-h-[80px]">
+        <div className="p-2 flex flex-col gap-1.5 min-h-[80px] min-w-0">
             {/* Médicos asignados */}
             {asignados.map(g => (
                 <div
                     key={g.guardiaId}
-                    className="flex items-center justify-between gap-1 bg-white/80 border border-lime-200/60 rounded-lg px-2 py-1.5 shadow-sm"
+                    className="flex items-center justify-between gap-1 bg-white/80 border border-lime-200/60 rounded-lg px-2 py-1.5 shadow-sm min-w-0"
                 >
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                         <p className="text-[11px] font-bold text-gray-800 truncate leading-tight">{g.medico.nombre}</p>
                         <p className="text-[10px] text-gray-400 truncate">{g.medico.especialidad}</p>
                     </div>
@@ -237,7 +237,7 @@ export default function GuardiasPage() {
                     {dias.map((dia, i) => {
                         const esHoy = toISO(dia) === hoyISO;
                         return (
-                            <div key={i} className={`px-2 py-3 text-center border-l border-white/40 ${esHoy ? "bg-lime-50/60" : ""}`}>
+                            <div key={i} className={`min-w-0 px-2 py-3 text-center border-l border-white/40 ${esHoy ? "bg-lime-50/60" : ""}`}>
                                 <p className={`text-[10px] font-black uppercase tracking-widest ${esHoy ? "text-lime-600" : "text-gray-400"}`}>
                                     {DIA_LABELS[i]}
                                 </p>
@@ -265,7 +265,7 @@ export default function GuardiasPage() {
                                 const iso = toISO(dia);
                                 const esHoy = iso === hoyISO;
                                 return (
-                                    <div key={i} className={`border-l border-white/40 ${esHoy ? "bg-lime-50/30" : ""}`}>
+                                    <div key={i} className={`min-w-0 overflow-hidden border-l border-white/40 ${esHoy ? "bg-lime-50/30" : ""}`}>
                                         <GuardiaCell
                                             fecha={iso}
                                             turno={turno}
