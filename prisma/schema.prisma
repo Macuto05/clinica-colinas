@@ -56,6 +56,7 @@ model Usuario {
   cargosGenerados       CargoCuentaPaciente[]
   resetTokens           PasswordResetToken[]
   registrosAuditoria    RegistroAuditoria[]
+  guardiasCreadas       GuardiaEmergencia[]
 
   @@map("usuario")
 }
@@ -91,16 +92,17 @@ model Empleado {
 }
 
 model Medico {
-  empleadoId          BigInt         @id @map("empleado_id")
-  especialidadId      BigInt         @map("especialidad_id")
-  numeroColegiatura   String?        @unique @map("numero_colegiatura") @db.VarChar(60)
-  licenciaProfesional String?        @unique @map("licencia_profesional") @db.VarChar(60)
-  activo              Boolean        @default(true)
+  empleadoId          BigInt              @id @map("empleado_id")
+  especialidadId      BigInt              @map("especialidad_id")
+  numeroColegiatura   String?             @unique @map("numero_colegiatura") @db.VarChar(60)
+  licenciaProfesional String?             @unique @map("licencia_profesional") @db.VarChar(60)
+  activo              Boolean             @default(true)
   citas               CitaMedica[]
-  empleado            Empleado       @relation(fields: [empleadoId], references: [empleadoId], onDelete: Cascade)
-  especialidad        Especialidad   @relation(fields: [especialidadId], references: [especialidadId])
+  empleado            Empleado            @relation(fields: [empleadoId], references: [empleadoId], onDelete: Cascade)
+  especialidad        Especialidad        @relation(fields: [especialidadId], references: [especialidadId])
   horario             MedicoHorario?
   emergencias         Emergencia[]
+  guardias            GuardiaEmergencia[]
 
   @@map("medico")
 }
@@ -979,4 +981,24 @@ enum AuditSeveridad {
   INFO
   WARNING
   CRITICAL
+}
+
+enum TurnoGuardia {
+  MAÑANA
+  NOCHE
+}
+
+model GuardiaEmergencia {
+  guardiaId BigInt       @id @default(autoincrement()) @map("guardia_id")
+  medicoId  BigInt       @map("medico_id")
+  fecha     DateTime     @db.Date
+  turno     TurnoGuardia
+  creadoPor BigInt       @map("creado_por")
+  creadoEn  DateTime     @default(now()) @map("creado_en") @db.Timestamptz(6)
+  medico    Medico       @relation(fields: [medicoId], references: [empleadoId])
+  usuario   Usuario      @relation(fields: [creadoPor], references: [usuarioId])
+
+  @@unique([fecha, turno])
+  @@index([fecha])
+  @@map("guardia_emergencia")
 }

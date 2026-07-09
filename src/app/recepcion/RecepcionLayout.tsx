@@ -11,7 +11,8 @@ import {
     LogOut,
     Menu,
     ChevronRight,
-    Activity
+    Activity,
+    ShieldCheck
 } from "lucide-react";
 import ExchangeRateWidget from "@/components/admin/ExchangeRateWidget";
 
@@ -42,6 +43,7 @@ export default function RecepcionLayout({ children }: RecepcionLayoutProps) {
         { name: "Agenda del Día", href: "/recepcion", icon: LayoutDashboard, section: "Recepción" },
         { name: "Pacientes", href: "/recepcion/pacientes", icon: Users, section: "Gestión" },
         { name: "Nueva Cita", href: "/recepcion/citas/nueva", icon: CalendarPlus, section: "Gestión" },
+        { name: "Guardias", href: "/recepcion/guardias", icon: ShieldCheck, section: "Gestión" },
     ];
 
     const isActive = (path: string) => pathname === path;
