@@ -6,7 +6,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import {
     LayoutDashboard,
-    Users,
     UserCog,
     Activity,
     BarChart3,
@@ -49,9 +48,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     const navigation = [
         { name: "Resumen", href: "/admin", icon: LayoutDashboard, section: "General" },
         { name: "Médicos", href: "/admin/doctores", icon: Award, section: "Gestión de Usuarios" },
-        { name: "Pacientes", href: "/admin/pacientes", icon: Users, section: "Gestión de Usuarios" },
         { name: "Personal / Staff", href: "/admin/personal", icon: Briefcase, section: "Gestión de Usuarios" },
-        { name: "Roles", href: "/admin/roles", icon: Shield, section: "Gestión de Usuarios" },
         { name: "Especialidades", href: "/admin/especialidades", icon: Activity, section: "Clínica" },
         { name: "Servicios", href: "/admin/servicios", icon: FlaskConical, section: "Clínica" },
         { name: "Aseguradoras", href: "/admin/aseguradoras", icon: Shield, section: "Clínica" },
