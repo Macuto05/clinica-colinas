@@ -998,7 +998,8 @@ model GuardiaEmergencia {
   medico    Medico       @relation(fields: [medicoId], references: [empleadoId])
   usuario   Usuario      @relation(fields: [creadoPor], references: [usuarioId])
 
-  @@unique([fecha, turno])
+  @@unique([fecha, turno, medicoId])
   @@index([fecha])
+  @@index([fecha, turno])
   @@map("guardia_emergencia")
 }

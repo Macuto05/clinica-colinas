@@ -6,8 +6,7 @@ BigInt.prototype.toJSON = function () { return this.toString() };
 
 /**
  * GET /api/recepcion/guardias?semana=2026-06-30
- * Devuelve las 14 guardias (7 días × 2 turnos) de la semana indicada.
- * `semana` debe ser el lunes de la semana en formato YYYY-MM-DD.
+ * Devuelve todas las guardias de los 7 días de la semana indicada (lunes base).
  */
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -23,9 +22,7 @@ export async function GET(req: NextRequest) {
 
     try {
         const guardias = await prisma.guardiaEmergencia.findMany({
-            where: {
-                fecha: { gte: lunes, lte: domingo },
-            },
+            where: { fecha: { gte: lunes, lte: domingo } },
             include: {
                 medico: {
                     include: {
@@ -37,7 +34,7 @@ export async function GET(req: NextRequest) {
             orderBy: [{ fecha: "asc" }, { turno: "asc" }],
         });
 
-        const formatted = guardias.map((g: any) => ({
+        return NextResponse.json(guardias.map((g: any) => ({
             guardiaId: g.guardiaId.toString(),
             medicoId: g.medicoId.toString(),
             fecha: g.fecha.toISOString().split("T")[0],
@@ -46,9 +43,7 @@ export async function GET(req: NextRequest) {
                 nombre: `${g.medico.empleado.nombres} ${g.medico.empleado.apellidos}`,
                 especialidad: g.medico.especialidad?.nombre ?? "—",
             },
-        }));
-
-        return NextResponse.json(formatted);
+        })));
     } catch (error) {
         console.error("Error al obtener guardias:", error);
         return NextResponse.json({ error: "Error interno" }, { status: 500 });
@@ -56,33 +51,23 @@ export async function GET(req: NextRequest) {
 }
 
 /**
- * PUT /api/recepcion/guardias
- * Asigna o elimina el médico de guardia para un turno/fecha específico.
- * Body: { fecha: "YYYY-MM-DD", turno: "MAÑANA"|"NOCHE", medicoId: string | null }
- * Si medicoId es null elimina la guardia de ese slot.
+ * POST /api/recepcion/guardias
+ * Agrega un médico a un turno/fecha. Ignora si ya está asignado.
+ * Body: { fecha: "YYYY-MM-DD", turno: "MAÑANA"|"NOCHE", medicoId: string, creadoPor: string }
  */
-export async function PUT(req: NextRequest) {
+export async function POST(req: NextRequest) {
     try {
-        const body = await req.json();
-        const { fecha, turno, medicoId, creadoPor } = body;
+        const { fecha, turno, medicoId, creadoPor } = await req.json();
 
-        if (!fecha || !turno) {
-            return NextResponse.json({ error: "fecha y turno son requeridos" }, { status: 400 });
+        if (!fecha || !turno || !medicoId) {
+            return NextResponse.json({ error: "fecha, turno y medicoId son requeridos" }, { status: 400 });
         }
 
         const fechaDate = new Date(fecha + "T00:00:00Z");
 
-        if (!medicoId) {
-            // Eliminar guardia si existe
-            await prisma.guardiaEmergencia.deleteMany({
-                where: { fecha: fechaDate, turno },
-            });
-            return NextResponse.json({ ok: true, accion: "eliminada" });
-        }
-
         const guardia = await prisma.guardiaEmergencia.upsert({
-            where: { fecha_turno: { fecha: fechaDate, turno } },
-            update: { medicoId: BigInt(medicoId), creadoPor: BigInt(creadoPor ?? 1) },
+            where: { fecha_turno_medicoId: { fecha: fechaDate, turno, medicoId: BigInt(medicoId) } },
+            update: {},
             create: {
                 fecha: fechaDate,
                 turno,
@@ -93,7 +78,28 @@ export async function PUT(req: NextRequest) {
 
         return NextResponse.json({ ok: true, guardiaId: guardia.guardiaId.toString() });
     } catch (error) {
-        console.error("Error al guardar guardia:", error);
+        console.error("Error al agregar guardia:", error);
+        return NextResponse.json({ error: "Error interno" }, { status: 500 });
+    }
+}
+
+/**
+ * DELETE /api/recepcion/guardias?id=123
+ * Elimina una guardia específica por su ID.
+ */
+export async function DELETE(req: NextRequest) {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+        return NextResponse.json({ error: "Parámetro 'id' requerido" }, { status: 400 });
+    }
+
+    try {
+        await prisma.guardiaEmergencia.delete({ where: { guardiaId: BigInt(id) } });
+        return NextResponse.json({ ok: true });
+    } catch (error) {
+        console.error("Error al eliminar guardia:", error);
         return NextResponse.json({ error: "Error interno" }, { status: 500 });
     }
 }
