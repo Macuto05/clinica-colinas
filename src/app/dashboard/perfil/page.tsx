@@ -219,11 +219,11 @@ export default function ProfilePage() {
                     <button
                         onClick={handleDownloadHistory}
                         disabled={isDownloading || !hasHistory}
-                        title={!hasHistory ? "Sin historial clínico disponible aún" : "Descargar historial médico"}
+                        title={!hasHistory ? "Sin historial clínico disponible aún" : "Descargar historial clínico"}
                         className="flex items-center gap-2 px-5 py-2.5 bg-white/60 backdrop-blur-md border border-white/80 text-gray-700 font-bold rounded-2xl hover:bg-white transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm focus:ring-2 focus:ring-lime-300"
                     >
                         {isDownloading ? <Loader2 size={18} className="animate-spin text-lime-600" /> : <FileDown size={18} className="text-lime-600" />}
-                        Descargar Historial Médico
+                        Descargar Historial Clínico
                     </button>
                     <button
                         onClick={() => {

@@ -132,7 +132,7 @@ export default function AlmacenesPage() {
                         </div>
                         Gestión de Almacenes
                     </h1>
-                    <p className="text-gray-500 text-sm font-medium mt-1">Administra los puntos de almacenamiento y puntos de venta.</p>
+                    <p className="text-gray-500 text-sm font-medium mt-1">Administra los puntos de almacenamiento físico.</p>
                 </div>
                 <button
                     onClick={handleOpenCreate}
